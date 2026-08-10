@@ -19,5 +19,6 @@ export interface LoginResponse {
   userId: string;
   username: string;
   role: LoginResponseRole;
+  onboardingCompleted: boolean;
   expiresAt: string;
 }

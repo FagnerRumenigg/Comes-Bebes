@@ -9,6 +9,7 @@ import PublicationCard from '@/components/publication/PublicationCard.vue'
 const title = ref('')
 const ingredient = ref('')
 const submitted = ref(false)
+const hasSearchTerm = computed(() => Boolean(title.value.trim() || ingredient.value.trim()))
 const params = computed(() => ({
   title: title.value.trim() || undefined,
   ingredient: ingredient.value.trim() || undefined,
@@ -17,13 +18,15 @@ const params = computed(() => ({
 }))
 const searchQuery = useSearch(params, {
   query: {
-    enabled: computed(
-      () => submitted.value && Boolean(title.value.trim() || ingredient.value.trim()),
-    ),
+    enabled: computed(() => submitted.value && hasSearchTerm.value),
   },
 })
 
 function submit(): void {
+  if (!hasSearchTerm.value) {
+    return
+  }
+
   submitted.value = true
 }
 function clear(): void {
@@ -44,7 +47,7 @@ function clear(): void {
       <BaseInput v-model="title" label="Título" placeholder="Ex.: bolo de cenoura" />
       <BaseInput v-model="ingredient" label="Ingrediente" placeholder="Ex.: chocolate" />
       <div class="search-view__actions">
-        <BaseButton type="submit">Buscar</BaseButton
+        <BaseButton type="submit" :disabled="!hasSearchTerm">Buscar</BaseButton
         ><BaseButton type="button" variant="secondary" @click="clear">Limpar</BaseButton>
       </div>
     </form>

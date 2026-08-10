@@ -149,6 +149,23 @@ public class UserController {
         return UserResponse.of(userService.update(id, request), applicationZoneId);
     }
 
+    @PatchMapping("/{id}/onboarding")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Concluir onboarding", description = "Marca o onboarding do primeiro login como concluído para a conta autenticada.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Onboarding concluído."),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado.", content = @Content(schema = @Schema(implementation = org.application.controller.response.ApiErrorResponse.class)))
+    })
+    public ResponseEntity<Void> completeOnboarding(
+            @PathVariable UUID id,
+            Authentication authentication
+    ) {
+        ensureCurrentUser(id, authentication);
+        userService.completeOnboarding(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @PatchMapping("/{id}/password")
     @PreAuthorize("isAuthenticated()")
     @SecurityRequirement(name = "bearerAuth")

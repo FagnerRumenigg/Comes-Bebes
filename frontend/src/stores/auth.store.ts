@@ -10,7 +10,7 @@ import type { LoginResponse, LoginResponseRole } from '@/api/generated/models'
 export const AUTH_STORAGE_KEY = 'comes-e-bebes:session'
 
 type SessionStatus = 'idle' | 'initializing' | 'anonymous' | 'authenticated'
-type SessionIdentity = Pick<LoginResponse, 'userId' | 'username' | 'role'>
+type SessionIdentity = Pick<LoginResponse, 'userId' | 'username' | 'role' | 'onboardingCompleted'>
 
 interface StoredSession extends SessionIdentity {
   refreshToken: string
@@ -31,6 +31,7 @@ function parseStoredSession(value: string | null): StoredSession | null {
       typeof session.userId !== 'string' ||
       typeof session.username !== 'string' ||
       typeof session.remember !== 'boolean' ||
+      typeof session.onboardingCompleted !== 'boolean' ||
       !isRole(session.role)
     ) {
       return null
@@ -145,6 +146,7 @@ export const useAuthStore = defineStore('auth', () => {
       userId: response.userId,
       username: response.username,
       role: response.role,
+      onboardingCompleted: response.onboardingCompleted,
     }
     rememberSession.value = remember
     status.value = 'authenticated'
@@ -209,6 +211,7 @@ export const useAuthStore = defineStore('auth', () => {
         userId: storedSession.userId,
         username: storedSession.username,
         role: storedSession.role,
+        onboardingCompleted: storedSession.onboardingCompleted,
       }
       rememberSession.value = storedSession.remember
       await renewSession()

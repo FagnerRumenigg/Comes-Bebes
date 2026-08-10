@@ -49,7 +49,7 @@ spring:
         default_schema: application
 
 server:
-  port: ${COMESEBEBES_SERVER_PORT:8082}
+  port: ${COMESEBEBES_SERVER_PORT:8092}
   tomcat:
     max-http-form-post-size: 16MB
     max-swallow-size: 16MB

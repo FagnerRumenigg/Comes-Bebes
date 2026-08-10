@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.UUID;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpEntity;
@@ -36,8 +37,7 @@ public class ImageValidatorClient {
 
     public ValidationResult validate(byte[] content, String filename, String contentType) {
         String safeFilename = filename == null || filename.isBlank() ? "upload.img" : filename.replaceAll("[\\r\\n\\\"]", "_");
-        String requestedContentType = contentType == null || contentType.isBlank() ? "application/octet-stream" : contentType;
-        String boundary = "----ComeSebebes" + UUID.randomUUID();
+        String requestedContentType = normalizeContentType(contentType, safeFilename, content);
         try {
             MultipartBodyBuilder body = new MultipartBodyBuilder();
             body.part("file", new ByteArrayResource(content) {
@@ -75,6 +75,40 @@ public class ImageValidatorClient {
         } catch (RuntimeException exception) {
             throw unavailable();
         }
+    }
+
+    private String normalizeContentType(String contentType, String filename, byte[] content) {
+        if (contentType != null && !contentType.isBlank()) {
+            String normalized = contentType.trim().toLowerCase(Locale.ROOT);
+            if (normalized.startsWith("image/")) {
+                return normalized;
+            }
+        }
+
+        String extension = filename == null ? "" : filename.substring(filename.lastIndexOf('.') + 1).toLowerCase(Locale.ROOT);
+        return switch (extension) {
+            case "jpg", "jpeg" -> "image/jpeg";
+            case "png" -> "image/png";
+            case "webp" -> "image/webp";
+            case "heic", "heif" -> "image/heic";
+            default -> inferFromSignature(content);
+        };
+    }
+
+    private String inferFromSignature(byte[] content) {
+        if (content == null || content.length < 8) {
+            return "application/octet-stream";
+        }
+        if (content[0] == (byte) 0xFF && content[1] == (byte) 0xD8) {
+            return "image/jpeg";
+        }
+        if (content[0] == (byte) 0x89 && content[1] == 'P' && content[2] == 'N' && content[3] == 'G') {
+            return "image/png";
+        }
+        if (content[0] == 'R' && content[1] == 'I' && content[2] == 'F' && content[3] == 'F') {
+            return "image/webp";
+        }
+        return "application/octet-stream";
     }
 
     private InvalidOperationException responseError(int status) {

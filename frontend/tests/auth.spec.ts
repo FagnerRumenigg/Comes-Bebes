@@ -20,6 +20,7 @@ const session: LoginResponse = {
   userId: '71131447-a2a0-4996-a336-a8c3555bb327',
   username: 'fagner',
   role: 'USER',
+  onboardingCompleted: true,
   expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
 }
 
@@ -54,6 +55,7 @@ describe('store de sessão', () => {
         userId: session.userId,
         username: session.username,
         role: session.role,
+        onboardingCompleted: true,
         remember: true,
       }),
     )

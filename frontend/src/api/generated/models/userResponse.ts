@@ -24,4 +24,6 @@ export interface UserResponse {
   status: UserResponseStatus;
   /** Indica se os totais das reações ficam visíveis. */
   showReactionCounts: boolean;
+  /** Indica se o onboarding do primeiro login já foi concluído. */
+  onboardingCompleted: boolean;
 }

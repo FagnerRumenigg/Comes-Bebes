@@ -8,8 +8,17 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Iterator;
+import org.w3c.dom.Node;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
@@ -111,9 +120,9 @@ public class LocalImageStorage implements ImageStorage {
         if (image == null) {
             throw new InvalidOperationException("O arquivo informado não é uma imagem válida.");
         }
-        if (image.getWidth() <= 0 || image.getHeight() <= 0
-                || image.getWidth() > MAX_IMAGE_WIDTH || image.getHeight() > MAX_IMAGE_HEIGHT
-                || (long) image.getWidth() * image.getHeight() > MAX_IMAGE_PIXELS) {
+        image = applyExifOrientation(sourcePath, image);
+        image = normalizeDimensions(image);
+        if (image.getWidth() <= 0 || image.getHeight() <= 0) {
             throw new InvalidOperationException("As dimensões da imagem excedem o limite permitido.");
         }
 
@@ -137,6 +146,130 @@ public class LocalImageStorage implements ImageStorage {
                 .width(image.getWidth())
                 .height(image.getHeight())
                 .build();
+    }
+
+    private BufferedImage applyExifOrientation(Path sourcePath, BufferedImage image) throws IOException {
+        try (ImageInputStream inputStream = ImageIO.createImageInputStream(sourcePath.toFile())) {
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(inputStream);
+            if (!readers.hasNext()) {
+                return image;
+            }
+            ImageReader reader = readers.next();
+            try {
+                reader.setInput(inputStream, true, true);
+                int orientation = 1;
+                try {
+                    var metadata = reader.getImageMetadata(0);
+                    if (metadata != null) {
+                        var tree = metadata.getAsTree("javax_imageio_jpeg_image_1.0");
+                        if (tree != null) {
+                            Node child = tree.getFirstChild();
+                            while (child != null) {
+                                if ("orientation".equals(child.getNodeName())) {
+                                    var value = child.getAttributes().getNamedItem("value");
+                                    if (value != null) {
+                                        orientation = Integer.parseInt(value.getNodeValue());
+                                    }
+                                    break;
+                                }
+                                child = child.getNextSibling();
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+
+                switch (orientation) {
+                    case 2 -> {
+                        AffineTransform transform = AffineTransform.getScaleInstance(-1, 1);
+                        transform.translate(-image.getWidth(), 0);
+                        return transformImage(image, transform);
+                    }
+                    case 3 -> {
+                        AffineTransform transform = AffineTransform.getScaleInstance(-1, -1);
+                        transform.translate(-image.getWidth(), -image.getHeight());
+                        return transformImage(image, transform);
+                    }
+                    case 4 -> {
+                        AffineTransform transform = AffineTransform.getScaleInstance(1, -1);
+                        transform.translate(0, -image.getHeight());
+                        return transformImage(image, transform);
+                    }
+                    case 5 -> {
+                        AffineTransform transform = AffineTransform.getScaleInstance(0, 1);
+                        return transformImage(image, transform);
+                    }
+                    case 6 -> {
+                        BufferedImage rotated = new BufferedImage(image.getHeight(), image.getWidth(), image.getType());
+                        Graphics2D graphics = rotated.createGraphics();
+                        graphics.translate((rotated.getWidth() - image.getWidth()) / 2.0, (rotated.getHeight() - image.getHeight()) / 2.0);
+                        graphics.rotate(Math.toRadians(90), image.getWidth() / 2.0, image.getHeight() / 2.0);
+                        graphics.drawImage(image, 0, 0, null);
+                        graphics.dispose();
+                        return rotated;
+                    }
+                    case 7 -> {
+                        BufferedImage rotated = new BufferedImage(image.getHeight(), image.getWidth(), image.getType());
+                        Graphics2D graphics = rotated.createGraphics();
+                        graphics.translate((rotated.getWidth() - image.getWidth()) / 2.0, (rotated.getHeight() - image.getHeight()) / 2.0);
+                        graphics.rotate(Math.toRadians(270), image.getWidth() / 2.0, image.getHeight() / 2.0);
+                        graphics.drawImage(image, 0, 0, null);
+                        graphics.dispose();
+                        return rotated;
+                    }
+                    case 8 -> {
+                        BufferedImage rotated = new BufferedImage(image.getHeight(), image.getWidth(), image.getType());
+                        Graphics2D graphics = rotated.createGraphics();
+                        graphics.translate((rotated.getWidth() - image.getWidth()) / 2.0, (rotated.getHeight() - image.getHeight()) / 2.0);
+                        graphics.rotate(Math.toRadians(270), image.getWidth() / 2.0, image.getHeight() / 2.0);
+                        graphics.drawImage(image, 0, 0, null);
+                        graphics.dispose();
+                        return rotated;
+                    }
+                    default -> {
+                        return image;
+                    }
+                }
+            } finally {
+                reader.dispose();
+            }
+        }
+    }
+
+    private BufferedImage transformImage(BufferedImage image, AffineTransform transform) {
+        AffineTransformOp op = new AffineTransformOp(transform, AffineTransformOp.TYPE_BILINEAR);
+        return op.filter(image, null);
+    }
+
+    private BufferedImage normalizeDimensions(BufferedImage image) {
+        int width = image.getWidth();
+        int height = image.getHeight();
+        if (width <= MAX_IMAGE_WIDTH && height <= MAX_IMAGE_HEIGHT
+                && (long) width * height <= MAX_IMAGE_PIXELS) {
+            return image;
+        }
+
+        double scale = 1.0;
+        if (width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT) {
+            double widthScale = (double) MAX_IMAGE_WIDTH / width;
+            double heightScale = (double) MAX_IMAGE_HEIGHT / height;
+            scale = Math.min(widthScale, heightScale);
+        } else if ((long) width * height > MAX_IMAGE_PIXELS) {
+            scale = Math.sqrt((double) MAX_IMAGE_PIXELS / (width * height));
+        }
+
+        int targetWidth = Math.max(1, (int) Math.round(width * scale));
+        int targetHeight = Math.max(1, (int) Math.round(height * scale));
+        BufferedImage resized = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = resized.createGraphics();
+        try {
+            graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            graphics.drawImage(image, 0, 0, targetWidth, targetHeight, null);
+        } finally {
+            graphics.dispose();
+        }
+        return resized;
     }
 
     private void copyWithLimit(InputStream inputStream, Path target) throws IOException {

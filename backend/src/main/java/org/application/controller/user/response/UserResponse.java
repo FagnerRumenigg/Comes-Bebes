@@ -22,7 +22,9 @@ public record UserResponse(
         @Schema(description = "Estado atual da conta.", example = "ACTIVE")
         UserStatus status,
         @Schema(description = "Indica se os totais das reações ficam visíveis.", example = "true")
-        boolean showReactionCounts
+        boolean showReactionCounts,
+        @Schema(description = "Indica se o onboarding do primeiro login já foi concluído.", example = "false")
+        boolean onboardingCompleted
 ) {
 
     public static UserResponse of(User user, ZoneId zoneId) {
@@ -33,6 +35,7 @@ public record UserResponse(
                 .role(user.getRole())
                 .status(user.getStatus())
                 .showReactionCounts(user.isShowReactionCounts())
+                .onboardingCompleted(user.isOnboardingCompleted())
                 .build();
     }
 }

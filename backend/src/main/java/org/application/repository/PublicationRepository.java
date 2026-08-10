@@ -25,8 +25,8 @@ public interface PublicationRepository extends JpaRepository<Publication, UUID> 
             left join Recipe r on r.publicationId = p.id and r.deletedAt is null
             left join RecipeIngredient i on i.recipeId = r.publicationId and i.deletedAt is null
             where p.status = :status and (:visibility is null or p.visibility = :visibility)
-              and (lower(p.title) like lower(concat('%', :title, '%'))
-                or lower(i.name) like lower(concat('%', :ingredient, '%')))
+              and ((:title is not null and :title <> '' and lower(p.title) like lower(concat('%', :title, '%')))
+                or (:ingredient is not null and :ingredient <> '' and lower(i.name) like lower(concat('%', :ingredient, '%'))))
             order by p.publishedAt desc, p.id desc
             """)
     Page<Publication> searchByTitleOrIngredient(

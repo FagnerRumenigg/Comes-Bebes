@@ -5,6 +5,7 @@ import type { UserResponseRole } from '@/api/generated/models/userResponseRole'
 export interface RouteSession {
   authenticated: boolean
   role: UserResponseRole | null
+  onboardingCompleted?: boolean
 }
 
 export type RouteSessionResolver = () => RouteSession | Promise<RouteSession>
@@ -39,6 +40,10 @@ export function resolveRouteAccess(
       name: 'login',
       query: { redirect: to.fullPath },
     }
+  }
+
+  if (session.authenticated && to.name !== 'onboarding' && session.onboardingCompleted === false) {
+    return { name: 'onboarding' }
   }
 
   if (access === 'admin' && session.role !== 'ADMIN') {

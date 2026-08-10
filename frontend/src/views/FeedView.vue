@@ -31,20 +31,27 @@ onMounted(() => {
     return
   }
 
-  loadMoreObserver = new IntersectionObserver(
-    ([entry]) => {
-      if (
-        entry?.isIntersecting &&
-        feedQuery.hasNextPage.value &&
-        !feedQuery.isFetchingNextPage.value
-      ) {
-        void feedQuery.fetchNextPage()
-      }
-    },
-    { rootMargin: '20rem 0px' },
-  )
+  try {
+    loadMoreObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (
+          entry?.isIntersecting &&
+          feedQuery.hasNextPage.value &&
+          !feedQuery.isFetchingNextPage.value
+        ) {
+          void feedQuery.fetchNextPage()
+        }
+      },
+      { rootMargin: '20rem' },
+    )
+  } catch {
+    supportsInfiniteScroll.value = false
+    loadMoreObserver = null
+  }
 
-  if (loadMoreTrigger.value) loadMoreObserver.observe(loadMoreTrigger.value)
+  if (loadMoreObserver && loadMoreTrigger.value) {
+    loadMoreObserver.observe(loadMoreTrigger.value)
+  }
 })
 
 onBeforeUnmount(() => loadMoreObserver?.disconnect())

@@ -44,6 +44,7 @@ describe('edição de publicação', () => {
       userId: authorId,
       username: 'fagner',
       role: 'USER',
+      onboardingCompleted: true,
     })
     setAccessTokenProvider(() => authStore.accessToken)
 

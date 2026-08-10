@@ -98,6 +98,13 @@ public class UserService {
     }
 
     @Transactional
+    public void completeOnboarding(UUID id) {
+        User user = findActive(id);
+        user.completeOnboarding();
+        userRepository.save(user);
+    }
+
+    @Transactional
     public void changePassword(UUID id, ChangePasswordRequest request) {
         User user = findActive(id);
         if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {

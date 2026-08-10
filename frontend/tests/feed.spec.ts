@@ -149,6 +149,7 @@ describe('PublicationCard', () => {
       userId: mockPublications[0]!.authorId,
       username: 'autor',
       role: 'USER',
+      onboardingCompleted: true,
     }
 
     const wrapper = mount(PublicationCard, {

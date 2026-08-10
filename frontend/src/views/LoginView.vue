@@ -31,7 +31,8 @@ const loginMutation = useLogin({
       authStore.acceptSession(response, remember.value)
       const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
       const safeRedirect = redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/'
-      void router.replace(safeRedirect)
+      const target = response.onboardingCompleted ? safeRedirect : '/onboarding'
+      void router.replace(target)
     },
     onError(error) {
       const normalizedError = normalizeHttpError(error)

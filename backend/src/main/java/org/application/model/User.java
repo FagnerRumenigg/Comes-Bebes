@@ -64,6 +64,10 @@ public class User {
     @Builder.Default
     private boolean showReactionCounts = true;
 
+    @Column(name = "onboarding_completed", nullable = false)
+    @Builder.Default
+    private boolean onboardingCompleted = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -93,6 +97,10 @@ public class User {
 
     public void updatePasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public void completeOnboarding() {
+        this.onboardingCompleted = true;
     }
 
     public void delete(OffsetDateTime deletedAt) {

@@ -15,11 +15,12 @@ public record LoginResponse(
         UUID userId,
         String username,
         UserRole role,
+        boolean onboardingCompleted,
         OffsetDateTime expiresAt,
         UUID sessionId
 ) {
     public LoginResponse(String accessToken, String refreshToken, String tokenType, long expiresInSeconds,
-                         UUID userId, String username, UserRole role, OffsetDateTime expiresAt) {
-        this(accessToken, refreshToken, tokenType, expiresInSeconds, userId, username, role, expiresAt, UUID.randomUUID());
+                         UUID userId, String username, UserRole role, boolean onboardingCompleted, OffsetDateTime expiresAt) {
+        this(accessToken, refreshToken, tokenType, expiresInSeconds, userId, username, role, onboardingCompleted, expiresAt, UUID.randomUUID());
     }
 }

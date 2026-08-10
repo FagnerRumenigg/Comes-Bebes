@@ -61,11 +61,13 @@ def validate_and_normalize(input_path: Path, output_directory: Path) -> Validati
 
             with Image.open(input_path) as image:
                 normalized_image = ImageOps.exif_transpose(image)
+                normalized_image = normalized_image.copy()
                 width, height = normalized_image.size
-                if width <= 0 or height <= 0 or width > MAX_WIDTH or height > MAX_HEIGHT:
-                    raise ImageValidationError("DIMENSIONS_TOO_LARGE", "As dimensões da imagem excedem o limite permitido.")
-                if width * height > MAX_PIXELS:
-                    raise ImageValidationError("PIXELS_TOO_MANY", "A quantidade de pixels excede o limite permitido.")
+                if width <= 0 or height <= 0:
+                    raise ImageValidationError("INVALID_IMAGE", "O arquivo não é uma imagem válida.")
+                if width > MAX_WIDTH or height > MAX_HEIGHT or width * height > MAX_PIXELS:
+                    normalized_image = ImageOps.contain(normalized_image, (MAX_WIDTH, MAX_HEIGHT))
+                    width, height = normalized_image.size
 
                 normalized_image.load()
                 rgb_image = normalized_image.convert("RGB")

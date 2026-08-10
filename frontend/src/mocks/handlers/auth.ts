@@ -18,7 +18,8 @@ const accounts: Array<{
   username: string
   password: string
   role: MockAccount['role']
-}> = mockAccounts.map((account) => ({ ...account }))
+  onboardingCompleted: boolean
+}> = mockAccounts.map((account) => ({ ...account, onboardingCompleted: true }))
 
 const refreshSessions = new Map<string, string>()
 
@@ -54,6 +55,7 @@ function createSession(account: (typeof accounts)[number]): LoginResponse {
     userId: account.userId,
     username: account.username,
     role: account.role,
+    onboardingCompleted: account.onboardingCompleted,
     expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
   }
 }
@@ -92,6 +94,7 @@ export const authMockHandlers = [
       username: body.username,
       password: body.password,
       role: 'USER' as const,
+      onboardingCompleted: false,
     }
     accounts.push(account)
 

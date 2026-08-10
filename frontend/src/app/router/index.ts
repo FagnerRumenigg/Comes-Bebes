@@ -13,6 +13,7 @@ import EditPublicationView from '@/views/EditPublicationView.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import SearchView from '@/views/SearchView.vue'
 import SavedView from '@/views/SavedView.vue'
+import OnboardingView from '@/views/OnboardingView.vue'
 import NotificationsView from '@/views/NotificationsView.vue'
 import ModerationQueueView from '@/views/ModerationQueueView.vue'
 import ModerationCaseView from '@/views/ModerationCaseView.vue'
@@ -78,6 +79,12 @@ export const routes: RouteRecordRaw[] = [
         name: 'notifications',
         component: NotificationsView,
         meta: { access: 'authenticated', pageTitle: 'Notificações' },
+      },
+      {
+        path: 'onboarding',
+        name: 'onboarding',
+        component: OnboardingView,
+        meta: { access: 'authenticated', pageTitle: 'Bem-vindo' },
       },
       {
         path: ':pathMatch(.*)*',

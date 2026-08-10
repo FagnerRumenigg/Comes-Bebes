@@ -142,6 +142,14 @@ class UserControllerTest {
     }
 
     @Test
+    void shouldCompleteOnboarding() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        mockMvc.perform(patch("/users/{id}/onboarding", id))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
     void shouldChangePassword() throws Exception {
         UUID id = UUID.randomUUID();
 

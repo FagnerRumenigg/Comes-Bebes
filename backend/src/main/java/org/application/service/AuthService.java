@@ -116,7 +116,7 @@ public class AuthService {
                 .tokenHash(hash(rawRefreshToken))
                 .expiresAt(issuedAt.plusDays(refreshTokenExpirationDays))
                 .build());
-        return new LoginResponse(token, rawRefreshToken, "Bearer", expirationMinutes * 60, user.getId(), user.getUsername(), user.getRole(), expiresAt, sessionId);
+        return new LoginResponse(token, rawRefreshToken, "Bearer", expirationMinutes * 60, user.getId(), user.getUsername(), user.getRole(), user.isOnboardingCompleted(), expiresAt, sessionId);
     }
 
     private String generateRefreshToken() {

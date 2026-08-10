@@ -33,6 +33,7 @@ export const discoveryMockHandlers = [
       role: found.role,
       status: 'ACTIVE',
       showReactionCounts: true,
+      onboardingCompleted: true,
     }
     return HttpResponse.json(response)
   }),
