@@ -32,6 +32,11 @@ frontend/*.local
 # Local design references
 frontend/docs/design/
 
+# Internal development documentation
+/docs/
+/backend/docs/
+/frontend/docs/
+
 # Backend build artifacts
 backend/target/
 
@@ -49,3 +54,8 @@ backend/validator/data/*
 
 # Runtime uploads
 backend/uploads/
+
+# Application infrastructure runtime data
+infra/.env
+infra/.env.*
+!infra/.env.example

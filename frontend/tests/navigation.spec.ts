@@ -43,6 +43,7 @@ describe('mapa de rotas', () => {
       ['/login', 'login', 'guest'],
       ['/admin/moderacao', 'moderation-queue', 'admin'],
       ['/admin/moderacao/42', 'moderation-case', 'admin'],
+      ['/rota-inexistente', 'not-found', 'public'],
     ]
 
     for (const [path, name, access] of expectedRoutes) {

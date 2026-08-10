@@ -6,10 +6,10 @@ Backend da rede social de comida ComeSebebes.
 
 - JDK 25.
 - Maven 3.9 ou superior.
-- PostgreSQL 17 acessível localmente.
-- Um banco PostgreSQL já criado para uso local.
+- Docker Desktop com a `Infra-Geral` em execução.
+- Database e usuário exclusivos provisionados para o Comes & Bebes.
 
-A aplicação não sobe o PostgreSQL; o Compose sobe o backend e o validador de imagens.
+A aplicação não sobe o PostgreSQL. O Compose próprio em `../infra/compose.yml` sobe apenas a API e o validador de imagens.
 
 ## Configuração do banco
 
@@ -22,7 +22,7 @@ schemas:
   - flyway: histórico das migrations
 ```
 
-O usuário configurado em `SHARED_DB_USERNAME` precisa ter permissão para conectar ao banco e criar os schemas e tabelas. O Flyway cria `application` e `flyway` automaticamente e mantém seu histórico em `flyway`.
+O usuário configurado em `DB_USERNAME` deve ser exclusivo desta aplicação. O Flyway cria `application` e `flyway` automaticamente e mantém seu histórico em `flyway`.
 
 Crie o database manualmente, conectado à instância PostgreSQL:
 
@@ -39,36 +39,37 @@ CREATE SCHEMA flyway;
 
 ## Variáveis de ambiente
 
-Não existem valores padrão para conexão no Spring. A aplicação reutiliza as variáveis do banco compartilhado em `infra/.env`:
+O arquivo local de configuração fica em `../infra/.env` e nunca deve ser versionado:
 
 ```text
-SHARED_DB_PORT=5432
-SHARED_DB_USERNAME=usuario_do_banco
-SHARED_DB_PASSWORD=senha_do_banco
-COMESEBEBES_DB_NAME=comesebebes
-COMESEBEBES_SERVER_PORT=8082
+DB_HOST=platform-postgres
+DB_PORT=5432
+DB_NAME=comesebebes
+DB_USERNAME=comesebebes_app
+DB_PASSWORD=senha_exclusiva_da_aplicacao
+API_HOST_PORT=8082
 JWT_SECRET=segredo-jwt-com-no-minimo-32-caracteres
-COMESEBEBES_IMAGE_STORAGE_PATH=./uploads/images
+USER_BLOCKED_USERNAME_HMAC_SECRET=segredo-hmac-diferente-do-jwt
 COMESEBEBES_CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
 ```
 
 As configurações de issuer, expiração de tokens e limite de login possuem valores padrão no `application.yml` e só precisam ser adicionadas ao ambiente se forem alteradas.
 
-As variáveis dependentes do ambiente devem ser configuradas em `infra/.env`. Não coloque credenciais no Git ou neste README.
+As variáveis dependentes do ambiente devem ser configuradas no `.env` da aplicação. Não coloque credenciais no Git ou neste README.
 
 ## Executar pelo IntelliJ IDEA
 
 1. Abra o projeto `comesebebes` no IntelliJ IDEA.
 2. Configure o JDK 25 para o projeto e para o Maven.
 3. Crie ou edite uma configuração de execução para `org.application.Main`.
-4. Adicione todas as variáveis de ambiente obrigatórias, usando os valores de `infra/.env`.
+4. Adicione todas as variáveis de ambiente obrigatórias, usando os valores de `../infra/.env` e trocando `DB_HOST` por `localhost` quando executar fora do Docker.
 5. Execute a classe `Main`.
 6. Aguarde o Flyway concluir as migrations.
 
 Exemplo de configuração de ambiente no IntelliJ:
 
 ```text
-SHARED_DB_PORT=5432;SHARED_DB_USERNAME=usuario_do_banco;SHARED_DB_PASSWORD=senha_do_banco;COMESEBEBES_DB_NAME=comesebebes;COMESEBEBES_SERVER_PORT=8082;JWT_SECRET=uma-chave-local-com-pelo-menos-32-bytes;USER_BLOCKED_USERNAME_HMAC_SECRET=uma-chave-hmac-local;COMESEBEBES_IMAGE_STORAGE_PATH=./uploads/images;COMESEBEBES_CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+DB_HOST=localhost;DB_PORT=5432;DB_NAME=comesebebes;DB_USERNAME=comesebebes_app;DB_PASSWORD=senha_do_banco;COMESEBEBES_SERVER_PORT=8082;JWT_SECRET=uma-chave-local-com-pelo-menos-32-bytes;USER_BLOCKED_USERNAME_HMAC_SECRET=uma-chave-hmac-local;COMESEBEBES_IMAGE_STORAGE_PATH=./uploads/images;COMESEBEBES_CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
 ```
 
 ## Executar pelo Maven
@@ -76,10 +77,11 @@ SHARED_DB_PORT=5432;SHARED_DB_USERNAME=usuario_do_banco;SHARED_DB_PASSWORD=senha
 No PowerShell, defina as variáveis na sessão atual:
 
 ```powershell
-$env:SHARED_DB_PORT = "5432"
-$env:SHARED_DB_USERNAME = "usuario_do_banco"
-$env:SHARED_DB_PASSWORD = "senha_do_banco"
-$env:COMESEBEBES_DB_NAME = "comesebebes"
+$env:DB_HOST = "localhost"
+$env:DB_PORT = "5432"
+$env:DB_NAME = "comesebebes"
+$env:DB_USERNAME = "comesebebes_app"
+$env:DB_PASSWORD = "senha_do_banco"
 $env:COMESEBEBES_SERVER_PORT = "8082"
 ```
 
@@ -89,36 +91,30 @@ Depois execute:
 mvn spring-boot:run
 ```
 
-## Executar na infraestrutura Docker compartilhada
+## Executar com Docker
 
-O backend reutiliza o PostgreSQL, Nginx e Ngrok do Compose compartilhado em `TrioParadaDura/infra`. O banco é acessado pelo hostname Docker `shared-database`, o Nginx encaminha `/comesebebes/` para o backend e o Ngrok continua publicando o gateway existente.
-
-Na pasta `TrioParadaDura/infra`, suba o stack:
+Primeiro suba o repositório `Infra-Geral`. Depois, na raiz deste repositório, suba somente os serviços do Comes & Bebes:
 
 ```powershell
-docker compose --env-file .env -f docker-compose.shared-database.yml up --build -d
+docker compose --env-file .\infra\.env -f .\infra\compose.yml up --build -d
 ```
 
 Verifique o estado e os logs:
 
 ```powershell
-docker compose --env-file .env -f docker-compose.shared-database.yml ps
-docker compose --env-file .env -f docker-compose.shared-database.yml logs -f comesebebes-backend comesebebes-validator trio-gateway ngrok
+docker compose --env-file .\infra\.env -f .\infra\compose.yml ps
+docker compose --env-file .\infra\.env -f .\infra\compose.yml logs -f api validator
 ```
 
-A API fica disponível pelo gateway em `http://localhost:8090/comesebebes/`; a URL pública é a URL exibida pelo Ngrok. O healthcheck interno do validador fica em `http://comesebebes-validator:8001/health`.
+A API fica disponível diretamente em `http://localhost:8082` e pelo gateway em `http://localhost:8090/comesebebes/`. O validador fica acessível somente pela rede privada da aplicação.
 
-Para testar somente o backend fora da infraestrutura compartilhada, ainda é possível usar o Compose local deste projeto:
+Para parar somente o Comes & Bebes:
 
 ```powershell
-docker compose up --build -d
+docker compose --env-file .\infra\.env -f .\infra\compose.yml down
 ```
 
-Para parar a infraestrutura compartilhada:
-
-```powershell
-docker compose --env-file .env -f docker-compose.shared-database.yml down
-```
+Esse comando não derruba o PostgreSQL, o gateway nem as outras aplicações.
 
 ## Migrations
 

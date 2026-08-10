@@ -15,6 +15,7 @@ import SavedView from '@/views/SavedView.vue'
 import NotificationsView from '@/views/NotificationsView.vue'
 import ModerationQueueView from '@/views/ModerationQueueView.vue'
 import ModerationCaseView from '@/views/ModerationCaseView.vue'
+import NotFoundView from '@/views/NotFoundView.vue'
 
 import { routeAccessGuard } from './guards'
 
@@ -70,6 +71,12 @@ export const routes: RouteRecordRaw[] = [
         name: 'notifications',
         component: NotificationsView,
         meta: { access: 'authenticated', pageTitle: 'Notificações' },
+      },
+      {
+        path: ':pathMatch(.*)*',
+        name: 'not-found',
+        component: NotFoundView,
+        meta: { access: 'public', pageTitle: 'Página não encontrada' },
       },
     ],
   },

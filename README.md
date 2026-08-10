@@ -43,6 +43,6 @@ Comes-Bebes/
 
 ## Documentação
 
-As instruções de configuração e execução do backend estão em [`backend/README.md`](backend/README.md). A documentação de arquitetura e implementação do frontend está em [`frontend/docs`](frontend/docs).
+As instruções de configuração e execução ficam nos arquivos `README.md` de cada componente. Documentos de planejamento e controle do desenvolvimento permanecem somente no ambiente local.
 
 > As credenciais e configurações locais devem ser mantidas em arquivos `.env`, que não são versionados no Git.

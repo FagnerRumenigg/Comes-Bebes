@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="robots" content="noindex" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirecionando | Comes&amp;Bebes</title>
+    <script>
+      ;(() => {
+        const basePath = '/Comes-Bebes/'
+
+        if (!window.location.pathname.startsWith(basePath)) {
+          window.location.replace(basePath)
+          return
+        }
+
+        const route = `${window.location.pathname.slice(basePath.length - 1)}${window.location.search}${window.location.hash}`
+        window.location.replace(
+          `${window.location.origin}${basePath}?spa-redirect=${encodeURIComponent(route)}`,
+        )
+      })()
+    </script>
+  </head>
+  <body>
+    <p>Redirecionando para o Comes&amp;Bebes...</p>
+  </body>
+</html>

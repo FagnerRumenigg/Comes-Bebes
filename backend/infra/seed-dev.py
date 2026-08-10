@@ -10,7 +10,7 @@ from PIL import Image, ImageOps
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ENV_FILE = ROOT / "infra" / ".env"
+ENV_FILE = ROOT.parent / "infra" / ".env"
 IMAGE_ROOT = ROOT / "uploads" / "images"
 PASSWORD_HASH = "$2b$10$FH9iJ2AV.QYz/12cXg5KS.ui1xJMWM/yIBGo9o6HkKcZI7tNVDNX2"
 DEMO_USERS = [
@@ -66,10 +66,10 @@ def connect_config() -> dict[str, str | int]:
     env = load_env()
     return {
         "host": "localhost",
-        "port": int(env.get("SHARED_DB_PORT", "5432")),
-        "dbname": env["COMESEBEBES_DB_NAME"],
-        "user": env["SHARED_DB_USERNAME"],
-        "password": env["SHARED_DB_PASSWORD"],
+        "port": int(env.get("DB_HOST_PORT", env.get("DB_PORT", "5432"))),
+        "dbname": env.get("DB_NAME", "comesebebes"),
+        "user": env["DB_USERNAME"],
+        "password": env["DB_PASSWORD"],
     }
 
 
