@@ -1,7 +1,7 @@
 import { createPinia } from 'pinia'
 import { mount, shallowMount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter, type RouteLocationNormalized } from 'vue-router'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import AdminLayout from '@/app/layouts/AdminLayout.vue'
 import AppLayout from '@/app/layouts/AppLayout.vue'
@@ -22,6 +22,7 @@ function createTestRouter() {
 }
 
 afterEach(() => {
+  vi.useRealTimers()
   window.localStorage.clear()
   delete document.documentElement.dataset.theme
   navigationState.pending = false
@@ -121,11 +122,25 @@ describe('layouts e navegação', () => {
       'Buscar',
       'Publicar',
       'Salvos',
-      'Perfil',
+      'Entrar',
     ])
 
     await header.get('nav button').trigger('click')
     expect(authNotice.visible).toBe(true)
+  })
+
+  it('remove automaticamente o aviso de autenticação depois de dois segundos', async () => {
+    vi.useFakeTimers()
+    const router = createTestRouter()
+    await router.push('/')
+    await router.isReady()
+    const header = mount(AppHeader, { global: { plugins: [createPinia(), router] } })
+
+    await header.get('nav button').trigger('click')
+    expect(authNotice.visible).toBe(true)
+
+    vi.advanceTimersByTime(2_000)
+    expect(authNotice.visible).toBe(false)
   })
 
   it('alterna e persiste o tema pelo controle do cabeçalho', async () => {

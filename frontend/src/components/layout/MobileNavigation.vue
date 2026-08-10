@@ -21,7 +21,7 @@ const profileDestination = computed(() => `/u/${authStore.identity?.username ?? 
     <RouterLink v-if="authStore.authenticated" to="/salvos">Salvos</RouterLink>
     <button v-else type="button" @click="showAuthNotice">Salvos</button>
     <RouterLink v-if="authStore.authenticated" :to="profileDestination">Perfil</RouterLink>
-    <button v-else type="button" @click="showAuthNotice">Perfil</button>
+    <RouterLink v-else to="/login">Entrar</RouterLink>
   </nav>
 </template>
 
