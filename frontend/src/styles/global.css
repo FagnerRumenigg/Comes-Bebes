@@ -1,0 +1,42 @@
+@import './reset.css';
+@import './tokens.css';
+@import './themes.css';
+@import './typography.css';
+
+html {
+  background: var(--color-background);
+}
+
+body {
+  color: var(--color-text);
+  background: var(--color-background);
+  transition:
+    color var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard);
+}
+
+a {
+  color: var(--color-primary);
+  text-underline-offset: 0.2em;
+}
+
+::selection {
+  color: var(--color-primary-contrast);
+  background: var(--color-primary);
+}
+
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--space-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,11 @@
+node_modules
+dist
+coverage
+playwright-report
+test-results
+src/api/generated
+docs/design
+docs/FRONTEND-ARCHITECTURE.md
+docs/DESIGN-HANDOFF.md
+openapi/openapi.json
+package-lock.json

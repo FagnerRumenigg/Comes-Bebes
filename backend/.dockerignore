@@ -1,0 +1,11 @@
+.git
+.idea
+.venv-validator
+target
+uploads/images
+validator/data
+validator/normalized
+validator/__pycache__
+**/__pycache__
+**/*.pyc
+replay_pid*.log

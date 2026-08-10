@@ -1,0 +1,51 @@
+# Operating systems and editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Environment variables and secrets
+.env
+.env.*
+!**/.env.example
+!frontend/.env.e2e
+
+# Logs and JVM crash dumps
+*.log
+hs_err_pid*
+replay_pid*
+
+# Frontend dependencies and generated artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/
+frontend/blob-report/
+frontend/.vite/
+frontend/*.tsbuildinfo
+frontend/*.local
+
+# Local design references
+frontend/docs/design/
+
+# Backend build artifacts
+backend/target/
+
+# Python environments and caches
+backend/.venv*/
+backend/**/__pycache__/
+backend/**/*.py[cod]
+backend/.pytest_cache/
+
+# Validator models, datasets, and generated images
+backend/validator/models/
+backend/validator/normalized/
+backend/validator/data/*
+!backend/validator/data/README.md
+
+# Runtime uploads
+backend/uploads/

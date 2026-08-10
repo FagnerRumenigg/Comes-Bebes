@@ -1,0 +1,40 @@
+package org.application.repository;
+
+import org.application.model.Publication;
+import org.application.model.PublicationStatus;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.application.model.PublicationVisibility;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+public interface PublicationRepository extends JpaRepository<Publication, UUID> {
+
+    Optional<Publication> findByIdAndStatus(UUID id, PublicationStatus status);
+    Optional<Publication> findByIdAndStatusAndVisibility(UUID id, PublicationStatus status, PublicationVisibility visibility);
+    Page<Publication> findByStatusOrderByPublishedAtDescIdDesc(PublicationStatus status, Pageable pageable);
+    Page<Publication> findByStatusAndVisibilityOrderByPublishedAtDescIdDesc(PublicationStatus status, PublicationVisibility visibility, Pageable pageable);
+    Page<Publication> findByStatusAndVisibilityAndTitleContainingIgnoreCaseOrderByPublishedAtDescIdDesc(PublicationStatus status, PublicationVisibility visibility, String title, Pageable pageable);
+    Page<Publication> findByStatusAndTitleContainingIgnoreCaseOrderByPublishedAtDescIdDesc(PublicationStatus status, String title, Pageable pageable);
+    @Query("""
+            select distinct p from Publication p
+            left join Recipe r on r.publicationId = p.id and r.deletedAt is null
+            left join RecipeIngredient i on i.recipeId = r.publicationId and i.deletedAt is null
+            where p.status = :status and (:visibility is null or p.visibility = :visibility)
+              and (lower(p.title) like lower(concat('%', :title, '%'))
+                or lower(i.name) like lower(concat('%', :ingredient, '%')))
+            order by p.publishedAt desc, p.id desc
+            """)
+    Page<Publication> searchByTitleOrIngredient(
+            @Param("status") PublicationStatus status,
+            @Param("visibility") PublicationVisibility visibility,
+            @Param("title") String title,
+            @Param("ingredient") String ingredient,
+            Pageable pageable);
+    Page<Publication> findByAuthorIdAndStatusOrderByPublishedAtDescIdDesc(UUID authorId, PublicationStatus status, Pageable pageable);
+    Page<Publication> findByAuthorIdAndStatusAndVisibilityOrderByPublishedAtDescIdDesc(UUID authorId, PublicationStatus status, PublicationVisibility visibility, Pageable pageable);
+}
