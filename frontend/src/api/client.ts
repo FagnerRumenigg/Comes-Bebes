@@ -1,12 +1,26 @@
 import axios, { type AxiosRequestConfig } from 'axios'
 
 const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8082'
+const defaultHeaders: Record<string, string> = {
+  Accept: 'application/json',
+}
+
+export function requiresNgrokBrowserWarningBypass(apiBaseUrl: string): boolean {
+  try {
+    const hostname = new URL(apiBaseUrl, window.location.origin).hostname
+    return hostname.endsWith('.ngrok-free.dev') || hostname.endsWith('.ngrok-free.app')
+  } catch {
+    return false
+  }
+}
+
+if (requiresNgrokBrowserWarningBypass(baseURL)) {
+  defaultHeaders['ngrok-skip-browser-warning'] = 'true'
+}
 
 export const httpClient = axios.create({
   baseURL,
-  headers: {
-    Accept: 'application/json',
-  },
+  headers: defaultHeaders,
 })
 
 type AccessTokenProvider = () => string | null
