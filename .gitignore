@@ -12,6 +12,7 @@ Thumbs.db
 .env.*
 !**/.env.example
 !frontend/.env.e2e
+!frontend/.env.test
 
 # Logs and JVM crash dumps
 *.log
