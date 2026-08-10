@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import BaseButton from '@/components/base/BaseButton.vue'
 import PublicationCard from '@/components/publication/PublicationCard.vue'
@@ -7,6 +7,9 @@ import { normalizeHttpError } from '@/api/errors'
 import { useInfiniteFeed } from '@/features/feed/feed.queries'
 
 const feedQuery = useInfiniteFeed()
+const loadMoreTrigger = ref<HTMLElement | null>(null)
+const supportsInfiniteScroll = ref(true)
+let loadMoreObserver: IntersectionObserver | null = null
 
 const publications = computed(
   () => feedQuery.data.value?.pages.flatMap((page) => page.content) ?? [],
@@ -16,6 +19,35 @@ const errorMessage = computed(() =>
     ? normalizeHttpError(feedQuery.error.value).message
     : 'Não foi possível carregar o feed.',
 )
+
+watch(loadMoreTrigger, (current, previous) => {
+  if (previous) loadMoreObserver?.unobserve(previous)
+  if (current) loadMoreObserver?.observe(current)
+})
+
+onMounted(() => {
+  if (typeof IntersectionObserver === 'undefined') {
+    supportsInfiniteScroll.value = false
+    return
+  }
+
+  loadMoreObserver = new IntersectionObserver(
+    ([entry]) => {
+      if (
+        entry?.isIntersecting &&
+        feedQuery.hasNextPage.value &&
+        !feedQuery.isFetchingNextPage.value
+      ) {
+        void feedQuery.fetchNextPage()
+      }
+    },
+    { rootMargin: '20rem 0px' },
+  )
+
+  if (loadMoreTrigger.value) loadMoreObserver.observe(loadMoreTrigger.value)
+})
+
+onBeforeUnmount(() => loadMoreObserver?.disconnect())
 </script>
 
 <template>
@@ -51,15 +83,17 @@ const errorMessage = computed(() =>
         />
       </div>
 
-      <div class="feed-view__pagination">
+      <div ref="loadMoreTrigger" class="feed-view__pagination">
+        <p v-if="feedQuery.isFetchingNextPage.value" role="status">Carregando mais publicações…</p>
         <BaseButton
-          v-if="feedQuery.hasNextPage.value"
+          v-else-if="feedQuery.hasNextPage.value && !supportsInfiniteScroll"
           variant="secondary"
           :loading="feedQuery.isFetchingNextPage.value"
           @click="feedQuery.fetchNextPage()"
         >
           Carregar mais publicações
         </BaseButton>
+        <span v-else-if="feedQuery.hasNextPage.value" aria-hidden="true" />
         <p v-else>Você chegou ao fim por hoje.</p>
       </div>
     </template>

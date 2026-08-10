@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import BaseIconButton from './BaseIconButton.vue'
 
-type ToastKind = 'info' | 'success' | 'error'
+type ToastKind = 'info' | 'success' | 'warning' | 'error'
 
 withDefaults(
   defineProps<{
@@ -58,6 +58,10 @@ defineEmits<{
 
 .base-toast--success {
   border-color: var(--color-success);
+}
+
+.base-toast--warning {
+  border-color: var(--color-accent);
 }
 
 .base-toast--error {

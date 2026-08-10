@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query'
 
 import { removeSaved, save } from '@/api/generated/publications/publications'
 import { normalizeHttpError } from '@/api/errors'
+import { showAuthNotice } from '@/composables/useAuthNotice'
 import { useAuthStore } from '@/stores/auth.store'
 
 const props = defineProps<{
@@ -46,17 +47,15 @@ function toggle(): void {
 
 <template>
   <div class="save-button">
-    <RouterLink
+    <button
       v-if="!authStore.authenticated"
       class="save-button__control"
-      :to="{
-        name: 'login',
-        query: { redirect: `/publicacoes/${publicationId}` },
-      }"
+      type="button"
       aria-label="Salvar publicação; é necessário entrar"
+      @click="showAuthNotice"
     >
       Salvar
-    </RouterLink>
+    </button>
     <button
       v-else
       class="save-button__control"

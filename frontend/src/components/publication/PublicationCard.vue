@@ -2,6 +2,8 @@
 import { computed } from 'vue'
 
 import type { PublicationResponse } from '@/api/generated/models'
+import { showAuthNotice } from '@/composables/useAuthNotice'
+import { useAuthStore } from '@/stores/auth.store'
 
 import PublicationHeader from './PublicationHeader.vue'
 import PublicationImage from './PublicationImage.vue'
@@ -13,6 +15,7 @@ import SaveButton from './SaveButton.vue'
 const props = defineProps<{
   publication: PublicationResponse
 }>()
+const authStore = useAuthStore()
 
 const typeLabel = computed(() => {
   const labels: Record<PublicationResponse['type'], string> = {
@@ -70,12 +73,23 @@ const imageAlt = computed(
         :reported="publication.reportedByCurrentUser"
       />
       <RouterLink
-        v-if="publication.type === 'RECIPE' || publication.type === 'MY_VERSION'"
+        v-if="
+          authStore.authenticated &&
+          (publication.type === 'RECIPE' || publication.type === 'MY_VERSION')
+        "
         class="publication-card__versions"
         :to="`/publicar/minha-versao/${publication.id}`"
       >
         Fiz também ({{ publication.versionsCount }})
       </RouterLink>
+      <button
+        v-else-if="publication.type === 'RECIPE' || publication.type === 'MY_VERSION'"
+        type="button"
+        class="publication-card__versions"
+        @click="showAuthNotice"
+      >
+        Fiz também ({{ publication.versionsCount }})
+      </button>
     </div>
   </article>
 </template>
@@ -153,9 +167,12 @@ const imageAlt = computed(
 }
 
 .publication-card__versions {
+  padding: 0;
   color: var(--color-primary);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
+  background: transparent;
+  border: 0;
 }
 
 @media (max-width: 30rem) {

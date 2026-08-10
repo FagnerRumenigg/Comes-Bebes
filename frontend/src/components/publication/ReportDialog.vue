@@ -8,6 +8,7 @@ import BaseSelect from '@/components/base/BaseSelect.vue'
 import BaseTextarea from '@/components/base/BaseTextarea.vue'
 import { report } from '@/api/generated/publications/publications'
 import { normalizeHttpError } from '@/api/errors'
+import { showAuthNotice } from '@/composables/useAuthNotice'
 import { useAuthStore } from '@/stores/auth.store'
 
 const props = defineProps<{
@@ -67,6 +68,14 @@ function submit(): void {
 </script>
 
 <template>
+  <button
+    v-if="!authStore.authenticated"
+    type="button"
+    class="report-dialog__trigger"
+    @click="showAuthNotice"
+  >
+    Denunciar
+  </button>
   <template v-if="authStore.authenticated && !submitted && !isOwnPublication">
     <button type="button" class="report-dialog__trigger" @click="open = true">Denunciar</button>
     <BaseDialog

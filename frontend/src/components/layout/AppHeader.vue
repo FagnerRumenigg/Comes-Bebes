@@ -2,6 +2,7 @@
 import { useRouter } from 'vue-router'
 
 import BaseButton from '@/components/base/BaseButton.vue'
+import { showAuthNotice } from '@/composables/useAuthNotice'
 import { useAuthStore } from '@/stores/auth.store'
 
 import BrandMark from './BrandMark.vue'
@@ -26,9 +27,12 @@ async function logout(): Promise<void> {
 
       <nav class="app-header__navigation" aria-label="Navegação principal">
         <RouterLink to="/buscar">Buscar</RouterLink>
-        <RouterLink to="/publicar">Publicar</RouterLink>
-        <RouterLink to="/salvos">Salvos</RouterLink>
-        <RouterLink to="/notificacoes">Notificações</RouterLink>
+        <RouterLink v-if="authStore.authenticated" to="/publicar">Publicar</RouterLink>
+        <button v-else type="button" @click="showAuthNotice">Publicar</button>
+        <RouterLink v-if="authStore.authenticated" to="/salvos">Salvos</RouterLink>
+        <button v-else type="button" @click="showAuthNotice">Salvos</button>
+        <RouterLink v-if="authStore.authenticated" to="/notificacoes">Notificações</RouterLink>
+        <button v-else type="button" @click="showAuthNotice">Notificações</button>
       </nav>
 
       <div class="app-header__actions">
@@ -83,6 +87,7 @@ async function logout(): Promise<void> {
 }
 
 .app-header__navigation a,
+.app-header__navigation button,
 .app-header__session {
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
@@ -90,8 +95,15 @@ async function logout(): Promise<void> {
   text-decoration: none;
 }
 
+.app-header__navigation button {
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
 .app-header__navigation a:hover,
 .app-header__navigation a.router-link-active,
+.app-header__navigation button:hover,
 .app-header__session:hover {
   color: var(--color-primary);
 }

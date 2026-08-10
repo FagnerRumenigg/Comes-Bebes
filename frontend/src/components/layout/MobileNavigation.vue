@@ -2,20 +2,26 @@
 import { computed } from 'vue'
 
 import { useAuthStore } from '@/stores/auth.store'
+import { showAuthNotice } from '@/composables/useAuthNotice'
 
 const authStore = useAuthStore()
-const profileDestination = computed(() =>
-  authStore.identity ? `/u/${authStore.identity.username}` : '/login',
-)
+const profileDestination = computed(() => `/u/${authStore.identity?.username ?? ''}`)
 </script>
 
 <template>
   <nav class="mobile-navigation" aria-label="Navegação móvel">
     <RouterLink to="/">Início</RouterLink>
     <RouterLink to="/buscar">Buscar</RouterLink>
-    <RouterLink class="mobile-navigation__primary" to="/publicar">Publicar</RouterLink>
-    <RouterLink to="/salvos">Salvos</RouterLink>
-    <RouterLink :to="profileDestination">Perfil</RouterLink>
+    <RouterLink v-if="authStore.authenticated" class="mobile-navigation__primary" to="/publicar">
+      Publicar
+    </RouterLink>
+    <button v-else type="button" class="mobile-navigation__primary" @click="showAuthNotice">
+      Publicar
+    </button>
+    <RouterLink v-if="authStore.authenticated" to="/salvos">Salvos</RouterLink>
+    <button v-else type="button" @click="showAuthNotice">Salvos</button>
+    <RouterLink v-if="authStore.authenticated" :to="profileDestination">Perfil</RouterLink>
+    <button v-else type="button" @click="showAuthNotice">Perfil</button>
   </nav>
 </template>
 
@@ -37,7 +43,8 @@ const profileDestination = computed(() =>
   box-shadow: var(--shadow-md);
 }
 
-.mobile-navigation a {
+.mobile-navigation a,
+.mobile-navigation button {
   display: grid;
   min-height: var(--control-min-size);
   place-items: center;
@@ -46,6 +53,8 @@ const profileDestination = computed(() =>
   font-weight: var(--font-weight-medium);
   text-align: center;
   text-decoration: none;
+  background: transparent;
+  border: 0;
 }
 
 .mobile-navigation a.router-link-exact-active {

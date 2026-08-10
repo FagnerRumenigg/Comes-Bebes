@@ -51,6 +51,12 @@ export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): voi
 
 httpClient.interceptors.request.use((config) => {
   const accessToken = accessTokenProvider()
+  const requestBaseUrl = new URL(config.baseURL ?? '/', window.location.origin)
+  const requestUrl = new URL(config.url ?? '', requestBaseUrl).toString()
+
+  if (requiresNgrokBrowserWarningBypass(requestUrl)) {
+    config.headers['ngrok-skip-browser-warning'] = 'true'
+  }
 
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`

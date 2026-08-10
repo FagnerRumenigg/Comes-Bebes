@@ -3,13 +3,15 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { http, HttpResponse } from 'msw'
 import { createPinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { PageResponsePublicationResponse } from '@/api/generated/models'
 import PublicationCard from '@/components/publication/PublicationCard.vue'
 import { mockPublications } from '@/mocks/fixtures/publications'
 import FeedView from '@/views/FeedView.vue'
 import { mockServer } from './setup'
+
+afterEach(() => vi.unstubAllGlobals())
 
 async function mountFeed() {
   const router = createRouter({
@@ -81,7 +83,24 @@ describe('feed', () => {
     expect(wrapper.get('button').text()).toContain('Tentar novamente')
   })
 
-  it('carrega a próxima página a partir da página 1', async () => {
+  it('carrega a próxima página automaticamente ao alcançar o fim da lista', async () => {
+    let intersectionCallback: IntersectionObserverCallback | undefined
+    const observe = vi.fn()
+    const disconnect = vi.fn()
+
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class IntersectionObserverMock {
+        constructor(callback: IntersectionObserverCallback) {
+          intersectionCallback = callback
+        }
+
+        observe = observe
+        unobserve = vi.fn()
+        disconnect = disconnect
+      },
+    )
+
     mockServer.use(
       http.get('*/publications/feed', ({ request }) => {
         const page = Number(new URL(request.url).searchParams.get('page') ?? 1)
@@ -102,7 +121,11 @@ describe('feed', () => {
       expect(wrapper.text()).toContain('Risoto de cogumelos')
     })
 
-    await wrapper.get('button').trigger('click')
+    expect(observe).toHaveBeenCalled()
+    intersectionCallback?.(
+      [{ isIntersecting: true } as IntersectionObserverEntry],
+      {} as IntersectionObserver,
+    )
     await flushPromises()
 
     await vi.waitFor(() => {
@@ -110,10 +133,30 @@ describe('feed', () => {
     })
     expect(wrapper.text()).toContain('Bolo de cenoura com cobertura de chocolate')
     expect(wrapper.text()).toContain('Você chegou ao fim por hoje.')
+
+    wrapper.unmount()
+    expect(disconnect).toHaveBeenCalled()
   })
 })
 
 describe('PublicationCard', () => {
+  it('avisa o visitante sem redirecionar ao tentar salvar', async () => {
+    const { authNotice, dismissAuthNotice } = await import('@/composables/useAuthNotice')
+    dismissAuthNotice()
+    const wrapper = mount(PublicationCard, {
+      props: { publication: mockPublications[0]! },
+      global: {
+        plugins: [createPinia(), [VueQueryPlugin, { queryClient: new QueryClient() }]],
+        stubs: { RouterLink: { template: '<a><slot /></a>' } },
+      },
+    })
+
+    await wrapper.get('[aria-label="Salvar publicação; é necessário entrar"]').trigger('click')
+
+    expect(authNotice.visible).toBe(true)
+    dismissAuthNotice()
+  })
+
   it('resolve imagens do backend preservando o caminho-base da API', () => {
     const wrapper = mount(PublicationCard, {
       props: {

@@ -12,6 +12,7 @@ import App from '@/App.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import MobileNavigation from '@/components/layout/MobileNavigation.vue'
 import ThemeSwitch from '@/components/layout/ThemeSwitch.vue'
+import { authNotice, dismissAuthNotice } from '@/composables/useAuthNotice'
 
 function createTestRouter() {
   return createRouter({
@@ -25,6 +26,7 @@ afterEach(() => {
   delete document.documentElement.dataset.theme
   navigationState.pending = false
   navigationState.error = null
+  dismissAuthNotice()
 })
 
 describe('mapa de rotas', () => {
@@ -108,14 +110,22 @@ describe('layouts e navegação', () => {
     const mobile = mount(MobileNavigation, { global })
 
     expect(header.get('nav').attributes('aria-label')).toBe('Navegação principal')
-    expect(header.findAll('nav a')).toHaveLength(4)
-    expect(mobile.findAll('a').map((link) => link.text())).toEqual([
+    expect(
+      header
+        .get('nav')
+        .findAll('a, button')
+        .map((item) => item.text()),
+    ).toEqual(['Buscar', 'Publicar', 'Salvos', 'Notificações'])
+    expect(mobile.findAll('a, button').map((item) => item.text())).toEqual([
       'Início',
       'Buscar',
       'Publicar',
       'Salvos',
       'Perfil',
     ])
+
+    await header.get('nav button').trigger('click')
+    expect(authNotice.visible).toBe(true)
   })
 
   it('alterna e persiste o tema pelo controle do cabeçalho', async () => {

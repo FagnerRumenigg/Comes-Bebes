@@ -25,6 +25,21 @@ describe('cliente HTTP autenticado', () => {
     expect(requiresNgrokBrowserWarningBypass('/comesebebes')).toBe(false)
   })
 
+  it('envia o bypass também em uma URL absoluta de imagem do Ngrok', async () => {
+    mockServer.use(
+      http.get('https://images.ngrok-free.dev/comesebebes/images/prato.webp', ({ request }) =>
+        HttpResponse.json({ bypass: request.headers.get('ngrok-skip-browser-warning') }),
+      ),
+    )
+
+    const response = await apiRequest<{ bypass: string }>({
+      url: 'https://images.ngrok-free.dev/comesebebes/images/prato.webp',
+      method: 'GET',
+    })
+
+    expect(response.bypass).toBe('true')
+  })
+
   it('renova a sessão uma vez e repete uma requisição que recebeu 401', async () => {
     let accessToken = 'expired-token'
     let renewals = 0

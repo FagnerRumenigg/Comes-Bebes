@@ -12,9 +12,12 @@ import ReactionBar from '@/components/publication/ReactionBar.vue'
 import ReportDialog from '@/components/publication/ReportDialog.vue'
 import SaveButton from '@/components/publication/SaveButton.vue'
 import { normalizeHttpError } from '@/api/errors'
+import { showAuthNotice } from '@/composables/useAuthNotice'
+import { useAuthStore } from '@/stores/auth.store'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 const publicationId = computed(() => String(route.params.id))
 const publicationQuery = useGetPublicationById(publicationId)
 const myVersionOpen = ref(false)
@@ -34,6 +37,14 @@ function goBack(): void {
     return
   }
   void router.push('/')
+}
+
+function startMyVersion(): void {
+  if (!authStore.authenticated) {
+    showAuthNotice()
+    return
+  }
+  myVersionOpen.value = true
 }
 </script>
 
@@ -89,7 +100,7 @@ function goBack(): void {
             publicationQuery.data.value.type === 'MY_VERSION'
           "
           variant="secondary"
-          @click="myVersionOpen = true"
+          @click="startMyVersion"
         >
           Fiz também ({{ publicationQuery.data.value.versionsCount }})
         </BaseButton>

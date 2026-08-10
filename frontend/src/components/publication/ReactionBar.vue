@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { applyReaction, removeReaction } from '@/api/generated/publications/publications'
 import type { PublicationResponse, ReactionRequestReactionCode } from '@/api/generated/models'
 import { normalizeHttpError } from '@/api/errors'
+import { showAuthNotice } from '@/composables/useAuthNotice'
 import { useAuthStore } from '@/stores/auth.store'
 
 const props = defineProps<{ publication: PublicationResponse }>()
@@ -83,20 +84,18 @@ function toggle(code: ReactionRequestReactionCode): void {
       </button>
     </template>
     <template v-else>
-      <RouterLink
+      <button
         v-for="reaction in reactions"
         :key="reaction.code"
+        type="button"
         class="reaction-bar__button"
-        :to="{
-          name: 'login',
-          query: { redirect: `/publicacoes/${publication.id}` },
-        }"
+        @click="showAuthNotice"
       >
         <span>{{ reaction.label }}</span>
         <span v-if="publication.showReactionCounts" class="reaction-bar__count">
           {{ total(reaction.code) }}
         </span>
-      </RouterLink>
+      </button>
     </template>
     <span v-if="isOwnPublication" class="reaction-bar__hint">
       Você não pode reagir à própria publicação.
