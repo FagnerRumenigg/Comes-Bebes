@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PageResponsePublicationResponse } from '@/api/generated/models'
 import PublicationCard from '@/components/publication/PublicationCard.vue'
 import { mockPublications } from '@/mocks/fixtures/publications'
+import { useAuthStore } from '@/stores/auth.store'
 import FeedView from '@/views/FeedView.vue'
 import { mockServer } from './setup'
 
@@ -140,6 +141,29 @@ describe('feed', () => {
 })
 
 describe('PublicationCard', () => {
+  it('oferece edição direta ao autor da publicação', () => {
+    const pinia = createPinia()
+    const authStore = useAuthStore(pinia)
+    authStore.status = 'authenticated'
+    authStore.identity = {
+      userId: mockPublications[0]!.authorId,
+      username: 'autor',
+      role: 'USER',
+    }
+
+    const wrapper = mount(PublicationCard, {
+      props: { publication: mockPublications[0]! },
+      global: {
+        plugins: [pinia, [VueQueryPlugin, { queryClient: new QueryClient() }]],
+        stubs: { RouterLink: { props: ['to'], template: '<a :data-to="to"><slot /></a>' } },
+      },
+    })
+
+    const editLink = wrapper.get('.publication-card__edit')
+    expect(editLink.text()).toBe('Editar')
+    expect(editLink.attributes('data-to')).toBe(`/publicacoes/${mockPublications[0]!.id}/editar`)
+  })
+
   it('avisa o visitante sem redirecionar ao tentar salvar', async () => {
     const { authNotice, dismissAuthNotice } = await import('@/composables/useAuthNotice')
     dismissAuthNotice()

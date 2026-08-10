@@ -11,6 +11,7 @@ import BaseInput from '@/components/base/BaseInput.vue'
 import BaseSelect from '@/components/base/BaseSelect.vue'
 import BaseTextarea from '@/components/base/BaseTextarea.vue'
 import BaseToast from '@/components/base/BaseToast.vue'
+import PreparationStepsEditor from '@/components/publication/PreparationStepsEditor.vue'
 
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal = function showModal() {
@@ -167,5 +168,22 @@ describe('feedback e sobreposição', () => {
 
     await wrapper.get('button').trigger('click')
     expect(wrapper.emitted('dismiss')).toHaveLength(1)
+  })
+})
+
+describe('editor de modo de preparo', () => {
+  it('cria e focaliza o próximo passo ao pressionar Enter', async () => {
+    const wrapper = mount(PreparationStepsEditor, {
+      attachTo: document.body,
+      props: { modelValue: 'Misture os ingredientes.' },
+    })
+
+    await wrapper.get('textarea').trigger('keydown', { key: 'Enter' })
+    await nextTick()
+
+    expect(wrapper.findAll('textarea')).toHaveLength(2)
+    expect(wrapper.text()).toContain('Passo 2')
+    expect(document.activeElement).toBe(wrapper.findAll('textarea')[1]!.element)
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['Misture os ingredientes.\n'])
   })
 })

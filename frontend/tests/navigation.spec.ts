@@ -37,6 +37,7 @@ describe('mapa de rotas', () => {
       ['/', 'feed', 'public'],
       ['/buscar', 'search', 'public'],
       ['/publicacoes/42', 'publication-details', 'public'],
+      ['/publicacoes/42/editar', 'edit-publication', 'authenticated'],
       ['/u/cozinha', 'profile', 'public'],
       ['/publicar', 'create-publication', 'authenticated'],
       ['/publicar/minha-versao/42', 'create-my-version', 'authenticated'],

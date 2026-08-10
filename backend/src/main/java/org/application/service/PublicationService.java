@@ -288,13 +288,24 @@ public class PublicationService {
         }
 
         PublicationType targetType = request.type() == null ? publication.getType() : parseType(request.type());
-        if (targetType == PublicationType.RECIPE) {
-            if (request.recipe() == null) {
+        boolean convertsDishToRecipe = publication.getType() == PublicationType.DISH
+                && targetType == PublicationType.RECIPE;
+        boolean keepsRecipe = targetType == PublicationType.RECIPE || targetType == PublicationType.MY_VERSION;
+
+        if (keepsRecipe) {
+            if (convertsDishToRecipe && request.recipe() == null) {
                 throw new InvalidOperationException("RECIPE_REQUIRED_FOR_CONVERSION", "A conversão para RECIPE precisa informar a receita.");
             }
-            validateRecipe(targetType, request.recipe());
-            publication.changeType(PublicationType.RECIPE);
-            saveOrUpdateRecipe(publication.getId(), request.recipe());
+            if (publication.getTitle() == null || publication.getTitle().isBlank()) {
+                throw new InvalidOperationException("RECIPE_TITLE_REQUIRED", "Uma receita precisa informar um título.");
+            }
+            if (request.recipe() != null) {
+                validateRecipe(PublicationType.RECIPE, request.recipe());
+                saveOrUpdateRecipe(publication.getId(), request.recipe());
+            }
+            if (targetType == PublicationType.RECIPE) {
+                publication.changeType(PublicationType.RECIPE);
+            }
         } else if (targetType == PublicationType.DISH) {
             publication.changeType(PublicationType.DISH);
             deactivateRecipe(publication.getId());

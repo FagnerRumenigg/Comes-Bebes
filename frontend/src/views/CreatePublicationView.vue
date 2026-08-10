@@ -19,6 +19,7 @@ import BaseTextarea from '@/components/base/BaseTextarea.vue'
 import IngredientEditor, {
   type IngredientDraft,
 } from '@/components/publication/IngredientEditor.vue'
+import PreparationStepsEditor from '@/components/publication/PreparationStepsEditor.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -285,14 +286,9 @@ onBeforeUnmount(clearImagePreview)
         <img v-if="imagePreview" :src="imagePreview" alt="Prévia da imagem selecionada" />
       </fieldset>
       <div v-if="recipeMode" class="create-publication__recipe">
-        <IngredientEditor v-model="ingredients" :error="ingredientError" /><BaseTextarea
+        <IngredientEditor v-model="ingredients" :error="ingredientError" /><PreparationStepsEditor
           v-model="instructions"
-          label="Modo de preparo"
-          hint="Um passo por linha."
-          maxlength="10000"
           :error="fieldErrors.instructions ?? fieldErrors['recipe.instructions']"
-          :rows="7"
-          required
         />
         <div class="create-publication__yield">
           <BaseInput v-model="yieldQuantity" label="Rendimento" type="number" :min="0" /><BaseInput

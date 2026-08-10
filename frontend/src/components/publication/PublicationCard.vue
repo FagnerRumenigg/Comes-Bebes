@@ -66,6 +66,13 @@ const imageAlt = computed(
     </div>
     <div class="publication-card__actions">
       <ReactionBar :publication="publication" />
+      <RouterLink
+        v-if="authStore.identity?.userId === publication.authorId"
+        class="publication-card__edit"
+        :to="`/publicacoes/${publication.id}/editar`"
+      >
+        Editar
+      </RouterLink>
       <SaveButton :publication-id="publication.id" :saved="publication.saved" />
       <ReportDialog
         :publication-id="publication.id"
@@ -166,13 +173,18 @@ const imageAlt = computed(
   border: 0;
 }
 
-.publication-card__versions {
+.publication-card__versions,
+.publication-card__edit {
   padding: 0;
   color: var(--color-primary);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   background: transparent;
   border: 0;
+}
+
+.publication-card__edit {
+  text-decoration: none;
 }
 
 @media (max-width: 30rem) {

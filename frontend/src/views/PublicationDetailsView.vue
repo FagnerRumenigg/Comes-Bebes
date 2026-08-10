@@ -25,6 +25,7 @@ const myVersionOpen = ref(false)
 const errorMessage = computed(() => normalizeHttpError(publicationQuery.error.value).message)
 
 const recipe = computed(() => publicationQuery.data.value?.recipePreview)
+const isOwner = computed(() => authStore.identity?.userId === publicationQuery.data.value?.authorId)
 const typeLabel = computed(() => {
   const type = publicationQuery.data.value?.type
   return type === 'MY_VERSION' ? 'Minha versão' : type === 'RECIPE' ? 'Receita' : 'Prato'
@@ -84,6 +85,13 @@ function startMyVersion(): void {
       />
 
       <div class="publication-details__actions">
+        <RouterLink
+          v-if="isOwner"
+          class="publication-details__edit"
+          :to="`/publicacoes/${publicationQuery.data.value.id}/editar`"
+        >
+          Editar publicação
+        </RouterLink>
         <ReactionBar :publication="publicationQuery.data.value" />
         <SaveButton
           :publication-id="publicationQuery.data.value.id"
@@ -214,6 +222,16 @@ function startMyVersion(): void {
   flex-basis: 100%;
   padding: 0;
   border: 0;
+}
+
+.publication-details__edit {
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: none;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
 }
 
 .publication-details__description {

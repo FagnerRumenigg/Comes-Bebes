@@ -2,6 +2,9 @@ package org.application.service;
 
 import org.application.model.Publication;
 import org.application.model.PublicationStatus;
+import org.application.model.PublicationType;
+import org.application.model.PublicationVisibility;
+import org.application.model.Recipe;
 import org.application.model.User;
 import org.application.model.UserStatus;
 import org.application.repository.PublicationRepository;
@@ -17,6 +20,9 @@ import org.application.controller.publication.request.CreatePublicationUploadReq
 import org.application.util.StringNormalizer;
 import org.application.controller.publication.request.CreatePublicationRequest;
 import org.application.controller.publication.request.CreateMyVersionRequest;
+import org.application.controller.publication.request.CreateIngredientRequest;
+import org.application.controller.publication.request.CreateRecipeRequest;
+import org.application.controller.publication.request.UpdatePublicationRequest;
 import org.application.service.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,6 +36,7 @@ import java.util.List;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.math.BigDecimal;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -38,6 +45,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
@@ -108,6 +116,49 @@ class PublicationServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class);
         assertThatThrownBy(() -> publicationService.createMyVersion(id, org.mockito.Mockito.mock(CreateMyVersionRequest.class)))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void shouldUpdateRecipeStepsAndTitleForMyVersion() {
+        UUID id = UUID.randomUUID();
+        UUID authorId = UUID.randomUUID();
+        Publication publication = Publication.builder()
+                .id(id)
+                .authorId(authorId)
+                .type(PublicationType.MY_VERSION)
+                .visibility(PublicationVisibility.PUBLIC)
+                .title("Título antigo")
+                .status(PublicationStatus.ACTIVE)
+                .build();
+        Recipe storedRecipe = Recipe.builder()
+                .publicationId(id)
+                .instructions("Passo antigo")
+                .build();
+        CreateRecipeRequest recipe = new CreateRecipeRequest(
+                BigDecimal.valueOf(4),
+                "porções",
+                "Misture.\nAsse.",
+                List.of(new CreateIngredientRequest((short) 1, "farinha", BigDecimal.ONE, "xícara", null))
+        );
+
+        when(publicationRepository.findByIdAndStatus(id, PublicationStatus.ACTIVE))
+                .thenReturn(Optional.of(publication));
+        when(userRepository.findByIdAndStatus(authorId, UserStatus.ACTIVE))
+                .thenReturn(Optional.of(User.builder().id(authorId).status(UserStatus.ACTIVE).build()));
+        when(stringNormalizer.normalize("Título corrigido")).thenReturn("Título corrigido");
+        when(recipeRepository.findByPublicationIdAndDeletedAtIsNull(id))
+                .thenReturn(Optional.of(storedRecipe));
+        when(clock.instant()).thenReturn(Instant.parse("2026-08-10T12:00:00Z"));
+        when(clock.getZone()).thenReturn(ZoneOffset.UTC);
+
+        publicationService.update(id, new UpdatePublicationRequest(
+                null, null, "Título corrigido", null, null, recipe
+        ), authorId);
+
+        assertThat(publication.getTitle()).isEqualTo("Título corrigido");
+        assertThat(storedRecipe.getInstructions()).isEqualTo("Misture.\nAsse.");
+        verify(recipeRepository).save(storedRecipe);
+        verify(recipeIngredientRepository, times(2)).saveAll(any());
     }
 
     @Test

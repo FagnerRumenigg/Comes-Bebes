@@ -9,6 +9,7 @@ import PublicationDetailsView from '@/views/PublicationDetailsView.vue'
 import LoginView from '@/views/LoginView.vue'
 import RegisterView from '@/views/RegisterView.vue'
 import CreatePublicationView from '@/views/CreatePublicationView.vue'
+import EditPublicationView from '@/views/EditPublicationView.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import SearchView from '@/views/SearchView.vue'
 import SavedView from '@/views/SavedView.vue'
@@ -35,6 +36,12 @@ export const routes: RouteRecordRaw[] = [
         name: 'search',
         component: SearchView,
         meta: { access: 'public', pageTitle: 'Buscar' },
+      },
+      {
+        path: 'publicacoes/:id/editar',
+        name: 'edit-publication',
+        component: EditPublicationView,
+        meta: { access: 'authenticated', pageTitle: 'Editar publicação' },
       },
       {
         path: 'publicacoes/:id',
