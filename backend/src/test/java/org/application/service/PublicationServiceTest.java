@@ -46,6 +46,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
@@ -145,7 +146,6 @@ class PublicationServiceTest {
                 .thenReturn(Optional.of(publication));
         when(userRepository.findByIdAndStatus(authorId, UserStatus.ACTIVE))
                 .thenReturn(Optional.of(User.builder().id(authorId).status(UserStatus.ACTIVE).build()));
-        when(stringNormalizer.normalize("Título corrigido")).thenReturn("Título corrigido");
         when(recipeRepository.findByPublicationIdAndDeletedAtIsNull(id))
                 .thenReturn(Optional.of(storedRecipe));
         when(clock.instant()).thenReturn(Instant.parse("2026-08-10T12:00:00Z"));
@@ -159,6 +159,11 @@ class PublicationServiceTest {
         assertThat(storedRecipe.getInstructions()).isEqualTo("Misture.\nAsse.");
         verify(recipeRepository).save(storedRecipe);
         verify(recipeIngredientRepository, times(2)).saveAll(any());
+        var ingredientWriteOrder = inOrder(recipeIngredientRepository);
+        ingredientWriteOrder.verify(recipeIngredientRepository).saveAll(any());
+        ingredientWriteOrder.verify(recipeIngredientRepository).flush();
+        ingredientWriteOrder.verify(recipeIngredientRepository).saveAll(any());
+        verify(stringNormalizer, never()).normalize("Título corrigido");
     }
 
     @Test

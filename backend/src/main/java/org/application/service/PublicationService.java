@@ -11,7 +11,6 @@ import org.application.dto.StoredImage;
 import org.application.model.Publication;
 import org.application.model.PublicationStatus;
 import org.application.model.PublicationType;
-import org.application.model.PublicationVisibility;
 import org.application.model.Recipe;
 import org.application.model.RecipeIngredient;
 import org.application.model.PublicationOrigin;
@@ -86,7 +85,7 @@ public class PublicationService {
                 .authorId(authorId)
                 .type(PublicationType.MY_VERSION)
                 .visibility(parseVisibility(request.visibility()))
-                .title(source.getTitle() + " — " + request.titleSuffix().trim())
+                .title(source.getTitle() + " — " + request.titleSuffix())
                 .description(request.changeSummary())
                 .gcsBucket(image.bucket())
                 .gcsObjectName(image.objectName())
@@ -104,7 +103,7 @@ public class PublicationService {
                 .derivedPublicationId(saved.getId())
                 .sourceRecipeId(sourceRecipe.getPublicationId())
                 .sourceTitleSnapshot(source.getTitle())
-                .titleSuffix(request.titleSuffix().trim())
+                .titleSuffix(request.titleSuffix())
                 .changeSummary(request.changeSummary())
                 .build());
         return saved;
@@ -141,7 +140,7 @@ public class PublicationService {
                 .authorId(authorId)
                 .type(type)
                 .visibility(visibility)
-                .title(normalizeNullable(request.title()))
+                .title(request.title())
                 .description(request.description())
                 .gcsBucket(image.bucket())
                 .gcsObjectName(image.objectName())
@@ -279,7 +278,7 @@ public class PublicationService {
 
         if (request.title() != null || request.description() != null) {
             publication.updateText(
-                    request.title() == null ? publication.getTitle() : normalizeNullable(request.title()),
+                    request.title() == null ? publication.getTitle() : request.title(),
                     request.description() == null ? publication.getDescription() : request.description()
             );
         }
@@ -329,7 +328,7 @@ public class PublicationService {
                 .publicationId(publicationId)
                 .yieldQuantity(request.yieldQuantity())
                 .yieldUnit(request.yieldUnit())
-                .instructions(request.instructions().trim())
+                .instructions(request.instructions())
                 .build());
 
         List<RecipeIngredient> ingredients = request.ingredients().stream()
@@ -341,9 +340,10 @@ public class PublicationService {
     private void saveOrUpdateRecipe(UUID publicationId, CreateRecipeRequest request) {
         Recipe recipe = recipeRepository.findByPublicationIdAndDeletedAtIsNull(publicationId)
                 .orElseGet(() -> Recipe.builder().publicationId(publicationId).build());
-        recipe.update(request.yieldQuantity(), request.yieldUnit(), request.instructions().trim());
+        recipe.update(request.yieldQuantity(), request.yieldUnit(), request.instructions());
         recipeRepository.save(recipe);
         deactivateIngredients(publicationId);
+        recipeIngredientRepository.flush();
         recipeIngredientRepository.saveAll(request.ingredients().stream()
                 .map(ingredient -> ingredient(ingredient, publicationId))
                 .toList());
@@ -371,7 +371,7 @@ public class PublicationService {
                 .id(UUID.randomUUID())
                 .recipeId(recipeId)
                 .position(request.position())
-                .name(request.name().trim())
+                .name(request.name())
                 .quantity(request.quantity())
                 .unit(request.unit())
                 .note(request.note())
@@ -398,7 +398,4 @@ public class PublicationService {
         return PublicationVisibility.valueOf(visibility);
     }
 
-    private String normalizeNullable(String value) {
-        return value == null ? null : stringNormalizer.normalize(value);
-    }
 }

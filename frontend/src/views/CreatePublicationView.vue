@@ -122,16 +122,16 @@ function recipePayload(): CreateRecipeRequest | undefined {
   }
   ingredientError.value = ''
   return {
-    instructions: instructions.value.trim(),
+    instructions: instructions.value,
     ingredients: valid.map((item, index) => ({
       position: index + 1,
-      name: item.name.trim(),
+      name: item.name,
       ...(item.quantity.trim() ? { quantity: Number(item.quantity) } : {}),
-      ...(item.unit.trim() ? { unit: item.unit.trim() } : {}),
-      ...(item.note.trim() ? { note: item.note.trim() } : {}),
+      ...(item.unit.trim() ? { unit: item.unit } : {}),
+      ...(item.note.trim() ? { note: item.note } : {}),
     })),
     ...(yieldQuantity.value ? { yieldQuantity: Number(yieldQuantity.value) } : {}),
-    ...(yieldUnit.value.trim() ? { yieldUnit: yieldUnit.value.trim() } : {}),
+    ...(yieldUnit.value.trim() ? { yieldUnit: yieldUnit.value } : {}),
   }
 }
 
@@ -154,8 +154,8 @@ function submit(): void {
       data: {
         data: {
           visibility: visibility.value,
-          titleSuffix: titleSuffix.value.trim(),
-          ...(changeSummary.value.trim() ? { changeSummary: changeSummary.value.trim() } : {}),
+          titleSuffix: titleSuffix.value,
+          ...(changeSummary.value.trim() ? { changeSummary: changeSummary.value } : {}),
           recipe: recipe!,
         },
         image: image.value,
@@ -167,8 +167,8 @@ function submit(): void {
         data: {
           type: type.value,
           visibility: visibility.value,
-          ...(title.value.trim() ? { title: title.value.trim() } : {}),
-          ...(description.value.trim() ? { description: description.value.trim() } : {}),
+          ...(title.value.trim() ? { title: title.value } : {}),
+          ...(description.value.trim() ? { description: description.value } : {}),
           ...(recipe ? { recipe } : {}),
         },
         image: image.value,

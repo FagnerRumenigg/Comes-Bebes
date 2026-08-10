@@ -123,20 +123,16 @@ function recipePayload(): CreateRecipeRequest | undefined {
     return undefined
   }
   return {
-    instructions: instructions.value
-      .split(/\r?\n/)
-      .map((step) => step.trim())
-      .filter(Boolean)
-      .join('\n'),
+    instructions: instructions.value,
     ingredients: validIngredients.map((item, index) => ({
       position: index + 1,
-      name: item.name.trim(),
+      name: item.name,
       ...(item.quantity.trim() ? { quantity: Number(item.quantity) } : {}),
-      ...(item.unit.trim() ? { unit: item.unit.trim() } : {}),
-      ...(item.note.trim() ? { note: item.note.trim() } : {}),
+      ...(item.unit.trim() ? { unit: item.unit } : {}),
+      ...(item.note.trim() ? { note: item.note } : {}),
     })),
     ...(yieldQuantity.value ? { yieldQuantity: Number(yieldQuantity.value) } : {}),
-    ...(yieldUnit.value.trim() ? { yieldUnit: yieldUnit.value.trim() } : {}),
+    ...(yieldUnit.value.trim() ? { yieldUnit: yieldUnit.value } : {}),
   }
 }
 
@@ -151,8 +147,8 @@ function submit(): void {
   if (hasRecipe.value && !recipe) return
 
   const data: UpdatePublicationRequest = {
-    title: title.value.trim(),
-    description: description.value.trim(),
+    title: title.value,
+    description: description.value,
     visibility: visibility.value,
     ...(recipe ? { recipe } : {}),
   }
