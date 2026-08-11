@@ -43,4 +43,5 @@ jobs:
 
       - name: Deploy
         shell: powershell
-        run: & "C:\Users\fagne\Documents\Eu\Programação\Comes-Bebes\infra\Deploy-Release.ps1" -Service ${{ steps.release.outputs.service }} -Version ${{ steps.release.outputs.version }}
+        run: |
+          & "C:\Users\fagne\Documents\Eu\Programação\Comes-Bebes\infra\Deploy-Release.ps1" -Service ${{ steps.release.outputs.service }} -Version ${{ steps.release.outputs.version }}
