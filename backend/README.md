@@ -171,26 +171,24 @@ Automático: todo push na `main` que altere `frontend/**` dispara `.github/workf
 
 ### Backend (API e/ou validator)
 
-Push na `main` **não** deploya o backend sozinho. São duas etapas manuais, sempre com a `main` atualizada e sem alterações locais pendentes:
-
-**1. Publicar a imagem no Docker Hub**, criando uma tag anotada:
+Também automático, de ponta a ponta. O único passo manual é criar e enviar a tag da versão, sempre com a `main` atualizada e sem alterações locais pendentes:
 
 ```powershell
 git checkout main
 git pull origin main
-git tag -a api-v0.X.Y -m "API release 0.X.Y"
-git push origin api-v0.X.Y
+git tag -a api-v1.2.0 -m "API release 1.2.0"
+git push origin api-v1.2.0
 ```
 
-(troque `api-v` por `validator-v` para o validador). Isso dispara o workflow de release correspondente (`.github/workflows/release-api.yml` ou `release-validator.yml`), que roda os testes, builda a imagem e publica `fagnerrumenigg/comesebebes-api:0.X.Y` (ou `-validator`) no Docker Hub. Cada serviço tem ciclo de release independente — publicar a API não aciona o release do validador, e vice-versa.
+(troque `api-v` por `validator-v` para o validador; siga [SemVer](https://semver.org/lang/pt-BR/) — MAJOR pra quebra de compatibilidade, MINOR pra funcionalidade nova compatível, PATCH pra correção de bug). **Depois desse push não precisa fazer mais nada.**
 
-**2. Aplicar a nova versão no servidor**, rodando no host onde a `Infra-Geral` está em execução:
+Se o runner de produção estiver offline, ou pra fazer rollback (uma tag publicada nunca deve ser reutilizada), rode manualmente:
 
 ```powershell
-.\infra\Deploy-Release.ps1 -Service api -Version 0.X.Y
+.\infra\Deploy-Release.ps1 -Service api -Version 1.2.0
 ```
 
-(ou `-Service validator`). O script atualiza `API_VERSION`/`VALIDATOR_VERSION` em `infra/.env`, faz `pull` e `up -d` só do serviço informado, sem afetar banco, gateway ou o outro serviço. Detalhes completos (rollback, persistência, pré-requisitos) estão em `../infra/README.md`.
+(ou `-Service validator`). Detalhes completos (rollback, persistência, pré-requisitos) estão em `../infra/README.md`.
 
 ## Problemas comuns
 
