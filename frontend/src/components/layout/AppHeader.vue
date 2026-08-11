@@ -1,26 +1,40 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import BaseButton from '@/components/base/BaseButton.vue'
 import { showAuthNotice } from '@/composables/useAuthNotice'
+import { useFeedRefresh } from '@/features/feed/useFeedRefresh'
 import { useAuthStore } from '@/stores/auth.store'
 
 import BrandMark from './BrandMark.vue'
 import ThemeSwitch from './ThemeSwitch.vue'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
+const { refreshFeed } = useFeedRefresh()
 
 async function logout(): Promise<void> {
   await authStore.logout()
   await router.push('/')
+}
+
+function goHome(): void {
+  if (route.path !== '/') return
+  void refreshFeed()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 </script>
 
 <template>
   <header class="app-header">
     <div class="app-header__inner">
-      <RouterLink class="app-header__brand" to="/" aria-label="Comes&Bebes — início">
+      <RouterLink
+        class="app-header__brand"
+        to="/"
+        aria-label="Comes&Bebes — início"
+        @click="goHome"
+      >
         <BrandMark />
         <span>Comes&amp;Bebes</span>
       </RouterLink>

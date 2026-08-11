@@ -112,7 +112,7 @@ public class PublicationController {
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Publicação criada."),
             @ApiResponse(responseCode = "400", description = "Dados inválidos, imagem inválida ou imagem rejeitada pelo classificador de comida.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-            @ApiResponse(responseCode = "413", description = "A imagem excede o limite de 15 MB.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "413", description = "A imagem excede o limite de 20 MB.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "503", description = "O validador de imagens está indisponível.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
     public ResponseEntity<PublicationResponse> createUpload(
@@ -318,7 +318,7 @@ public class PublicationController {
             @ApiResponse(responseCode = "201", description = "Minha versão criada."),
             @ApiResponse(responseCode = "400", description = "Receita, dados da versão ou imagem inválidos; também pode indicar rejeição pelo classificador de comida.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "Publicação original, receita ou autor não encontrado.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-            @ApiResponse(responseCode = "413", description = "A imagem excede o limite de 15 MB.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "413", description = "A imagem excede o limite de 20 MB.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "503", description = "O validador de imagens está indisponível.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
     public org.springframework.http.ResponseEntity<PublicationResponse> createMyVersion(

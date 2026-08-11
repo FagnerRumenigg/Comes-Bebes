@@ -21,8 +21,8 @@ app:
 spring:
   servlet:
     multipart:
-      max-file-size: 15MB
-      max-request-size: 16MB
+      max-file-size: 20MB
+      max-request-size: 21MB
   data:
     web:
       pageable:

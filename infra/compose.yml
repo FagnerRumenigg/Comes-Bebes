@@ -2,9 +2,7 @@ name: comesebebes
 
 services:
   validator:
-    build:
-      context: ../backend
-      dockerfile: validator/Dockerfile
+    image: fagnerrumenigg/comesebebes-validator:${VALIDATOR_VERSION}
     environment:
       HF_HOME: /var/cache/huggingface
     volumes:
@@ -24,9 +22,7 @@ services:
     restart: unless-stopped
 
   api:
-    build:
-      context: ../backend
-      dockerfile: Dockerfile
+    image: fagnerrumenigg/comesebebes-api:${API_VERSION}
     env_file:
       - .env
     environment:

@@ -22,14 +22,14 @@ test('criação de prato valida imagem e envia multipart', async ({ page }) => {
     mimeType: 'text/plain',
     buffer: Buffer.from('não é uma imagem'),
   })
-  await expect(page.getByRole('alert')).toContainText('JPEG, PNG ou WebP')
+  await expect(page.getByRole('alert')).toContainText('JPEG, PNG, WebP, HEIC ou HEIF')
 
   await page.locator('input[type="file"]').setInputFiles({
     name: 'grande.jpg',
     mimeType: 'image/jpeg',
-    buffer: Buffer.alloc(15 * 1024 * 1024 + 1),
+    buffer: Buffer.alloc(20 * 1024 * 1024 + 1),
   })
-  await expect(page.getByRole('alert')).toContainText('no máximo 15 MB')
+  await expect(page.getByRole('alert')).toContainText('no máximo 20 MB')
 
   await page.locator('input[type="file"]').setInputFiles(image)
   await page.getByLabel('Título').fill('Prato criado no teste')

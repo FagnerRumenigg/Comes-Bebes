@@ -45,7 +45,7 @@ def test_rejects_image_with_unsupported_format(tmp_path: Path) -> None:
 def test_rejects_file_over_size_limit(tmp_path: Path) -> None:
     input_path = tmp_path / "large.bin"
     with input_path.open("wb") as file:
-        file.truncate(15 * 1024 * 1024 + 1)
+        file.truncate(20 * 1024 * 1024 + 1)
 
     with pytest.raises(ImageValidationError) as error:
         validate_and_normalize(input_path, tmp_path / "normalized")

@@ -14,7 +14,7 @@ import pillow_heif
 pillow_heif.register_heif_opener()
 
 
-MAX_INPUT_BYTES = 15 * 1024 * 1024
+MAX_INPUT_BYTES = 20 * 1024 * 1024
 MAX_WIDTH = 3840
 MAX_HEIGHT = 2160
 MAX_PIXELS = MAX_WIDTH * MAX_HEIGHT

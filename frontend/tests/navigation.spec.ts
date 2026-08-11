@@ -1,3 +1,4 @@
+import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createPinia } from 'pinia'
 import { flushPromises, mount, shallowMount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter, type RouteLocationNormalized } from 'vue-router'
@@ -108,7 +109,9 @@ describe('layouts e navegação', () => {
     await router.push('/')
     await router.isReady()
 
-    const global = { plugins: [createPinia(), router] }
+    const global = {
+      plugins: [createPinia(), router, [VueQueryPlugin, { queryClient: new QueryClient() }]],
+    }
     const header = mount(AppHeader, { global })
     const mobile = mount(MobileNavigation, { global })
 
@@ -168,7 +171,11 @@ describe('layouts e navegação', () => {
     const router = createTestRouter()
     await router.push('/')
     await router.isReady()
-    const header = mount(AppHeader, { global: { plugins: [createPinia(), router] } })
+    const header = mount(AppHeader, {
+      global: {
+        plugins: [createPinia(), router, [VueQueryPlugin, { queryClient: new QueryClient() }]],
+      },
+    })
 
     await header.get('nav button').trigger('click')
     expect(authNotice.visible).toBe(true)

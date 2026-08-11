@@ -71,7 +71,7 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiErrorResponse> handleUploadTooLarge(MaxUploadSizeExceededException exception) {
-        return response(HttpStatus.PAYLOAD_TOO_LARGE, "FILE_TOO_LARGE", "A imagem excede o limite de 15 MB.");
+        return response(HttpStatus.PAYLOAD_TOO_LARGE, "FILE_TOO_LARGE", "A imagem excede o limite de 20 MB.");
     }
 
     // Os handlers abaixo preservam o status HTTP que o Spring já resolveria por padrão para

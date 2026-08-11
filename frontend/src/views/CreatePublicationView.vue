@@ -95,8 +95,8 @@ function acceptImage(event: Event): void {
     imageError.value = 'Escolha uma imagem JPEG, PNG, WebP, HEIC ou HEIF.'
     return
   }
-  if (selected.size > 15 * 1024 * 1024) {
-    imageError.value = 'A imagem deve ter no máximo 15 MB.'
+  if (selected.size > 20 * 1024 * 1024) {
+    imageError.value = 'A imagem deve ter no máximo 20 MB.'
     return
   }
   image.value = selected
@@ -298,7 +298,7 @@ onBeforeUnmount(clearImagePreview)
             required
             @change="acceptImage"
         /></label>
-        <p>JPEG, PNG, WebP, HEIC ou HEIF até 15 MB.</p>
+        <p>JPEG, PNG, WebP, HEIC ou HEIF até 20 MB.</p>
         <img v-if="imagePreview" :src="imagePreview" alt="Prévia da imagem selecionada" />
       </fieldset>
       <div v-if="recipeMode" class="create-publication__recipe">

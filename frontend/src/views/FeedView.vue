@@ -5,11 +5,55 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import PublicationCard from '@/components/publication/PublicationCard.vue'
 import { normalizeHttpError } from '@/api/errors'
 import { useInfiniteFeed } from '@/features/feed/feed.queries'
+import { useFeedRefresh } from '@/features/feed/useFeedRefresh'
+
+const PULL_TRIGGER_DISTANCE = 70
+const PULL_MAX_DISTANCE = 100
+const PULL_DRAG_RATIO = 0.5
 
 const feedQuery = useInfiniteFeed()
+const { refreshFeed } = useFeedRefresh()
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 const supportsInfiniteScroll = ref(true)
 let loadMoreObserver: IntersectionObserver | null = null
+
+const pullDistance = ref(0)
+const isRefreshing = ref(false)
+let pullStartY = 0
+let isTrackingPull = false
+
+function onTouchStart(event: TouchEvent): void {
+  if (isRefreshing.value || window.scrollY > 0) return
+  pullStartY = event.touches[0]!.clientY
+  isTrackingPull = true
+}
+
+function onTouchMove(event: TouchEvent): void {
+  if (!isTrackingPull) return
+  if (window.scrollY > 0) {
+    isTrackingPull = false
+    pullDistance.value = 0
+    return
+  }
+  const delta = event.touches[0]!.clientY - pullStartY
+  if (delta <= 0) {
+    pullDistance.value = 0
+    return
+  }
+  event.preventDefault()
+  pullDistance.value = Math.min(delta * PULL_DRAG_RATIO, PULL_MAX_DISTANCE)
+}
+
+async function onTouchEnd(): Promise<void> {
+  if (!isTrackingPull) return
+  isTrackingPull = false
+  const shouldRefresh = pullDistance.value >= PULL_TRIGGER_DISTANCE
+  pullDistance.value = 0
+  if (!shouldRefresh) return
+  isRefreshing.value = true
+  await refreshFeed()
+  isRefreshing.value = false
+}
 
 const publications = computed(
   () => feedQuery.data.value?.pages.flatMap((page) => page.content) ?? [],
@@ -60,7 +104,28 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
 </script>
 
 <template>
-  <section class="feed-view" aria-labelledby="feed-title">
+  <section
+    class="feed-view"
+    aria-labelledby="feed-title"
+    @touchstart="onTouchStart"
+    @touchmove="onTouchMove"
+    @touchend="onTouchEnd"
+    @touchcancel="onTouchEnd"
+  >
+    <div
+      v-if="pullDistance > 0 || isRefreshing"
+      class="feed-view__pull-indicator"
+      role="status"
+      :style="{ height: `${isRefreshing ? PULL_TRIGGER_DISTANCE : pullDistance}px` }"
+    >
+      {{
+        isRefreshing
+          ? 'Atualizando…'
+          : pullDistance >= PULL_TRIGGER_DISTANCE
+            ? 'Solte para atualizar'
+            : 'Puxe para atualizar'
+      }}
+    </div>
     <header class="feed-view__heading">
       <p>Da cozinha da comunidade</p>
       <h1 id="feed-title">Seu feed</h1>
@@ -113,6 +178,19 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
 .feed-view {
   width: min(100%, var(--content-feed));
   margin-inline: auto;
+}
+
+.feed-view__pull-indicator {
+  display: flex;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-wide);
+  text-transform: uppercase;
+  transition: height var(--duration-fast) var(--ease-standard);
 }
 
 .feed-view__heading {

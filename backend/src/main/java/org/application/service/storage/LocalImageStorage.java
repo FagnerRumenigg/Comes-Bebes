@@ -33,7 +33,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class LocalImageStorage implements ImageStorage {
 
-    private static final long MAX_IMAGE_BYTES = 15L * 1024 * 1024;
+    private static final long MAX_IMAGE_BYTES = 20L * 1024 * 1024;
     private static final int MAX_IMAGE_WIDTH = 3840;
     private static final int MAX_IMAGE_HEIGHT = 2160;
     private static final long MAX_IMAGE_PIXELS = (long) MAX_IMAGE_WIDTH * MAX_IMAGE_HEIGHT;
@@ -76,7 +76,7 @@ public class LocalImageStorage implements ImageStorage {
             throw new InvalidOperationException("A imagem não pode estar vazia.");
         }
         if (content.length > MAX_IMAGE_BYTES) {
-            throw new InvalidOperationException("A imagem excede o limite de 15 MB.");
+            throw new InvalidOperationException("A imagem excede o limite de 20 MB.");
         }
         BufferedImage image;
         try {
@@ -144,7 +144,7 @@ public class LocalImageStorage implements ImageStorage {
     private StoredImage storeValidatedFile(Path sourcePath, String originalFilename) throws IOException {
         long size = Files.size(sourcePath);
         if (size == 0 || size > MAX_IMAGE_BYTES) {
-            throw new InvalidOperationException("A imagem excede o limite de 15 MB.");
+            throw new InvalidOperationException("A imagem excede o limite de 20 MB.");
         }
         BufferedImage image = ImageIO.read(sourcePath.toFile());
         if (image == null) {
@@ -316,7 +316,7 @@ public class LocalImageStorage implements ImageStorage {
             while ((read = inputStream.read(buffer)) != -1) {
                 total += read;
                 if (total > MAX_IMAGE_BYTES) {
-                    throw new InvalidOperationException("A imagem excede o limite de 15 MB.");
+                    throw new InvalidOperationException("A imagem excede o limite de 20 MB.");
                 }
                 outputStream.write(buffer, 0, read);
             }

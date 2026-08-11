@@ -163,6 +163,35 @@ O login limita tentativas por IP e username. O limite local padrão é de 5 tent
 
 Erros possuem `status`, `code` e `message`. O frontend deve tratar o `code`, não o texto da mensagem.
 
+## Deploy para produção
+
+### Frontend
+
+Automático: todo push na `main` que altere `frontend/**` dispara `.github/workflows/deploy-pages.yml`, que builda e publica no GitHub Pages. Não precisa de nenhum passo manual.
+
+### Backend (API e/ou validator)
+
+Push na `main` **não** deploya o backend sozinho. São duas etapas manuais, sempre com a `main` atualizada e sem alterações locais pendentes:
+
+**1. Publicar a imagem no Docker Hub**, criando uma tag anotada:
+
+```powershell
+git checkout main
+git pull origin main
+git tag -a api-v0.X.Y -m "API release 0.X.Y"
+git push origin api-v0.X.Y
+```
+
+(troque `api-v` por `validator-v` para o validador). Isso dispara o workflow de release correspondente (`.github/workflows/release-api.yml` ou `release-validator.yml`), que roda os testes, builda a imagem e publica `fagnerrumenigg/comesebebes-api:0.X.Y` (ou `-validator`) no Docker Hub. Cada serviço tem ciclo de release independente — publicar a API não aciona o release do validador, e vice-versa.
+
+**2. Aplicar a nova versão no servidor**, rodando no host onde a `Infra-Geral` está em execução:
+
+```powershell
+.\infra\Deploy-Release.ps1 -Service api -Version 0.X.Y
+```
+
+(ou `-Service validator`). O script atualiza `API_VERSION`/`VALIDATOR_VERSION` em `infra/.env`, faz `pull` e `up -d` só do serviço informado, sem afetar banco, gateway ou o outro serviço. Detalhes completos (rollback, persistência, pré-requisitos) estão em `../infra/README.md`.
+
 ## Problemas comuns
 
 - `Could not resolve placeholder`: alguma variável de ambiente obrigatória não foi configurada.
