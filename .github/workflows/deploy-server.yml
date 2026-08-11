@@ -37,7 +37,9 @@ jobs:
 
       - name: Atualizar checkout de produção
         shell: powershell
-        run: git -C "C:\Users\fagne\Documents\Eu\Programação\Comes-Bebes" pull origin main
+        run: |
+          git config --global --add safe.directory "C:/Users/fagne/Documents/Eu/Programação/Comes-Bebes"
+          git -C "C:\Users\fagne\Documents\Eu\Programação\Comes-Bebes" pull origin main
 
       - name: Deploy
         shell: powershell
