@@ -1,11 +1,15 @@
 package org.application.service;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.application.model.Publication;
 import org.application.model.PublicationStatus;
 import org.application.model.PublicationType;
 import org.application.model.PublicationVisibility;
 import org.application.model.Recipe;
 import org.application.model.User;
+import org.application.model.UserRole;
 import org.application.model.UserStatus;
 import org.application.repository.PublicationRepository;
 import org.application.repository.PublicationImageCheckRepository;
@@ -24,11 +28,14 @@ import org.application.controller.publication.request.CreateIngredientRequest;
 import org.application.controller.publication.request.CreateRecipeRequest;
 import org.application.controller.publication.request.UpdatePublicationRequest;
 import org.application.service.exception.ResourceNotFoundException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -63,6 +70,22 @@ class PublicationServiceTest {
     @Mock private PublicationOriginRepository publicationOriginRepository;
     @Mock private ImageValidatorClient imageValidatorClient;
     @Mock private PublicationImageCheckRepository publicationImageCheckRepository;
+
+    private ch.qos.logback.classic.Logger serviceLogger;
+    private ListAppender<ILoggingEvent> appender;
+
+    @BeforeEach
+    void setUpLogging() {
+        serviceLogger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(PublicationService.class);
+        appender = new ListAppender<>();
+        appender.start();
+        serviceLogger.addAppender(appender);
+    }
+
+    @AfterEach
+    void tearDownLogging() {
+        serviceLogger.detachAppender(appender);
+    }
 
     @InjectMocks
     private PublicationService publicationService;
@@ -164,6 +187,121 @@ class PublicationServiceTest {
         ingredientWriteOrder.verify(recipeIngredientRepository).flush();
         ingredientWriteOrder.verify(recipeIngredientRepository).saveAll(any());
         verify(stringNormalizer, never()).normalize("Título corrigido");
+    }
+
+    @Test
+    void shouldAllowAdminToEditPublicationOfAnotherAuthorAndMarkEditedByAdmin() {
+        UUID id = UUID.randomUUID();
+        UUID authorId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
+        Publication publication = Publication.builder()
+                .id(id)
+                .authorId(authorId)
+                .type(PublicationType.DISH)
+                .visibility(PublicationVisibility.PUBLIC)
+                .title("Título antigo")
+                .status(PublicationStatus.ACTIVE)
+                .build();
+
+        when(publicationRepository.findByIdAndStatus(id, PublicationStatus.ACTIVE))
+                .thenReturn(Optional.of(publication));
+        when(userRepository.findByIdAndStatus(adminId, UserStatus.ACTIVE))
+                .thenReturn(Optional.of(User.builder().id(adminId).status(UserStatus.ACTIVE).role(UserRole.ADMIN).build()));
+        when(clock.instant()).thenReturn(Instant.parse("2026-08-11T12:00:00Z"));
+        when(clock.getZone()).thenReturn(ZoneOffset.UTC);
+
+        publicationService.update(id, new UpdatePublicationRequest(
+                null, null, "Editado pelo admin", null, null, null
+        ), adminId);
+
+        assertThat(publication.getTitle()).isEqualTo("Editado pelo admin");
+        assertThat(publication.getEditedByAdminId()).isEqualTo(adminId);
+        assertThat(publication.getEditedByAdminAt()).isNotNull();
+        assertThat(appender.list).hasSize(1);
+        assertThat(appender.list.get(0).getLevel()).isEqualTo(Level.INFO);
+        assertThat(appender.list.get(0).getFormattedMessage())
+                .contains("event=publication_edited_by_admin", "publicationId=" + id, "adminId=" + adminId, "authorId=" + authorId);
+    }
+
+    @Test
+    void shouldAllowAdminToRemovePublicationOfAnotherAuthor() {
+        UUID id = UUID.randomUUID();
+        UUID authorId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
+        Publication publication = Publication.builder()
+                .id(id)
+                .authorId(authorId)
+                .type(PublicationType.DISH)
+                .visibility(PublicationVisibility.PUBLIC)
+                .status(PublicationStatus.ACTIVE)
+                .build();
+
+        when(publicationRepository.findByIdAndStatus(id, PublicationStatus.ACTIVE))
+                .thenReturn(Optional.of(publication));
+        when(userRepository.findByIdAndStatus(adminId, UserStatus.ACTIVE))
+                .thenReturn(Optional.of(User.builder().id(adminId).status(UserStatus.ACTIVE).role(UserRole.ADMIN).build()));
+        when(clock.instant()).thenReturn(Instant.parse("2026-08-11T12:00:00Z"));
+        when(clock.getZone()).thenReturn(ZoneOffset.UTC);
+
+        publicationService.remove(id, adminId);
+
+        assertThat(publication.getStatus()).isEqualTo(PublicationStatus.REMOVED);
+        assertThat(appender.list).hasSize(1);
+        assertThat(appender.list.get(0).getLevel()).isEqualTo(Level.INFO);
+        assertThat(appender.list.get(0).getFormattedMessage())
+                .contains("event=publication_removed_by_admin", "publicationId=" + id, "adminId=" + adminId, "authorId=" + authorId);
+    }
+
+    @Test
+    void shouldRejectUpdateWhenActingUserIsNeitherAuthorNorAdmin() {
+        UUID id = UUID.randomUUID();
+        UUID authorId = UUID.randomUUID();
+        UUID strangerId = UUID.randomUUID();
+        Publication publication = Publication.builder()
+                .id(id)
+                .authorId(authorId)
+                .type(PublicationType.DISH)
+                .visibility(PublicationVisibility.PUBLIC)
+                .status(PublicationStatus.ACTIVE)
+                .build();
+
+        when(publicationRepository.findByIdAndStatus(id, PublicationStatus.ACTIVE))
+                .thenReturn(Optional.of(publication));
+        when(userRepository.findByIdAndStatus(strangerId, UserStatus.ACTIVE))
+                .thenReturn(Optional.of(User.builder().id(strangerId).status(UserStatus.ACTIVE).role(UserRole.USER).build()));
+
+        assertThatThrownBy(() -> publicationService.update(id, new UpdatePublicationRequest(
+                null, null, "Tentativa indevida", null, null, null
+        ), strangerId))
+                .isInstanceOf(org.application.service.exception.InvalidOperationException.class)
+                .hasMessageContaining("Somente o autor");
+        assertThat(publication.getTitle()).isNull();
+        assertThat(appender.list).isEmpty();
+    }
+
+    @Test
+    void shouldRejectRemovalWhenActingUserIsNeitherAuthorNorAdmin() {
+        UUID id = UUID.randomUUID();
+        UUID authorId = UUID.randomUUID();
+        UUID strangerId = UUID.randomUUID();
+        Publication publication = Publication.builder()
+                .id(id)
+                .authorId(authorId)
+                .type(PublicationType.DISH)
+                .visibility(PublicationVisibility.PUBLIC)
+                .status(PublicationStatus.ACTIVE)
+                .build();
+
+        when(publicationRepository.findByIdAndStatus(id, PublicationStatus.ACTIVE))
+                .thenReturn(Optional.of(publication));
+        when(userRepository.findByIdAndStatus(strangerId, UserStatus.ACTIVE))
+                .thenReturn(Optional.of(User.builder().id(strangerId).status(UserStatus.ACTIVE).role(UserRole.USER).build()));
+
+        assertThatThrownBy(() -> publicationService.remove(id, strangerId))
+                .isInstanceOf(org.application.service.exception.InvalidOperationException.class)
+                .hasMessageContaining("Somente o autor");
+        assertThat(publication.getStatus()).isEqualTo(PublicationStatus.ACTIVE);
+        assertThat(appender.list).isEmpty();
     }
 
     @Test

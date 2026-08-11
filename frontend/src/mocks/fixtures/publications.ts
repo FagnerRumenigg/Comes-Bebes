@@ -26,6 +26,7 @@ export const mockPublications: PublicationResponse[] = [
     originalPublicationId: null,
     reportedByCurrentUser: false,
     recipePreview: null,
+    editedByAdmin: false,
   },
   {
     id: '7b0200b5-66e3-47b1-a80c-a2369379e1d3',
@@ -57,6 +58,7 @@ export const mockPublications: PublicationResponse[] = [
         { position: 3, name: 'farinha de trigo', quantity: 2, unit: 'xícaras', note: null },
       ],
     },
+    editedByAdmin: false,
   },
   {
     id: 'd0d9201c-4781-4204-a304-2c2bc7ea7330',
@@ -88,6 +90,7 @@ export const mockPublications: PublicationResponse[] = [
         { position: 3, name: 'levain ativo', quantity: 100, unit: 'g', note: null },
       ],
     },
+    editedByAdmin: false,
   },
   {
     id: '8d74a06e-dfd8-4263-b4ed-f0e662680c27',
@@ -118,5 +121,6 @@ export const mockPublications: PublicationResponse[] = [
         { position: 2, name: 'chocolate em pó', quantity: 3, unit: 'colheres', note: null },
       ],
     },
+    editedByAdmin: false,
   },
 ]

@@ -22,6 +22,7 @@ const session: LoginResponse = {
   role: 'USER',
   onboardingCompleted: true,
   expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+  sessionId: 'a4f0f2b0-df43-4b40-9df1-4f6da3e6f36e',
 }
 
 afterEach(() => {

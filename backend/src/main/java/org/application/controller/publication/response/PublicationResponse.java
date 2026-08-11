@@ -45,7 +45,9 @@ public record PublicationResponse(
         @Schema(description = "Publicação de origem; preenchido somente para MY_VERSION.", nullable = true)
         UUID originalPublicationId,
         boolean reportedByCurrentUser,
-        RecipeResponse recipePreview
+        RecipeResponse recipePreview,
+        @Schema(description = "Indica se a publicação foi editada por um administrador.")
+        boolean editedByAdmin
 ) {
 
     public static PublicationResponse of(Publication publication, ZoneId zoneId) {

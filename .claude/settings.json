@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"/c/Users/fagne/AppData/Local/Temp/claude/c--Users-fagne-Documents-Eu-Programa--o-Comes-Bebes/89bfff3c-f30e-4c55-965a-4660e40006b3/scratchpad\")",
+      "Bash(curl -s http://127.0.0.1:8082/v3/api-docs -o \"/c/Users/fagne/AppData/Local/Temp/claude/c--Users-fagne-Documents-Eu-Programa--o-Comes-Bebes/89bfff3c-f30e-4c55-965a-4660e40006b3/scratchpad/live-openapi.json\")",
+      "Read(//c/Users/fagne/AppData/Local/Temp/claude/c--Users-fagne-Documents-Eu-Programa--o-Comes-Bebes/89bfff3c-f30e-4c55-965a-4660e40006b3/scratchpad/**)"
+    ]
+  }
+}

@@ -31,7 +31,7 @@ export const getUpdateCurrentUserResponseMock = (overrideResponse: Partial< User
 
 export const getGetUserPublicationsResponseMock = (overrideResponse: Partial< PageResponsePublicationResponse > = {}): PageResponsePublicationResponse => ({content: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.uuid(), authorId: faker.string.uuid(), type: faker.helpers.arrayElement(['DISH','RECIPE','MY_VERSION'] as const), visibility: faker.helpers.arrayElement(['PUBLIC','INTERNAL'] as const), title: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), status: faker.helpers.arrayElement(['PENDING_VALIDATION','ACTIVE','UNDER_REVIEW','HIDDEN','REJECTED','REMOVED'] as const), publishedAt: `${faker.date.past().toISOString().split('.')[0]}Z`, imageUrl: faker.string.alpha({length: {min: 10, max: 20}}), authorUsername: faker.string.alpha({length: {min: 10, max: 20}}), authorDisplayName: faker.string.alpha({length: {min: 10, max: 20}}), showReactionCounts: faker.datatype.boolean(), reactionTotals: {
         [faker.string.alphanumeric(5)]: faker.number.int({min: undefined, max: undefined})
-      }, selectedReactions: faker.helpers.arrayElements(['WOULD_EAT','WANT_TO_MAKE','COMFORT_FOOD'] as const), saved: faker.datatype.boolean(), versionsCount: faker.number.int({min: undefined, max: undefined}), originalPublicationId: faker.string.uuid(), reportedByCurrentUser: faker.datatype.boolean(), recipePreview: faker.helpers.arrayElement([{publicationId: faker.string.uuid(), yieldQuantity: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}),null,]), yieldUnit: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), instructions: faker.string.alpha({length: {min: 10, max: 20}}), ingredients: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({position: faker.number.int({min: undefined, max: undefined}), name: faker.string.alpha({length: {min: 10, max: 20}}), quantity: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}),null,]), unit: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), note: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,])}))},null,])})), page: faker.number.int({min: undefined, max: undefined}), size: faker.number.int({min: undefined, max: undefined}), totalElements: faker.number.int({min: undefined, max: undefined}), totalPages: faker.number.int({min: undefined, max: undefined}), first: faker.datatype.boolean(), last: faker.datatype.boolean(), ...overrideResponse})
+      }, selectedReactions: faker.helpers.arrayElements(['WOULD_EAT','WANT_TO_MAKE','COMFORT_FOOD'] as const), saved: faker.datatype.boolean(), versionsCount: faker.number.int({min: undefined, max: undefined}), originalPublicationId: faker.string.uuid(), reportedByCurrentUser: faker.datatype.boolean(), recipePreview: faker.helpers.arrayElement([{publicationId: faker.string.uuid(), yieldQuantity: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}),null,]), yieldUnit: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), instructions: faker.string.alpha({length: {min: 10, max: 20}}), ingredients: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({position: faker.number.int({min: undefined, max: undefined}), name: faker.string.alpha({length: {min: 10, max: 20}}), quantity: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}),null,]), unit: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), note: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,])}))},null,]), editedByAdmin: faker.datatype.boolean()})), page: faker.number.int({min: undefined, max: undefined}), size: faker.number.int({min: undefined, max: undefined}), totalElements: faker.number.int({min: undefined, max: undefined}), totalPages: faker.number.int({min: undefined, max: undefined}), first: faker.datatype.boolean(), last: faker.datatype.boolean(), ...overrideResponse})
 
 export const getNotificationsResponseMock = (overrideResponse: Partial< PageResponseNotificationResponse > = {}): PageResponseNotificationResponse => ({content: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.uuid(), type: faker.string.alpha({length: {min: 10, max: 20}}), moderationCaseId: faker.string.uuid(), publicationId: faker.string.uuid(), readAt: `${faker.date.past().toISOString().split('.')[0]}Z`})), page: faker.number.int({min: undefined, max: undefined}), size: faker.number.int({min: undefined, max: undefined}), totalElements: faker.number.int({min: undefined, max: undefined}), totalPages: faker.number.int({min: undefined, max: undefined}), first: faker.datatype.boolean(), last: faker.datatype.boolean(), ...overrideResponse})
 
@@ -72,6 +72,16 @@ export const getUpdateCurrentUserMockHandler = (overrideResponse?: UserResponse 
 
 export const getChangePasswordMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
   return http.patch('*/users/:id/password', async (info) => {await delay(1000);
+  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
+    return new HttpResponse(null,
+      { status: 204,
+        
+      })
+  }, options)
+}
+
+export const getCompleteOnboardingMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
+  return http.patch('*/users/:id/onboarding', async (info) => {await delay(1000);
   if (typeof overrideResponse === 'function') {await overrideResponse(info); }
     return new HttpResponse(null,
       { status: 204,
@@ -128,6 +138,7 @@ export const getUsersMock = () => [
   getDeleteCurrentUserMockHandler(),
   getUpdateCurrentUserMockHandler(),
   getChangePasswordMockHandler(),
+  getCompleteOnboardingMockHandler(),
   getBlockMockHandler(),
   getGetUserPublicationsMockHandler(),
   getNotificationsMockHandler(),

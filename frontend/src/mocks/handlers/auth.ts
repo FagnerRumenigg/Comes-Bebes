@@ -57,6 +57,7 @@ function createSession(account: (typeof accounts)[number]): LoginResponse {
     role: account.role,
     onboardingCompleted: account.onboardingCompleted,
     expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+    sessionId: crypto.randomUUID(),
   }
 }
 

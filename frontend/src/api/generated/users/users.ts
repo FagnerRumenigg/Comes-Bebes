@@ -312,6 +312,68 @@ export const useChangePassword = <TError = void,
       return useMutation(mutationOptions, queryClient);
     }
     /**
+ * Marca o onboarding do primeiro login como concluído para a conta autenticada.
+ * @summary Concluir onboarding
+ */
+export const completeOnboarding = (
+    id: MaybeRef<string>,
+ options?: SecondParameter<typeof apiRequest>,) => {
+      id = unref(id);
+      
+      return apiRequest<void>(
+      {url: `/users/${id}/onboarding`, method: 'PATCH'
+    },
+      options);
+    }
+  
+
+
+export const getCompleteOnboardingMutationOptions = <TError = ApiErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeOnboarding>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeOnboarding>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['completeOnboarding'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeOnboarding>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  completeOnboarding(id,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteOnboardingMutationResult = NonNullable<Awaited<ReturnType<typeof completeOnboarding>>>
+    
+    export type CompleteOnboardingMutationError = ApiErrorResponse
+
+    /**
+ * @summary Concluir onboarding
+ */
+export const useCompleteOnboarding = <TError = ApiErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeOnboarding>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof completeOnboarding>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+
+      const mutationOptions = getCompleteOnboardingMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Bloqueia e anonimiza uma conta, preservando HMAC do username.
  * @summary Bloquear usuário
  */

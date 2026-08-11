@@ -53,6 +53,7 @@ const isOwner = computed(
     Boolean(publicationQuery.data.value) &&
     authStore.identity?.userId === publicationQuery.data.value?.authorId,
 )
+const canEdit = computed(() => isOwner.value || authStore.isAdmin)
 const isLoading = computed(
   () =>
     publicationQuery.isPending.value ||
@@ -137,7 +138,7 @@ function recipePayload(): CreateRecipeRequest | undefined {
 }
 
 function submit(): void {
-  if (updateMutation.isPending.value || !isOwner.value) return
+  if (updateMutation.isPending.value || !canEdit.value) return
   clearErrors()
   if (hasRecipe.value && !title.value.trim()) {
     formError.value = 'Informe o título da receita.'
@@ -167,9 +168,9 @@ function submit(): void {
       <p>{{ loadError }}</p>
       <BaseButton variant="secondary" @click="router.back()">Voltar</BaseButton>
     </div>
-    <div v-else-if="!isOwner" class="edit-publication__state" role="alert">
+    <div v-else-if="!canEdit" class="edit-publication__state" role="alert">
       <strong>Essa publicação não pertence a você.</strong>
-      <p>Somente o autor pode fazer alterações.</p>
+      <p>Somente o autor ou um administrador pode fazer alterações.</p>
       <BaseButton variant="secondary" @click="router.back()">Voltar</BaseButton>
     </div>
     <form v-else class="edit-publication__form" novalidate @submit.prevent="submit">

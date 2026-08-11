@@ -83,6 +83,12 @@ public class Publication {
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
 
+    @Column(name = "edited_by_admin_id")
+    private UUID editedByAdminId;
+
+    @Column(name = "edited_by_admin_at")
+    private OffsetDateTime editedByAdminAt;
+
     public void activate(OffsetDateTime publishedAt) {
         this.status = PublicationStatus.ACTIVE;
         this.publishedAt = publishedAt;
@@ -108,6 +114,11 @@ public class Publication {
 
     public void changeStatus(PublicationStatus status) {
         this.status = status;
+    }
+
+    public void markEditedByAdmin(UUID adminId, OffsetDateTime at) {
+        this.editedByAdminId = adminId;
+        this.editedByAdminAt = at;
     }
 
     @PrePersist

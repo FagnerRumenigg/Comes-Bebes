@@ -47,4 +47,6 @@ export interface PublicationResponse {
   originalPublicationId: PublicationResponseOriginalPublicationId;
   reportedByCurrentUser: boolean;
   recipePreview: PublicationResponseRecipePreview;
+  /** Indica se a publicação foi editada por um administrador. */
+  editedByAdmin: boolean;
 }

@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useGetPublicationById } from '@/api/generated/publications/publications'
+import { useQueryClient } from '@tanstack/vue-query'
+import {
+  useDeletePublication,
+  useGetPublicationById,
+} from '@/api/generated/publications/publications'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseDialog from '@/components/base/BaseDialog.vue'
 import IngredientList from '@/components/recipe/IngredientList.vue'
@@ -17,18 +21,35 @@ import { useAuthStore } from '@/stores/auth.store'
 
 const route = useRoute()
 const router = useRouter()
+const queryClient = useQueryClient()
 const authStore = useAuthStore()
 const publicationId = computed(() => String(route.params.id))
 const publicationQuery = useGetPublicationById(publicationId)
 const myVersionOpen = ref(false)
+const deleteDialogOpen = ref(false)
+const deleteError = ref('')
 
 const errorMessage = computed(() => normalizeHttpError(publicationQuery.error.value).message)
 
 const recipe = computed(() => publicationQuery.data.value?.recipePreview)
 const isOwner = computed(() => authStore.identity?.userId === publicationQuery.data.value?.authorId)
+const canManage = computed(() => isOwner.value || authStore.isAdmin)
 const typeLabel = computed(() => {
   const type = publicationQuery.data.value?.type
   return type === 'MY_VERSION' ? 'Minha versão' : type === 'RECIPE' ? 'Receita' : 'Prato'
+})
+
+const deleteMutation = useDeletePublication({
+  mutation: {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['publications'] })
+      deleteDialogOpen.value = false
+      void router.push('/')
+    },
+    onError: (error) => {
+      deleteError.value = normalizeHttpError(error).message
+    },
+  },
 })
 
 function goBack(): void {
@@ -46,6 +67,12 @@ function startMyVersion(): void {
     return
   }
   myVersionOpen.value = true
+}
+
+function confirmDelete(): void {
+  if (deleteMutation.isPending.value) return
+  deleteError.value = ''
+  deleteMutation.mutate({ id: publicationId.value })
 }
 </script>
 
@@ -66,6 +93,9 @@ function startMyVersion(): void {
       <header class="publication-details__header">
         <span>{{ typeLabel }}</span>
         <h1>{{ publicationQuery.data.value.title ?? 'Publicação da comunidade' }}</h1>
+        <p v-if="publicationQuery.data.value.editedByAdmin" class="publication-details__admin-badge">
+          Editada por um administrador
+        </p>
         <p>
           Por
           <RouterLink :to="`/u/${publicationQuery.data.value.authorUsername}`">
@@ -86,12 +116,20 @@ function startMyVersion(): void {
 
       <div class="publication-details__actions">
         <RouterLink
-          v-if="isOwner"
+          v-if="canManage"
           class="publication-details__edit"
           :to="`/publicacoes/${publicationQuery.data.value.id}/editar`"
         >
           Editar publicação
         </RouterLink>
+        <BaseButton
+          v-if="canManage"
+          variant="ghost"
+          class="publication-details__delete"
+          @click="deleteDialogOpen = true"
+        >
+          Excluir publicação
+        </BaseButton>
         <ReactionBar :publication="publicationQuery.data.value" />
         <SaveButton
           :publication-id="publicationQuery.data.value.id"
@@ -141,6 +179,22 @@ function startMyVersion(): void {
             >
               Cadastrar minha versão
             </RouterLink>
+          </BaseButton>
+        </div>
+      </BaseDialog>
+
+      <BaseDialog
+        v-model:open="deleteDialogOpen"
+        title="Excluir publicação"
+        description="Tem certeza que deseja excluir esta publicação? Essa ação não pode ser desfeita."
+      >
+        <p v-if="deleteError" role="alert" class="publication-details__delete-error">
+          {{ deleteError }}
+        </p>
+        <div class="publication-details__dialog-actions">
+          <BaseButton variant="ghost" @click="deleteDialogOpen = false">Cancelar</BaseButton>
+          <BaseButton :loading="deleteMutation.isPending.value" @click="confirmDelete">
+            Excluir
           </BaseButton>
         </div>
       </BaseDialog>
@@ -232,6 +286,22 @@ function startMyVersion(): void {
   text-decoration: none;
   border: 1px solid var(--color-primary);
   border-radius: var(--radius-sm);
+}
+
+.publication-details__delete {
+  color: var(--color-danger);
+}
+
+.publication-details__admin-badge {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-style: italic;
+}
+
+.publication-details__delete-error {
+  margin: 0;
+  color: var(--color-danger);
 }
 
 .publication-details__description {

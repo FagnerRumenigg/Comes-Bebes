@@ -200,6 +200,7 @@ export const feedMockHandlers = [
       originalPublicationId: source.id,
       reportedByCurrentUser: false,
       recipePreview: recipePreview(id, data.recipe),
+      editedByAdmin: false,
     }
     source.versionsCount += 1
     addMockPublication(publication)
@@ -231,6 +232,7 @@ export const feedMockHandlers = [
       originalPublicationId: null,
       reportedByCurrentUser: false,
       recipePreview: data.recipe ? recipePreview(id, data.recipe) : null,
+      editedByAdmin: false,
     }
     addMockPublication(publication)
     return HttpResponse.json(publication, { status: 201 })

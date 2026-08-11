@@ -89,6 +89,7 @@ public class PublicationResponseFactory {
                 .originalPublicationId(origin == null ? null : origin.getSourceRecipeId())
                 .reportedByCurrentUser(viewerId != null && reportRepository.existsByPublicationIdAndReporterIdAndResolution(publication.getId(), viewerId, "PENDING"))
                 .recipePreview(preview)
+                .editedByAdmin(publication.getEditedByAdminId() != null)
                 .build();
     }
 }

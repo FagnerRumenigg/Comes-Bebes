@@ -26,6 +26,8 @@ import org.application.service.validation.ImageValidatorClient;
 import org.application.model.PublicationImageCheck;
 import org.application.repository.PublicationImageCheckRepository;
 import org.application.util.StringNormalizer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +45,7 @@ import org.application.model.PublicationVisibility;
 @Service
 @RequiredArgsConstructor
 public class PublicationService {
+    private static final Logger log = LoggerFactory.getLogger(PublicationService.class);
 
     private final PublicationRepository publicationRepository;
     private final RecipeRepository recipeRepository;
@@ -271,11 +274,15 @@ public class PublicationService {
     }
 
     @Transactional
-    public Publication update(UUID id, UpdatePublicationRequest request, UUID authorId) {
+    public Publication update(UUID id, UpdatePublicationRequest request, UUID actingUserId) {
         Publication publication = findActive(id);
-        userRepository.findByIdAndStatus(authorId, org.application.model.UserStatus.ACTIVE)
-                .filter(user -> user.getId().equals(publication.getAuthorId()))
+        var actingUser = userRepository.findByIdAndStatus(actingUserId, org.application.model.UserStatus.ACTIVE)
                 .orElseThrow(() -> new InvalidOperationException("PUBLICATION_AUTHOR_REQUIRED", "Somente o autor pode alterar a publicação."));
+        boolean isAuthor = actingUser.getId().equals(publication.getAuthorId());
+        boolean isAdmin = actingUser.getRole() == org.application.model.UserRole.ADMIN;
+        if (!isAuthor && !isAdmin) {
+            throw new InvalidOperationException("PUBLICATION_AUTHOR_REQUIRED", "Somente o autor pode alterar a publicação.");
+        }
 
         if (request.title() != null || request.description() != null) {
             publication.updateText(
@@ -311,17 +318,31 @@ public class PublicationService {
             deactivateRecipe(publication.getId());
         }
 
+        if (isAdmin && !isAuthor) {
+            publication.markEditedByAdmin(actingUser.getId(), OffsetDateTime.now(clock).withOffsetSameInstant(ZoneOffset.UTC));
+            log.info("event=publication_edited_by_admin publicationId={} adminId={} authorId={}",
+                    id, actingUser.getId(), publication.getAuthorId());
+        }
+
         return publicationRepository.save(publication);
     }
 
     @Transactional
-    public void remove(UUID id, UUID authorId) {
+    public void remove(UUID id, UUID actingUserId) {
         Publication publication = findActive(id);
-        if (!publication.getAuthorId().equals(authorId)) {
+        var actingUser = userRepository.findByIdAndStatus(actingUserId, org.application.model.UserStatus.ACTIVE)
+                .orElseThrow(() -> new InvalidOperationException("PUBLICATION_AUTHOR_REQUIRED", "Somente o autor pode excluir a publicação."));
+        boolean isAuthor = publication.getAuthorId().equals(actingUserId);
+        boolean isAdmin = actingUser.getRole() == org.application.model.UserRole.ADMIN;
+        if (!isAuthor && !isAdmin) {
             throw new InvalidOperationException("PUBLICATION_AUTHOR_REQUIRED", "Somente o autor pode excluir a publicação.");
         }
         publication.remove(OffsetDateTime.now(clock).withOffsetSameInstant(ZoneOffset.UTC));
         publicationRepository.save(publication);
+        if (isAdmin && !isAuthor) {
+            log.info("event=publication_removed_by_admin publicationId={} adminId={} authorId={}",
+                    id, actingUserId, publication.getAuthorId());
+        }
     }
 
     private void saveRecipe(UUID publicationId, CreateRecipeRequest request) {
