@@ -1,0 +1,64 @@
+name: Release Comes-Bebes image-validator
+
+on:
+  push:
+    tags:
+      - "validator-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/validator
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            backend/validator/requirements.txt
+            backend/validator/requirements-model.txt
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt httpx
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install timm transformers safetensors
+
+      - name: Test
+        run: pytest tests/ -q
+
+      - name: Resolve release version
+        id: version
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#validator-v}"
+          SHORT_SHA="$(git rev-parse --short=7 HEAD)"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: backend
+          file: backend/validator/Dockerfile
+          push: true
+          tags: |
+            fagnerrumenigg/comesebebes-validator:${{ steps.version.outputs.version }}
+            fagnerrumenigg/comesebebes-validator:sha-${{ steps.version.outputs.short_sha }}
+            fagnerrumenigg/comesebebes-validator:latest
