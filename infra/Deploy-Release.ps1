@@ -31,21 +31,27 @@ if (-not $hasKey) {
 $currentVersion = ($envLines -match $pattern)[0] -replace $pattern, ''
 Write-Output "Atualizando $versionKey de '$currentVersion' para '$Version' em $EnvFile"
 
+$originalContent = [IO.File]::ReadAllText($EnvFile)
 $updatedLines = $envLines | ForEach-Object {
     if ($_ -match $pattern) { "$versionKey=$Version" } else { $_ }
 }
 [IO.File]::WriteAllText($EnvFile, ($updatedLines -join [Environment]::NewLine) + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
 
+function Restore-EnvFile {
+    [IO.File]::WriteAllText($EnvFile, $originalContent, [Text.UTF8Encoding]::new($false))
+}
+
 Write-Output "Baixando imagem $Service`:$Version..."
 docker compose --env-file $EnvFile -f $composeFile pull $Service
 if ($LASTEXITCODE -ne 0) {
-    throw "Falha ao baixar a imagem. $versionKey foi revertida para '$currentVersion'."
+    Restore-EnvFile
+    throw "Falha ao baixar a imagem. $versionKey revertida para '$currentVersion' em $EnvFile."
 }
 
 Write-Output "Subindo o servico $Service..."
 docker compose --env-file $EnvFile -f $composeFile up -d $Service
 if ($LASTEXITCODE -ne 0) {
-    throw "Falha ao subir o servico. Verifique os logs com: docker compose --env-file `"$EnvFile`" -f `"$composeFile`" logs $Service"
+    throw "Falha ao subir o servico. $versionKey permanece '$Version' em $EnvFile (a imagem ja foi baixada), mas o container pode estar fora do ar. Verifique os logs com: docker compose --env-file `"$EnvFile`" -f `"$composeFile`" logs $Service`nPara reverter, rode novamente com -Version $currentVersion."
 }
 
 docker compose --env-file $EnvFile -f $composeFile ps $Service

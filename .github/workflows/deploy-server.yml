@@ -1,0 +1,45 @@
+name: Deploy release to production
+
+on:
+  workflow_run:
+    workflows:
+      - "Release Comes-Bebes API"
+      - "Release Comes-Bebes image-validator"
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: [self-hosted, comes-bebes]
+    steps:
+      - name: Resolve service and version
+        id: release
+        shell: pwsh
+        run: |
+          $tag = "${{ github.event.workflow_run.head_branch }}"
+          if ($tag -like "api-v*") {
+            $service = "api"
+            $version = $tag -replace "^api-v", ""
+          } else {
+            $service = "validator"
+            $version = $tag -replace "^validator-v", ""
+          }
+          "service=$service" >> $env:GITHUB_OUTPUT
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Atualizar checkout de produção
+        shell: pwsh
+        run: git -C "C:\Users\fagne\Documents\Eu\Programação\Comes-Bebes" pull origin main
+
+      - name: Deploy
+        shell: pwsh
+        working-directory: C:\Users\fagne\Documents\Eu\Programação\Comes-Bebes
+        run: .\infra\Deploy-Release.ps1 -Service ${{ steps.release.outputs.service }} -Version ${{ steps.release.outputs.version }}
