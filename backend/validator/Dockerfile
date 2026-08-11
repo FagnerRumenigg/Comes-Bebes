@@ -5,7 +5,8 @@ ENV PYTHONUNBUFFERED=1
 
 COPY validator/requirements.txt validator/requirements.txt
 COPY validator/requirements-model.txt validator/requirements-model.txt
-RUN pip install --no-cache-dir -r validator/requirements-model.txt
+RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu \
+ && pip install --no-cache-dir -r validator/requirements-model.txt
 
 COPY validator validator
 RUN mkdir -p validator/normalized
