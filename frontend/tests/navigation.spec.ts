@@ -1,6 +1,6 @@
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createPinia } from 'pinia'
-import { flushPromises, mount, shallowMount } from '@vue/test-utils'
+import { flushPromises, mount, shallowMount, type GlobalMountOptions } from '@vue/test-utils'
 import { createMemoryHistory, createRouter, type RouteLocationNormalized } from 'vue-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -109,7 +109,7 @@ describe('layouts e navegação', () => {
     await router.push('/')
     await router.isReady()
 
-    const global = {
+    const global: GlobalMountOptions = {
       plugins: [createPinia(), router, [VueQueryPlugin, { queryClient: new QueryClient() }]],
     }
     const header = mount(AppHeader, { global })
