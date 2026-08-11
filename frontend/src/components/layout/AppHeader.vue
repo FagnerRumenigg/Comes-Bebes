@@ -31,8 +31,11 @@ async function logout(): Promise<void> {
         <button v-else type="button" @click="showAuthNotice">Publicar</button>
         <RouterLink v-if="authStore.authenticated" to="/salvos">Salvos</RouterLink>
         <button v-else type="button" @click="showAuthNotice">Salvos</button>
-        <RouterLink v-if="authStore.authenticated" to="/notificacoes">Notificações</RouterLink>
-        <button v-else type="button" @click="showAuthNotice">Notificações</button>
+        <!--
+          Notificações fica fora da navegação principal até o backend da
+          feature existir (MEL-006). A rota/componente continuam no código,
+          só não são expostos aqui.
+        -->
       </nav>
 
       <div class="app-header__actions">

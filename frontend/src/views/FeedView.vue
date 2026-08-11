@@ -42,7 +42,9 @@ onMounted(() => {
           void feedQuery.fetchNextPage()
         }
       },
-      { rootMargin: '20rem' },
+      // IntersectionObserver só aceita rootMargin em px ou %; um valor em rem
+      // faz o construtor lançar exceção em navegadores reais.
+      { rootMargin: '320px' },
     )
   } catch {
     supportsInfiniteScroll.value = false

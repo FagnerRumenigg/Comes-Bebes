@@ -1,5 +1,8 @@
 package org.application.service;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.application.repository.ModerationCaseRepository;
 import org.application.repository.PublicationRepository;
 import org.application.repository.ReportRepository;
@@ -7,11 +10,14 @@ import org.application.repository.UserNotificationRepository;
 import org.application.repository.UserRepository;
 import org.application.controller.moderation.request.DecideModerationCaseRequest;
 import org.application.model.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +47,22 @@ class ModerationServiceTest {
     @InjectMocks
     private ModerationService moderationService;
 
+    private ch.qos.logback.classic.Logger serviceLogger;
+    private ListAppender<ILoggingEvent> appender;
+
+    @BeforeEach
+    void setUpLogging() {
+        serviceLogger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(ModerationService.class);
+        appender = new ListAppender<>();
+        appender.start();
+        serviceLogger.addAppender(appender);
+    }
+
+    @AfterEach
+    void tearDownLogging() {
+        serviceLogger.detachAppender(appender);
+    }
+
     @Test
     void shouldListPendingCasesInRepositoryOrder() {
         when(caseRepository.findByStatusOrderByOpenedAtAsc("PENDING")).thenReturn(List.of());
@@ -69,5 +91,9 @@ class ModerationServiceTest {
 
         assertThat(result.getStatus()).isEqualTo("KEPT");
         assertThat(publication.getStatus()).isEqualTo(PublicationStatus.ACTIVE);
+        assertThat(appender.list).hasSize(1);
+        assertThat(appender.list.get(0).getLevel()).isEqualTo(Level.INFO);
+        assertThat(appender.list.get(0).getFormattedMessage())
+                .contains("event=moderation_case_decided", "caseId=" + caseId, "decision=KEPT");
     }
 }

@@ -170,14 +170,15 @@ class PublicationServiceTest {
     void shouldValidateImageBeforeCreatingUpload() {
         UUID authorId = UUID.randomUUID();
         byte[] content = {1, 2, 3};
+        byte[] processedContent = {4, 5, 6, 7};
         Publication saved = publication(UUID.randomUUID());
         ImageValidatorClient.ValidationResult validation = new ImageValidatorClient.ValidationResult(
-                "approved", new ImageValidatorClient.Classification("FOOD", 0.98, 0.75));
+                processedContent, "image/webp", 800, 600, 0.98, 0.75);
 
         when(imageValidatorClient.validate(content, "dish.png", "image/png")).thenReturn(validation);
         when(userRepository.findByIdAndStatus(authorId, UserStatus.ACTIVE))
                 .thenReturn(Optional.of(User.builder().id(authorId).status(UserStatus.ACTIVE).build()));
-        when(imageStorage.store(content, "dish.png", "image/png"))
+        when(imageStorage.store(processedContent, "dish.png", "image/webp"))
                 .thenReturn(StoredImage.builder().bucket("bucket").objectName("dish.png").build());
         when(publicationRepository.save(any(Publication.class))).thenReturn(saved);
         when(clock.instant()).thenReturn(Instant.parse("2026-08-09T12:00:00Z"));
@@ -189,7 +190,7 @@ class PublicationServiceTest {
 
         org.assertj.core.api.Assertions.assertThat(result).isSameAs(saved);
         verify(imageValidatorClient).validate(content, "dish.png", "image/png");
-        verify(imageStorage).store(content, "dish.png", "image/png");
+        verify(imageStorage).store(processedContent, "dish.png", "image/webp");
         verify(publicationImageCheckRepository).save(any());
     }
 

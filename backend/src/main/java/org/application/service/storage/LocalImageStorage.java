@@ -65,6 +65,11 @@ public class LocalImageStorage implements ImageStorage {
         }
     }
 
+    /**
+     * Recebe bytes já normalizados (WebP) pelo image-validator Python e apenas os persiste.
+     * Nenhuma interpretação de EXIF, rotação, resize ou conversão de formato acontece aqui:
+     * o Python é a única fonte de verdade do processamento da imagem para o fluxo de upload.
+     */
     @Override
     public StoredImage store(byte[] content, String originalFilename, String contentType) {
         if (content == null || content.length == 0) {
@@ -73,18 +78,43 @@ public class LocalImageStorage implements ImageStorage {
         if (content.length > MAX_IMAGE_BYTES) {
             throw new InvalidOperationException("A imagem excede o limite de 15 MB.");
         }
+        BufferedImage image;
+        try {
+            image = ImageIO.read(new java.io.ByteArrayInputStream(content));
+        } catch (IOException exception) {
+            throw new InvalidOperationException("O arquivo informado não é uma imagem válida.");
+        }
+        if (image == null) {
+            throw new InvalidOperationException("O arquivo informado não é uma imagem válida.");
+        }
+        int width = image.getWidth();
+        int height = image.getHeight();
+        if (width <= 0 || height <= 0 || width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT
+                || (long) width * height > MAX_IMAGE_PIXELS) {
+            throw new InvalidOperationException("As dimensões da imagem excedem o limite permitido.");
+        }
         try {
             Files.createDirectories(storagePath);
-            Path temporaryFile = Files.createTempFile(storagePath, "upload-", ".tmp");
-            Files.write(temporaryFile, content);
-            try {
-                return storeValidatedFile(temporaryFile, originalFilename == null ? "upload.img" : originalFilename);
-            } finally {
-                Files.deleteIfExists(temporaryFile);
+            String objectName = "images/" + UUID.randomUUID() + ".webp";
+            Path storageRoot = storagePath.toAbsolutePath().normalize();
+            Path target = storageRoot.resolve(objectName).normalize();
+            if (!target.startsWith(storageRoot)) {
+                throw new InvalidOperationException("Caminho de imagem inválido.");
             }
+            Files.createDirectories(target.getParent());
+            Files.write(target, content);
+            return StoredImage.builder()
+                    .bucket("comesebebes-local-images")
+                    .objectName(objectName)
+                    .generation(1L)
+                    .format("webp")
+                    .sizeBytes((long) content.length)
+                    .width(width)
+                    .height(height)
+                    .build();
         } catch (InvalidOperationException exception) {
             throw exception;
-        } catch (Exception exception) {
+        } catch (IOException exception) {
             throw new InvalidOperationException("Não foi possível armazenar a imagem localmente.");
         }
     }
@@ -196,35 +226,20 @@ public class LocalImageStorage implements ImageStorage {
                         return transformImage(image, transform);
                     }
                     case 5 -> {
-                        AffineTransform transform = AffineTransform.getScaleInstance(0, 1);
-                        return transformImage(image, transform);
+                        AffineTransform flip = AffineTransform.getScaleInstance(-1, 1);
+                        flip.translate(-image.getWidth(), 0);
+                        return rotate90(transformImage(image, flip));
                     }
                     case 6 -> {
-                        BufferedImage rotated = new BufferedImage(image.getHeight(), image.getWidth(), image.getType());
-                        Graphics2D graphics = rotated.createGraphics();
-                        graphics.translate((rotated.getWidth() - image.getWidth()) / 2.0, (rotated.getHeight() - image.getHeight()) / 2.0);
-                        graphics.rotate(Math.toRadians(90), image.getWidth() / 2.0, image.getHeight() / 2.0);
-                        graphics.drawImage(image, 0, 0, null);
-                        graphics.dispose();
-                        return rotated;
+                        return rotate90(image);
                     }
                     case 7 -> {
-                        BufferedImage rotated = new BufferedImage(image.getHeight(), image.getWidth(), image.getType());
-                        Graphics2D graphics = rotated.createGraphics();
-                        graphics.translate((rotated.getWidth() - image.getWidth()) / 2.0, (rotated.getHeight() - image.getHeight()) / 2.0);
-                        graphics.rotate(Math.toRadians(270), image.getWidth() / 2.0, image.getHeight() / 2.0);
-                        graphics.drawImage(image, 0, 0, null);
-                        graphics.dispose();
-                        return rotated;
+                        AffineTransform flip = AffineTransform.getScaleInstance(-1, 1);
+                        flip.translate(-image.getWidth(), 0);
+                        return rotate270(transformImage(image, flip));
                     }
                     case 8 -> {
-                        BufferedImage rotated = new BufferedImage(image.getHeight(), image.getWidth(), image.getType());
-                        Graphics2D graphics = rotated.createGraphics();
-                        graphics.translate((rotated.getWidth() - image.getWidth()) / 2.0, (rotated.getHeight() - image.getHeight()) / 2.0);
-                        graphics.rotate(Math.toRadians(270), image.getWidth() / 2.0, image.getHeight() / 2.0);
-                        graphics.drawImage(image, 0, 0, null);
-                        graphics.dispose();
-                        return rotated;
+                        return rotate270(image);
                     }
                     default -> {
                         return image;
@@ -239,6 +254,27 @@ public class LocalImageStorage implements ImageStorage {
     private BufferedImage transformImage(BufferedImage image, AffineTransform transform) {
         AffineTransformOp op = new AffineTransformOp(transform, AffineTransformOp.TYPE_BILINEAR);
         return op.filter(image, null);
+    }
+
+    private BufferedImage rotate90(BufferedImage image) {
+        return rotate(image, 90);
+    }
+
+    private BufferedImage rotate270(BufferedImage image) {
+        return rotate(image, 270);
+    }
+
+    private BufferedImage rotate(BufferedImage image, double degrees) {
+        BufferedImage rotated = new BufferedImage(image.getHeight(), image.getWidth(), image.getType());
+        Graphics2D graphics = rotated.createGraphics();
+        try {
+            graphics.translate((rotated.getWidth() - image.getWidth()) / 2.0, (rotated.getHeight() - image.getHeight()) / 2.0);
+            graphics.rotate(Math.toRadians(degrees), image.getWidth() / 2.0, image.getHeight() / 2.0);
+            graphics.drawImage(image, 0, 0, null);
+        } finally {
+            graphics.dispose();
+        }
+        return rotated;
     }
 
     private BufferedImage normalizeDimensions(BufferedImage image) {

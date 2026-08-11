@@ -1,5 +1,5 @@
 import { createPinia } from 'pinia'
-import { mount, shallowMount } from '@vue/test-utils'
+import { flushPromises, mount, shallowMount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter, type RouteLocationNormalized } from 'vue-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -13,6 +13,7 @@ import AppHeader from '@/components/layout/AppHeader.vue'
 import MobileNavigation from '@/components/layout/MobileNavigation.vue'
 import ThemeSwitch from '@/components/layout/ThemeSwitch.vue'
 import { authNotice, dismissAuthNotice } from '@/composables/useAuthNotice'
+import { useAuthStore } from '@/stores/auth.store'
 
 function createTestRouter() {
   return createRouter({
@@ -117,7 +118,7 @@ describe('layouts e navegação', () => {
         .get('nav')
         .findAll('a, button')
         .map((item) => item.text()),
-    ).toEqual(['Buscar', 'Publicar', 'Salvos', 'Notificações'])
+    ).toEqual(['Buscar', 'Publicar', 'Salvos'])
     expect(mobile.findAll('a, button').map((item) => item.text())).toEqual([
       'Início',
       'Buscar',
@@ -128,6 +129,38 @@ describe('layouts e navegação', () => {
 
     await header.get('nav button').trigger('click')
     expect(authNotice.visible).toBe(true)
+  })
+
+  it('oferece a ação de sair na navegação mobile quando autenticado', async () => {
+    const router = createTestRouter()
+    await router.push('/')
+    await router.isReady()
+
+    const pinia = createPinia()
+    const authStore = useAuthStore(pinia)
+    authStore.status = 'authenticated'
+    authStore.identity = {
+      userId: 'user-1',
+      username: 'cozinha',
+      role: 'USER',
+      onboardingCompleted: true,
+    }
+
+    const mobile = mount(MobileNavigation, { global: { plugins: [pinia, router] } })
+
+    expect(mobile.findAll('a, button').map((item) => item.text())).toEqual([
+      'Início',
+      'Buscar',
+      'Publicar',
+      'Salvos',
+      'Perfil',
+      'Sair',
+    ])
+
+    await mobile.get('.mobile-navigation__logout').trigger('click')
+    await flushPromises()
+
+    expect(authStore.authenticated).toBe(false)
   })
 
   it('remove automaticamente o aviso de autenticação depois de dois segundos', async () => {

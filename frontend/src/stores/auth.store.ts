@@ -189,9 +189,37 @@ export const useAuthStore = defineStore('auth', () => {
       acceptSession(response, rememberSession.value)
       return true
     } catch {
-      clearSession()
-      return false
+      return await recoverFromStaleRefreshToken(currentRefreshToken)
     }
+  }
+
+  /**
+   * O refresh token é de uso único. Se outra aba já o rotacionou antes desta
+   * chamada, o storage guarda um token mais novo que o desta aba — nesse
+   * caso a sessão continua válida e não deve ser encerrada; adotamos o token
+   * mais recente e tentamos renovar com ele antes de desistir.
+   */
+  async function recoverFromStaleRefreshToken(failedRefreshToken: string): Promise<boolean> {
+    const storedSession = readStoredSession()
+    if (storedSession && storedSession.refreshToken !== failedRefreshToken) {
+      refreshToken.value = storedSession.refreshToken
+      identity.value = {
+        userId: storedSession.userId,
+        username: storedSession.username,
+        role: storedSession.role,
+        onboardingCompleted: storedSession.onboardingCompleted,
+      }
+      rememberSession.value = storedSession.remember
+      try {
+        const response = await refreshRequest({ refreshToken: storedSession.refreshToken })
+        acceptSession(response, rememberSession.value)
+        return true
+      } catch {
+        // Cai para o logout abaixo: mesmo o token mais recente falhou.
+      }
+    }
+    clearSession()
+    return false
   }
 
   async function initialize(): Promise<void> {

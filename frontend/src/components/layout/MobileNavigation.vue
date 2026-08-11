@@ -1,11 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth.store'
 import { showAuthNotice } from '@/composables/useAuthNotice'
 
+const router = useRouter()
 const authStore = useAuthStore()
 const profileDestination = computed(() => `/u/${authStore.identity?.username ?? ''}`)
+
+async function logout(): Promise<void> {
+  await authStore.logout()
+  await router.push('/')
+}
 </script>
 
 <template>
@@ -22,6 +29,15 @@ const profileDestination = computed(() => `/u/${authStore.identity?.username ?? 
     <button v-else type="button" @click="showAuthNotice">Salvos</button>
     <RouterLink v-if="authStore.authenticated" :to="profileDestination">Perfil</RouterLink>
     <RouterLink v-else to="/login">Entrar</RouterLink>
+    <button
+      v-if="authStore.authenticated"
+      type="button"
+      class="mobile-navigation__logout"
+      aria-label="Sair da conta"
+      @click="logout"
+    >
+      Sair
+    </button>
   </nav>
 </template>
 
@@ -34,7 +50,7 @@ const profileDestination = computed(() => `/u/${authStore.identity?.username ?? 
   left: 0;
   display: none;
   min-height: 4rem;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   align-items: center;
   padding: var(--space-2) max(var(--space-2), env(safe-area-inset-right))
     max(var(--space-2), env(safe-area-inset-bottom)) max(var(--space-2), env(safe-area-inset-left));

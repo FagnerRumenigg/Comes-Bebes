@@ -19,24 +19,26 @@ class LocalImageStorageTest {
     Path temporaryDirectory;
 
     @Test
-    void shouldStoreImageLocallyAndReturnMetadata() throws Exception {
-        Path source = temporaryDirectory.resolve("dish.png");
+    void shouldStoreAlreadyProcessedWebpAndReturnMetadata() throws Exception {
+        Path source = temporaryDirectory.resolve("dish.webp");
         BufferedImage image = new BufferedImage(32, 18, BufferedImage.TYPE_INT_RGB);
-        ImageIO.write(image, "png", source.toFile());
+        ImageIO.write(image, "webp", source.toFile());
         Path storageDirectory = temporaryDirectory.resolve("uploads");
 
         LocalImageStorage storage = new LocalImageStorage();
         ReflectionTestUtils.setField(storage, "storagePath", storageDirectory);
 
-        var stored = storage.store(Files.readAllBytes(source), "dish.png", "image/png");
+        byte[] processedBytes = Files.readAllBytes(source);
+        var stored = storage.store(processedBytes, "dish.png", "image/webp");
 
         assertThat(stored.bucket()).isEqualTo("comesebebes-local-images");
         assertThat(stored.format()).isEqualTo("webp");
         assertThat(stored.width()).isEqualTo(32);
         assertThat(stored.height()).isEqualTo(18);
-        assertThat(stored.sizeBytes()).isGreaterThan(0);
+        assertThat(stored.sizeBytes()).isEqualTo(processedBytes.length);
         assertThat(stored.objectName()).endsWith(".webp");
         assertThat(Files.exists(storageDirectory.resolve(stored.objectName()))).isTrue();
+        assertThat(Files.readAllBytes(storageDirectory.resolve(stored.objectName()))).isEqualTo(processedBytes);
     }
 
     @Test
@@ -44,7 +46,7 @@ class LocalImageStorageTest {
         LocalImageStorage storage = new LocalImageStorage();
         ReflectionTestUtils.setField(storage, "storagePath", temporaryDirectory.resolve("uploads"));
 
-        assertThatThrownBy(() -> storage.store("not-an-image".getBytes(), "dish.png", "image/png"))
+        assertThatThrownBy(() -> storage.store("not-an-image".getBytes(), "dish.png", "image/webp"))
                 .isInstanceOf(InvalidOperationException.class)
                 .hasMessageContaining("imagem válida");
     }

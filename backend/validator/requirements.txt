@@ -1,5 +1,6 @@
 fastapi
 pillow
+pillow-heif
 pytest
 python-multipart
 uvicorn[standard]

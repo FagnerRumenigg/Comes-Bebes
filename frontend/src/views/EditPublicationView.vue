@@ -216,7 +216,16 @@ function submit(): void {
         </div>
       </div>
 
-      <BaseSelect v-model="visibility" label="Visibilidade" required>
+      <BaseSelect
+        v-model="visibility"
+        label="Visibilidade"
+        required
+        :hint="
+          visibility === 'PUBLIC'
+            ? 'Pública: qualquer pessoa pode ver, mesmo sem conta no Comes&Bebes.'
+            : 'Interna: só é vista por quem tem conta e está conectado ao Comes&Bebes.'
+        "
+      >
         <option value="PUBLIC">Pública</option>
         <option value="INTERNAL">Interna</option>
       </BaseSelect>

@@ -16,6 +16,8 @@ import org.application.service.exception.DuplicateResourceException;
 import org.application.service.exception.InvalidOperationException;
 import org.application.service.exception.ResourceNotFoundException;
 import org.application.util.StringNormalizer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,7 @@ import java.util.Locale;
 @Service
 @RequiredArgsConstructor
 public class ReportService {
+    private static final Logger log = LoggerFactory.getLogger(ReportService.class);
 
     private final ReportRepository reportRepository;
     private final ReportReasonRepository reasonRepository;
@@ -60,6 +63,8 @@ public class ReportService {
                 .reasonId(reason.getId())
                 .description(request.description())
                 .build());
+        log.info("event=report_created reportId={} publicationId={} reporterId={} reasonId={}",
+                savedReport.getId(), publicationId, reporterId, reason.getId());
 
         int threshold = appConfigRepository.findById((short) 1)
                 .orElseThrow(() -> new IllegalStateException("Configuração da aplicação não encontrada."))
@@ -77,6 +82,8 @@ public class ReportService {
             reportRepository.saveAll(reports);
             publication.changeStatus(PublicationStatus.UNDER_REVIEW);
             publicationRepository.save(publication);
+            log.info("event=moderation_case_opened caseId={} publicationId={} reportCountAtOpen={}",
+                    moderationCase.getId(), publicationId, pendingReports);
         }
     }
 }

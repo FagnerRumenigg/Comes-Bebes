@@ -69,14 +69,30 @@ const isSubmitting = computed(
 const recipeMode = computed(() => isMyVersion.value || type.value === 'RECIPE')
 const pageTitle = computed(() => (isMyVersion.value ? 'Publicar minha versão' : 'Criar publicação'))
 
+const ACCEPTED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+]
+const ACCEPTED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif']
+
+function hasAcceptedExtension(filename: string): boolean {
+  const lower = filename.toLowerCase()
+  return ACCEPTED_IMAGE_EXTENSIONS.some((extension) => lower.endsWith(extension))
+}
+
 function acceptImage(event: Event): void {
   const selected = (event.target as HTMLInputElement).files?.[0] ?? null
   imageError.value = ''
   image.value = null
   clearImagePreview()
   if (!selected) return
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(selected.type)) {
-    imageError.value = 'Escolha uma imagem JPEG, PNG ou WebP.'
+  // Alguns navegadores (ex.: Safari com arquivos HEIC) não preenchem `type`,
+  // então também aceitamos com base na extensão do arquivo.
+  if (!ACCEPTED_IMAGE_TYPES.includes(selected.type) && !hasAcceptedExtension(selected.name)) {
+    imageError.value = 'Escolha uma imagem JPEG, PNG, WebP, HEIC ou HEIF.'
     return
   }
   if (selected.size > 15 * 1024 * 1024) {
@@ -278,11 +294,11 @@ onBeforeUnmount(clearImagePreview)
         <label class="create-publication__file"
           >Escolher imagem<input
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
             required
             @change="acceptImage"
         /></label>
-        <p>JPEG, PNG ou WebP até 15 MB.</p>
+        <p>JPEG, PNG, WebP, HEIC ou HEIF até 15 MB.</p>
         <img v-if="imagePreview" :src="imagePreview" alt="Prévia da imagem selecionada" />
       </fieldset>
       <div v-if="recipeMode" class="create-publication__recipe">
@@ -299,7 +315,15 @@ onBeforeUnmount(clearImagePreview)
           />
         </div>
       </div>
-      <BaseSelect v-model="visibility" label="Visibilidade" required
+      <BaseSelect
+        v-model="visibility"
+        label="Visibilidade"
+        required
+        :hint="
+          visibility === 'PUBLIC'
+            ? 'Pública: qualquer pessoa pode ver, mesmo sem conta no Comes&Bebes.'
+            : 'Interna: só é vista por quem tem conta e está conectado ao Comes&Bebes.'
+        "
         ><option value="PUBLIC">Pública</option>
         <option value="INTERNAL">Interna</option></BaseSelect
       >

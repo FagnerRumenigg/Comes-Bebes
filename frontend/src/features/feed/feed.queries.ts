@@ -4,7 +4,7 @@ import { computed, type MaybeRef } from 'vue'
 import { feed } from '@/api/generated/publications/publications'
 import { useAuthStore } from '@/stores/auth.store'
 
-export const FEED_PAGE_SIZE = 4
+export const FEED_PAGE_SIZE = 50
 
 export const feedQueryKeys = {
   all: ['publications', 'feed'] as const,

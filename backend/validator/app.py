@@ -5,7 +5,7 @@ import tempfile
 from functools import lru_cache
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Response, UploadFile
 
 from .image_validator import MAX_INPUT_BYTES, ImageValidationError, validate_and_normalize
 
@@ -47,31 +47,46 @@ def validate(file: UploadFile = File(...)) -> dict[str, object]:
         finally:
             file.file.close()
 
+    output_path = Path(result.output_path)
     try:
-        classification = get_classifier().classify(Path(result.output_path), threshold=DEFAULT_FOOD_THRESHOLD)
-    except (ImportError, OSError, RuntimeError) as error:
-        Path(result.output_path).unlink(missing_ok=True)
-        raise HTTPException(
-            status_code=503,
-            detail={"code": "CLASSIFIER_UNAVAILABLE", "message": "O classificador não está disponível."},
-        ) from error
+        try:
+            classification = get_classifier().classify(output_path, threshold=DEFAULT_FOOD_THRESHOLD)
+        except (ImportError, OSError, RuntimeError) as error:
+            raise HTTPException(
+                status_code=503,
+                detail={"code": "CLASSIFIER_UNAVAILABLE", "message": "O classificador não está disponível."},
+            ) from error
 
-    return {
-        "status": "APPROVED" if classification.decision == "FOOD" else "REJECTED",
-        "technical_status": result.status,
-        "source_format": result.source_format,
-        "format": result.format,
-        "width": result.width,
-        "height": result.height,
-        "size_bytes": result.size_bytes,
-        "sha256": result.sha256,
-        "output_path": result.output_path,
-        "classification": {
-            "decision": classification.decision,
-            "food_score": classification.food_score,
-            "threshold": DEFAULT_FOOD_THRESHOLD,
-        },
-    }
+        if classification.decision != "FOOD":
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": "IMAGE_NOT_FOOD",
+                    "message": "A imagem precisa apresentar uma comida.",
+                    "food_score": classification.food_score,
+                    "threshold": DEFAULT_FOOD_THRESHOLD,
+                },
+            )
+
+        image_bytes = output_path.read_bytes()
+        return Response(
+            content=image_bytes,
+            media_type="image/webp",
+            headers={
+                "X-Validation-Status": "APPROVED",
+                "X-Technical-Status": result.status,
+                "X-Source-Format": result.source_format,
+                "X-Image-Format": result.format,
+                "X-Image-Width": str(result.width),
+                "X-Image-Height": str(result.height),
+                "X-Size-Bytes": str(result.size_bytes),
+                "X-Sha256": result.sha256,
+                "X-Food-Score": str(classification.food_score),
+                "X-Food-Threshold": str(DEFAULT_FOOD_THRESHOLD),
+            },
+        )
+    finally:
+        output_path.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

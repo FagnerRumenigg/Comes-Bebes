@@ -70,6 +70,65 @@ describe('store de sessão', () => {
     authStore.dispose()
   })
 
+  it('recupera a sessão quando outra aba já rotacionou o refresh token', async () => {
+    mockServer.use(
+      http.post('*/auth/refresh', async ({ request }) => {
+        const body = (await request.json()) as { refreshToken: string }
+        if (body.refreshToken === 'stale-token') {
+          return HttpResponse.json({ message: 'Token inválido.' }, { status: 401 })
+        }
+        return HttpResponse.json({
+          ...session,
+          accessToken: 'renewed-access-token',
+          refreshToken: 'renewed-refresh-token',
+        })
+      }),
+    )
+    setActivePinia(createPinia())
+    const authStore = useAuthStore()
+    authStore.acceptSession(session, true)
+    // Simula outra aba que já rotacionou o refresh token e persistiu o novo
+    // valor no localStorage, enquanto esta aba ainda tem o token antigo
+    // (agora inválido) em memória.
+    authStore.refreshToken = 'stale-token'
+    window.localStorage.setItem(
+      AUTH_STORAGE_KEY,
+      JSON.stringify({
+        refreshToken: 'fresh-token-from-other-tab',
+        userId: session.userId,
+        username: session.username,
+        role: session.role,
+        onboardingCompleted: true,
+        remember: true,
+      }),
+    )
+
+    const result = await authStore.renewSession()
+
+    expect(result).toBe(true)
+    expect(authStore.authenticated).toBe(true)
+    expect(authStore.accessToken).toBe('renewed-access-token')
+    authStore.dispose()
+  })
+
+  it('desloga quando o refresh token está mesmo inválido em toda parte', async () => {
+    mockServer.use(
+      http.post('*/auth/refresh', () =>
+        HttpResponse.json({ message: 'Token inválido.' }, { status: 401 }),
+      ),
+    )
+    setActivePinia(createPinia())
+    const authStore = useAuthStore()
+    authStore.acceptSession(session, true)
+
+    const result = await authStore.renewSession()
+
+    expect(result).toBe(false)
+    expect(authStore.authenticated).toBe(false)
+    expect(window.localStorage.getItem(AUTH_STORAGE_KEY)).toBeNull()
+    authStore.dispose()
+  })
+
   it('revoga e limpa a sessão ao sair', async () => {
     setActivePinia(createPinia())
     const authStore = useAuthStore()

@@ -10,6 +10,8 @@ import org.application.repository.UserNotificationRepository;
 import org.application.repository.UserRepository;
 import org.application.service.exception.InvalidOperationException;
 import org.application.service.exception.ResourceNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class ModerationService {
+    private static final Logger log = LoggerFactory.getLogger(ModerationService.class);
 
     private final ModerationCaseRepository caseRepository;
     private final ReportRepository reportRepository;
@@ -83,6 +86,9 @@ public class ModerationService {
                     .moderationCaseId(caseId).publicationId(item.getPublicationId()).build()));
         }
         publicationRepository.save(publication);
-        return caseRepository.save(item);
+        var saved = caseRepository.save(item);
+        log.info("event=moderation_case_decided caseId={} publicationId={} reviewerId={} decision={}",
+                caseId, item.getPublicationId(), reviewer.getId(), decision);
+        return saved;
     }
 }

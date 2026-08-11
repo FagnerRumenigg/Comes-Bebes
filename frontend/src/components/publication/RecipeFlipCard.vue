@@ -70,7 +70,10 @@ onBeforeUnmount(() => {
             Rende {{ publication.recipePreview.yieldQuantity }}
             {{ publication.recipePreview.yieldUnit ?? 'porções' }}
           </p>
-          <ul v-if="publication.recipePreview" class="recipe-flip__ingredients">
+          <ul
+            v-if="publication.recipePreview && publication.recipePreview.ingredients.length > 0"
+            class="recipe-flip__ingredients"
+          >
             <li
               v-for="ingredient in publication.recipePreview.ingredients.slice(0, 3)"
               :key="ingredient.position"
@@ -81,6 +84,12 @@ onBeforeUnmount(() => {
               + {{ publication.recipePreview.ingredients.length - 3 }} ingredientes
             </li>
           </ul>
+          <p
+            v-else-if="publication.recipePreview"
+            class="recipe-flip__ingredients-empty"
+          >
+            Nenhum ingrediente cadastrado.
+          </p>
           <RouterLink
             class="recipe-flip__link"
             :to="`/publicacoes/${publication.id}`"
@@ -216,6 +225,12 @@ onBeforeUnmount(() => {
   margin: 0;
   padding-inline-start: var(--space-5);
   color: var(--color-text-secondary);
+}
+
+.recipe-flip__ingredients-empty {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-style: italic;
 }
 
 .recipe-flip__link {

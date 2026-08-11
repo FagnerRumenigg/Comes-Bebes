@@ -9,13 +9,23 @@ from pathlib import Path
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
+import pillow_heif
+
+pillow_heif.register_heif_opener()
+
 
 MAX_INPUT_BYTES = 15 * 1024 * 1024
 MAX_WIDTH = 3840
 MAX_HEIGHT = 2160
 MAX_PIXELS = MAX_WIDTH * MAX_HEIGHT
 WEBP_QUALITY = 85
-ALLOWED_FORMATS = {"JPEG", "PNG", "WEBP"}
+
+# MPO ("Multi Picture Object") is the container format Pillow reports for the
+# multi-frame JPEGs many phones save (portrait/depth mode, Live Photos, dual
+# camera). It is a JPEG for every practical purpose here; without this alias
+# those uploads are wrongly rejected as an unsupported format.
+ALLOWED_FORMATS = {"JPEG", "MPO", "PNG", "WEBP", "HEIC", "HEIF"}
+SOURCE_FORMAT_ALIASES = {"MPO": "JPEG"}
 
 
 class ImageValidationError(ValueError):
@@ -54,10 +64,11 @@ def validate_and_normalize(input_path: Path, output_directory: Path) -> Validati
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
             with Image.open(input_path) as source_image:
-                source_format = source_image.format or "UNKNOWN"
-                if source_format not in ALLOWED_FORMATS:
+                detected_format = source_image.format or "UNKNOWN"
+                if detected_format not in ALLOWED_FORMATS:
                     raise ImageValidationError("UNSUPPORTED_FORMAT", "Formato de imagem não permitido.")
                 source_image.verify()
+            source_format = SOURCE_FORMAT_ALIASES.get(detected_format, detected_format)
 
             with Image.open(input_path) as image:
                 normalized_image = ImageOps.exif_transpose(image)

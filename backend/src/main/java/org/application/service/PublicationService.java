@@ -166,7 +166,8 @@ public class PublicationService {
         CreatePublicationRequest publicationRequest = new CreatePublicationRequest(
                 authorId, request.type(), request.visibility(), request.title(), request.description(),
                 "file://local/upload", request.recipe());
-        Publication publication = create(publicationRequest, authorId, imageStorage.store(content, filename, contentType));
+        Publication publication = create(publicationRequest, authorId,
+                imageStorage.store(validation.imageBytes(), filename, validation.contentType()));
         saveApprovedImageCheck(publication, validation);
         return publication;
     }
@@ -176,13 +177,13 @@ public class PublicationService {
                                               byte[] content, String filename, String contentType) {
         var validation = imageValidatorClient.validate(content, filename, contentType);
         Publication publication = createMyVersion(sourcePublicationId, request, authorId,
-                imageStorage.store(content, filename, contentType));
+                imageStorage.store(validation.imageBytes(), filename, validation.contentType()));
         saveApprovedImageCheck(publication, validation);
         return publication;
     }
 
     private void saveApprovedImageCheck(Publication publication, ImageValidatorClient.ValidationResult validation) {
-        Double score = validation.classification().food_score();
+        Double score = validation.foodScore();
         publicationImageCheckRepository.save(PublicationImageCheck.builder()
                 .id(UUID.randomUUID())
                 .publicationId(publication.getId())

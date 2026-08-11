@@ -92,7 +92,15 @@ describe('feed', () => {
     vi.stubGlobal(
       'IntersectionObserver',
       class IntersectionObserverMock {
-        constructor(callback: IntersectionObserverCallback) {
+        constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+          // A API real só aceita rootMargin em px/%; reproduzimos essa validação
+          // aqui para que um valor inválido (ex.: rem) quebre o teste, como
+          // aconteceria em um navegador de verdade.
+          if (options?.rootMargin && !/^-?\d+(\.\d+)?(px|%)$/.test(options.rootMargin.trim())) {
+            throw new TypeError(
+              "Failed to construct 'IntersectionObserver': rootMargin must be specified in pixels or percent.",
+            )
+          }
           intersectionCallback = callback
         }
 

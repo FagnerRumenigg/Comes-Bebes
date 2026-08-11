@@ -60,7 +60,7 @@ public class AuthService {
                 .filter(candidate -> passwordEncoder.matches(request.password(), candidate.getPasswordHash()));
         if (userOptional.isEmpty()) {
             loginRateLimiter.registerFailure(rateLimitKey);
-            log.warn("event=login_failed username={} rateLimitKey={}", username, rateLimitKey);
+            log.warn("event=login_failed rateLimitKey={}", rateLimitKey);
             throw new InvalidOperationException("INVALID_CREDENTIALS", "Username ou senha inválidos.");
         }
         var user = userOptional.get();

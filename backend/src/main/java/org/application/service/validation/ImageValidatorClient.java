@@ -10,12 +10,11 @@ import org.springframework.stereotype.Component;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.Duration;
 import java.util.Locale;
-import java.util.UUID;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.client.MultipartBodyBuilder;
@@ -50,30 +49,62 @@ public class ImageValidatorClient {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
             HttpEntity<MultiValueMap<String, HttpEntity<?>>> request = new HttpEntity<>(body.build(), headers);
-            ResponseEntity<String> response;
+            ResponseEntity<byte[]> response;
             try {
-                response = new RestTemplate().postForEntity(validatorUrl + "/validate", request, String.class);
+                response = new RestTemplate().exchange(validatorUrl + "/validate", HttpMethod.POST, request, byte[].class);
             } catch (HttpStatusCodeException exception) {
-                log.warn("event=image_validator_response_body body={}", exception.getResponseBodyAsString());
-                throw responseError(exception.getStatusCode().value());
+                String responseBody = exception.getResponseBodyAsString(StandardCharsets.UTF_8);
+                // A maioria dessas respostas é uma rejeição de validação esperada (ex.: imagem
+                // sem comida), não uma falha do sistema — o corpo fica em DEBUG, não WARN.
+                log.debug("event=image_validator_response_body status={} body={}",
+                        exception.getStatusCode().value(), responseBody);
+                throw responseError(exception.getStatusCode().value(), responseBody);
             }
-            if (response.getStatusCode().value() < 200 || response.getStatusCode().value() >= 300) {
+            if (response.getStatusCode().value() < 200 || response.getStatusCode().value() >= 300 || response.getBody() == null) {
                 log.warn("event=image_validator_rejected status={} sizeBytes={} sha256={}",
                         response.getStatusCode().value(), content.length, sha256(content));
-                throw responseError(response.getStatusCode().value());
-            }
-            ValidationResult result = objectMapper.readValue(response.getBody(), ValidationResult.class);
-            if (result == null || result.classification() == null) {
                 throw unavailable();
             }
-            if (!"FOOD".equals(result.classification().decision())) {
-                throw new InvalidOperationException("IMAGE_NOT_FOOD", "A imagem precisa apresentar uma comida.");
-            }
-            return result;
+            return toValidationResult(response);
         } catch (InvalidOperationException exception) {
             throw exception;
         } catch (RuntimeException exception) {
             throw unavailable();
+        }
+    }
+
+    private ValidationResult toValidationResult(ResponseEntity<byte[]> response) {
+        HttpHeaders responseHeaders = response.getHeaders();
+        Integer width = parseIntHeader(responseHeaders, "X-Image-Width");
+        Integer height = parseIntHeader(responseHeaders, "X-Image-Height");
+        if (width == null || height == null || width <= 0 || height <= 0) {
+            throw unavailable();
+        }
+        MediaType contentType = responseHeaders.getContentType();
+        return new ValidationResult(
+                response.getBody(),
+                contentType == null ? "image/webp" : contentType.toString(),
+                width,
+                height,
+                parseDoubleHeader(responseHeaders, "X-Food-Score"),
+                parseDoubleHeader(responseHeaders, "X-Food-Threshold"));
+    }
+
+    private Integer parseIntHeader(HttpHeaders headers, String name) {
+        String value = headers.getFirst(name);
+        try {
+            return value == null ? null : Integer.valueOf(value);
+        } catch (NumberFormatException exception) {
+            return null;
+        }
+    }
+
+    private Double parseDoubleHeader(HttpHeaders headers, String name) {
+        String value = headers.getFirst(name);
+        try {
+            return value == null ? null : Double.valueOf(value);
+        } catch (NumberFormatException exception) {
+            return null;
         }
     }
 
@@ -111,12 +142,27 @@ public class ImageValidatorClient {
         return "application/octet-stream";
     }
 
-    private InvalidOperationException responseError(int status) {
-        return switch (status) {
-            case 413 -> new InvalidOperationException("IMAGE_TOO_LARGE", "A imagem excede o limite permitido.");
-            case 422 -> new InvalidOperationException("INVALID_IMAGE", "O arquivo não é uma imagem válida.");
-            default -> unavailable();
-        };
+    private InvalidOperationException responseError(int status, String responseBody) {
+        String code = extractErrorCode(responseBody);
+        if (status == 413 || "FILE_TOO_LARGE".equals(code)) {
+            return new InvalidOperationException("IMAGE_TOO_LARGE", "A imagem excede o limite permitido.");
+        }
+        if ("IMAGE_NOT_FOOD".equals(code)) {
+            return new InvalidOperationException("IMAGE_NOT_FOOD", "A imagem precisa apresentar uma comida.");
+        }
+        if (status == 422) {
+            return new InvalidOperationException("INVALID_IMAGE", "O arquivo não é uma imagem válida.");
+        }
+        return unavailable();
+    }
+
+    private String extractErrorCode(String responseBody) {
+        try {
+            ErrorEnvelope envelope = objectMapper.readValue(responseBody, ErrorEnvelope.class);
+            return envelope == null || envelope.detail() == null ? null : envelope.detail().code();
+        } catch (Exception exception) {
+            return null;
+        }
     }
 
     private InvalidOperationException unavailable() {
@@ -132,11 +178,15 @@ public class ImageValidatorClient {
         }
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public record ValidationResult(String status, Classification classification) {
+    public record ValidationResult(byte[] imageBytes, String contentType, int width, int height,
+                                    Double foodScore, Double threshold) {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Classification(String decision, Double food_score, Double threshold) {
+    private record ErrorDetail(String code, String message) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record ErrorEnvelope(ErrorDetail detail) {
     }
 }

@@ -11,7 +11,10 @@ import org.application.repository.UserRepository;
 import org.application.repository.ReportRepository;
 import org.application.controller.publication.response.RecipeResponse;
 import org.application.model.ReactionCode;
+import org.application.service.exception.ResourceNotFoundException;
 import org.application.util.DateTimeConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.ZoneId;
@@ -24,6 +27,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class PublicationResponseFactory {
+    private static final Logger log = LoggerFactory.getLogger(PublicationResponseFactory.class);
+
     private final UserRepository userRepository;
     private final PublicationReactionRepository reactionRepository;
     private final ReactionTypeRepository reactionTypeRepository;
@@ -57,7 +62,10 @@ public class PublicationResponseFactory {
                 || publication.getType() == org.application.model.PublicationType.MY_VERSION) {
             try {
                 preview = RecipeResponse.of(recipeService.findDetails(publication.getId()));
-            } catch (RuntimeException ignored) {
+            } catch (ResourceNotFoundException exception) {
+                preview = null;
+            } catch (RuntimeException exception) {
+                log.warn("event=recipe_preview_build_failed publicationId={}", publication.getId(), exception);
                 preview = null;
             }
         }

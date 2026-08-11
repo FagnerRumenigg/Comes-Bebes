@@ -23,15 +23,17 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         long startedAt = System.nanoTime();
         MDC.put("requestId", UUID.randomUUID().toString());
         putAuthenticationContext(request);
-        if (isMutation(request.getMethod())) {
-            log.info("event=mutation_request method={} path={}", request.getMethod(), request.getRequestURI());
-        }
         try {
             filterChain.doFilter(request, response);
         } finally {
             long durationMs = (System.nanoTime() - startedAt) / 1_000_000;
-            log.info("event=http_request method={} path={} status={} durationMs={}",
-                    request.getMethod(), request.getRequestURI(), response.getStatus(), durationMs);
+            if (isMutation(request.getMethod())) {
+                log.info("event=http_request method={} path={} status={} durationMs={}",
+                        request.getMethod(), request.getRequestURI(), response.getStatus(), durationMs);
+            } else if (log.isDebugEnabled()) {
+                log.debug("event=http_request method={} path={} status={} durationMs={}",
+                        request.getMethod(), request.getRequestURI(), response.getStatus(), durationMs);
+            }
             MDC.remove("requestId");
             MDC.remove("sessionId");
             MDC.remove("userId");

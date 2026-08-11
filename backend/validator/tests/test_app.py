@@ -7,29 +7,70 @@ from validator.app import app
 from validator.csat_classifier import CsatClassificationResult
 
 
-class FakeClassifier:
+class FakeApprovingClassifier:
     def classify(self, image_path, threshold: float) -> CsatClassificationResult:
         return CsatClassificationResult(food_score=0.91, decision="FOOD")
 
 
-def test_validate_returns_technical_and_classification_results(monkeypatch) -> None:
-    monkeypatch.setattr("validator.app.get_classifier", lambda: FakeClassifier())
+class FakeRejectingClassifier:
+    def classify(self, image_path, threshold: float) -> CsatClassificationResult:
+        return CsatClassificationResult(food_score=0.12, decision="NOT_FOOD")
+
+
+def _jpeg_bytes(size=(1200, 800), color="#d97706") -> BytesIO:
+    buffer = BytesIO()
+    Image.new("RGB", size, color).save(buffer, format="JPEG")
+    buffer.seek(0)
+    return buffer
+
+
+def test_validate_returns_processed_webp_image_and_metadata_headers(monkeypatch) -> None:
+    monkeypatch.setattr("validator.app.get_classifier", lambda: FakeApprovingClassifier())
     client = TestClient(app)
-    image_buffer = BytesIO()
-    Image.new("RGB", (1200, 800), "#d97706").save(image_buffer, format="JPEG")
-    image_buffer.seek(0)
 
     response = client.post(
         "/validate",
-        files={"file": ("dish.jpg", image_buffer, "image/jpeg")},
+        files={"file": ("dish.jpg", _jpeg_bytes(), "image/jpeg")},
     )
 
     assert response.status_code == 200
-    payload = response.json()
-    assert payload["status"] == "APPROVED"
-    assert payload["technical_status"] == "TECHNICALLY_VALID"
-    assert payload["classification"] == {
-        "decision": "FOOD",
-        "food_score": 0.91,
-        "threshold": 0.5,
-    }
+    assert response.headers["content-type"] == "image/webp"
+    assert response.headers["x-validation-status"] == "APPROVED"
+    assert response.headers["x-source-format"] == "JPEG"
+    assert response.headers["x-image-format"] == "WEBP"
+    assert response.headers["x-image-width"] == "1200"
+    assert response.headers["x-image-height"] == "800"
+    assert response.headers["x-food-score"] == "0.91"
+    assert response.headers["x-food-threshold"] == "0.5"
+
+    with Image.open(BytesIO(response.content)) as image:
+        assert image.format == "WEBP"
+        assert image.size == (1200, 800)
+
+
+def test_validate_rejects_image_that_is_not_food(monkeypatch) -> None:
+    monkeypatch.setattr("validator.app.get_classifier", lambda: FakeRejectingClassifier())
+    client = TestClient(app)
+
+    response = client.post(
+        "/validate",
+        files={"file": ("dish.jpg", _jpeg_bytes(), "image/jpeg")},
+    )
+
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert detail["code"] == "IMAGE_NOT_FOOD"
+    assert detail["food_score"] == 0.12
+
+
+def test_validate_rejects_non_image_payload(monkeypatch) -> None:
+    monkeypatch.setattr("validator.app.get_classifier", lambda: FakeApprovingClassifier())
+    client = TestClient(app)
+
+    response = client.post(
+        "/validate",
+        files={"file": ("payload.bin", BytesIO(b"not an image"), "application/octet-stream")},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"]["code"] == "INVALID_IMAGE"
