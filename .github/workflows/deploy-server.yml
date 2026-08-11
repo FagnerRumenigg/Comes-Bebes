@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Resolve service and version
         id: release
-        shell: pwsh
+        shell: powershell
         run: |
           $tag = "${{ github.event.workflow_run.head_branch }}"
           if ($tag -like "api-v*") {
@@ -36,10 +36,10 @@ jobs:
           "version=$version" >> $env:GITHUB_OUTPUT
 
       - name: Atualizar checkout de produção
-        shell: pwsh
+        shell: powershell
         run: git -C "C:\Users\fagne\Documents\Eu\Programação\Comes-Bebes" pull origin main
 
       - name: Deploy
-        shell: pwsh
+        shell: powershell
         working-directory: C:\Users\fagne\Documents\Eu\Programação\Comes-Bebes
         run: .\infra\Deploy-Release.ps1 -Service ${{ steps.release.outputs.service }} -Version ${{ steps.release.outputs.version }}
