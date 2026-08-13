@@ -105,6 +105,13 @@ public class UserService {
     }
 
     @Transactional
+    public void markPatchNotesSeen(UUID id) {
+        User user = findActive(id);
+        user.markPatchNotesSeen(OffsetDateTime.now(clock));
+        userRepository.save(user);
+    }
+
+    @Transactional
     public void changePassword(UUID id, ChangePasswordRequest request) {
         User user = findActive(id);
         if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {

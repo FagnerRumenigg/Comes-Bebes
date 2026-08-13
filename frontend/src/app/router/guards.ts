@@ -6,6 +6,7 @@ export interface RouteSession {
   authenticated: boolean
   role: UserResponseRole | null
   onboardingCompleted?: boolean
+  hasUnseenPatchNotes?: boolean
 }
 
 export type RouteSessionResolver = () => RouteSession | Promise<RouteSession>
@@ -44,6 +45,15 @@ export function resolveRouteAccess(
 
   if (session.authenticated && to.name !== 'onboarding' && session.onboardingCompleted === false) {
     return { name: 'onboarding' }
+  }
+
+  if (
+    session.authenticated &&
+    to.name !== 'patch-notes' &&
+    session.onboardingCompleted !== false &&
+    session.hasUnseenPatchNotes === true
+  ) {
+    return { name: 'patch-notes' }
   }
 
   if (access === 'admin' && session.role !== 'ADMIN') {

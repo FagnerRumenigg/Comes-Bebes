@@ -16,11 +16,14 @@ public record LoginResponse(
         String username,
         UserRole role,
         boolean onboardingCompleted,
+        @Schema(description = "Indica se existem notas de versão publicadas ainda não vistas pelo usuário.")
+        boolean hasUnseenPatchNotes,
         OffsetDateTime expiresAt,
         UUID sessionId
 ) {
     public LoginResponse(String accessToken, String refreshToken, String tokenType, long expiresInSeconds,
-                         UUID userId, String username, UserRole role, boolean onboardingCompleted, OffsetDateTime expiresAt) {
-        this(accessToken, refreshToken, tokenType, expiresInSeconds, userId, username, role, onboardingCompleted, expiresAt, UUID.randomUUID());
+                         UUID userId, String username, UserRole role, boolean onboardingCompleted,
+                         boolean hasUnseenPatchNotes, OffsetDateTime expiresAt) {
+        this(accessToken, refreshToken, tokenType, expiresInSeconds, userId, username, role, onboardingCompleted, hasUnseenPatchNotes, expiresAt, UUID.randomUUID());
     }
 }

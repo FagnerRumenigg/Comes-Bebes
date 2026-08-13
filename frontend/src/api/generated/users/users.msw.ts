@@ -70,6 +70,16 @@ export const getUpdateCurrentUserMockHandler = (overrideResponse?: UserResponse 
   }, options)
 }
 
+export const getMarkPatchNotesSeenMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
+  return http.patch('*/users/:id/patch-notes/seen', async (info) => {await delay(1000);
+  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
+    return new HttpResponse(null,
+      { status: 204,
+        
+      })
+  }, options)
+}
+
 export const getChangePasswordMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
   return http.patch('*/users/:id/password', async (info) => {await delay(1000);
   if (typeof overrideResponse === 'function') {await overrideResponse(info); }
@@ -137,6 +147,7 @@ export const getUsersMock = () => [
   getGetUserByIdMockHandler(),
   getDeleteCurrentUserMockHandler(),
   getUpdateCurrentUserMockHandler(),
+  getMarkPatchNotesSeenMockHandler(),
   getChangePasswordMockHandler(),
   getCompleteOnboardingMockHandler(),
   getBlockMockHandler(),

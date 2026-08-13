@@ -150,6 +150,14 @@ class UserControllerTest {
     }
 
     @Test
+    void shouldMarkPatchNotesSeen() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        mockMvc.perform(patch("/users/{id}/patch-notes/seen", id))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
     void shouldChangePassword() throws Exception {
         UUID id = UUID.randomUUID();
 

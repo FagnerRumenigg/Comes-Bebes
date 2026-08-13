@@ -21,6 +21,7 @@ const session: LoginResponse = {
   username: 'fagner',
   role: 'USER',
   onboardingCompleted: true,
+  hasUnseenPatchNotes: false,
   expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
   sessionId: 'a4f0f2b0-df43-4b40-9df1-4f6da3e6f36e',
 }
@@ -57,6 +58,7 @@ describe('store de sessão', () => {
         username: session.username,
         role: session.role,
         onboardingCompleted: true,
+        hasUnseenPatchNotes: false,
         remember: true,
       }),
     )
@@ -100,6 +102,7 @@ describe('store de sessão', () => {
         username: session.username,
         role: session.role,
         onboardingCompleted: true,
+        hasUnseenPatchNotes: false,
         remember: true,
       }),
     )

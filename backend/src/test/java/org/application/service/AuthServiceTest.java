@@ -43,6 +43,7 @@ class AuthServiceTest {
     @Mock private Clock clock;
     @Mock private LoginRateLimiter loginRateLimiter;
     @Mock private org.application.repository.RefreshTokenRepository refreshTokenRepository;
+    @Mock private PatchNoteService patchNoteService;
     @InjectMocks private AuthService service;
 
     @BeforeEach

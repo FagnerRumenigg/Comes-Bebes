@@ -81,6 +81,53 @@ describe('mapa de rotas', () => {
     })
     expect(resolveRouteAccess(moderation, { authenticated: true, role: 'ADMIN' })).toBe(true)
   })
+
+  it('redireciona para onboarding e para novidades pendentes, nessa ordem de prioridade', () => {
+    const router = createTestRouter()
+    const feed = router.resolve('/') as RouteLocationNormalized
+    const onboarding = router.resolve('/onboarding') as RouteLocationNormalized
+    const patchNotes = router.resolve('/novidades') as RouteLocationNormalized
+
+    expect(
+      resolveRouteAccess(feed, { authenticated: true, role: 'USER', onboardingCompleted: false }),
+    ).toEqual({ name: 'onboarding' })
+
+    expect(
+      resolveRouteAccess(feed, {
+        authenticated: true,
+        role: 'USER',
+        onboardingCompleted: true,
+        hasUnseenPatchNotes: true,
+      }),
+    ).toEqual({ name: 'patch-notes' })
+
+    expect(
+      resolveRouteAccess(feed, {
+        authenticated: true,
+        role: 'USER',
+        onboardingCompleted: false,
+        hasUnseenPatchNotes: true,
+      }),
+    ).toEqual({ name: 'onboarding' })
+
+    expect(
+      resolveRouteAccess(onboarding, {
+        authenticated: true,
+        role: 'USER',
+        onboardingCompleted: false,
+        hasUnseenPatchNotes: true,
+      }),
+    ).toBe(true)
+
+    expect(
+      resolveRouteAccess(patchNotes, {
+        authenticated: true,
+        role: 'USER',
+        onboardingCompleted: true,
+        hasUnseenPatchNotes: true,
+      }),
+    ).toBe(true)
+  })
 })
 
 describe('layouts e navegação', () => {
@@ -147,6 +194,7 @@ describe('layouts e navegação', () => {
       username: 'cozinha',
       role: 'USER',
       onboardingCompleted: true,
+      hasUnseenPatchNotes: false,
     }
 
     const mobile = mount(MobileNavigation, { global: { plugins: [pinia, router] } })

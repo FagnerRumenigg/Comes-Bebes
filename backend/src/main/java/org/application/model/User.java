@@ -68,6 +68,9 @@ public class User {
     @Builder.Default
     private boolean onboardingCompleted = false;
 
+    @Column(name = "last_seen_patch_note_at")
+    private OffsetDateTime lastSeenPatchNoteAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -103,6 +106,10 @@ public class User {
         this.onboardingCompleted = true;
     }
 
+    public void markPatchNotesSeen(OffsetDateTime seenAt) {
+        this.lastSeenPatchNoteAt = seenAt;
+    }
+
     public void delete(OffsetDateTime deletedAt) {
         this.status = UserStatus.DELETED;
         this.deletedAt = deletedAt;
@@ -135,6 +142,7 @@ public class User {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         createdAt = now;
         updatedAt = now;
+        if (lastSeenPatchNoteAt == null) lastSeenPatchNoteAt = now;
     }
 
     @PreUpdate

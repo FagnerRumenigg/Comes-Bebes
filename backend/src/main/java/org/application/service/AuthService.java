@@ -40,6 +40,7 @@ public class AuthService {
     private final Clock clock;
     private final LoginRateLimiter loginRateLimiter;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final PatchNoteService patchNoteService;
 
     @Value("${app.security.jwt-issuer}")
     private String issuer;
@@ -116,7 +117,7 @@ public class AuthService {
                 .tokenHash(hash(rawRefreshToken))
                 .expiresAt(issuedAt.plusDays(refreshTokenExpirationDays))
                 .build());
-        return new LoginResponse(token, rawRefreshToken, "Bearer", expirationMinutes * 60, user.getId(), user.getUsername(), user.getRole(), user.isOnboardingCompleted(), expiresAt, sessionId);
+        return new LoginResponse(token, rawRefreshToken, "Bearer", expirationMinutes * 60, user.getId(), user.getUsername(), user.getRole(), user.isOnboardingCompleted(), patchNoteService.hasUnseen(user), expiresAt, sessionId);
     }
 
     private String generateRefreshToken() {

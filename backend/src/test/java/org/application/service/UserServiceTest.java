@@ -19,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.Optional;
 import java.util.UUID;
 import java.time.Clock;
+import java.time.OffsetDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -138,6 +139,22 @@ class UserServiceTest {
         userService.completeOnboarding(id);
 
         assertThat(user.isOnboardingCompleted()).isTrue();
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void shouldMarkPatchNotesSeenWhenRequested() {
+        UUID id = UUID.randomUUID();
+        User user = User.of(org.application.dto.UserData.builder()
+                .email(null).passwordHash("old-hash").username("fagner").displayName("Fagner").build());
+        when(userRepository.findByIdAndStatus(id, UserStatus.ACTIVE)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+        when(clock.instant()).thenReturn(java.time.Instant.parse("2026-08-13T12:00:00Z"));
+        when(clock.getZone()).thenReturn(java.time.ZoneOffset.UTC);
+
+        userService.markPatchNotesSeen(id);
+
+        assertThat(user.getLastSeenPatchNoteAt()).isEqualTo(OffsetDateTime.parse("2026-08-13T12:00:00Z"));
         verify(userRepository).save(user);
     }
 

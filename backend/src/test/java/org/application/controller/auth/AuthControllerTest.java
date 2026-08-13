@@ -42,7 +42,7 @@ class AuthControllerTest {
     @Test
     void shouldLoginAndReturnToken() throws Exception {
         when(authService.login(any(LoginRequest.class), any(String.class))).thenReturn(
-                new LoginResponse("token", "refresh", "Bearer", 3600, UUID.randomUUID(), "fagner", org.application.model.UserRole.USER, false, OffsetDateTime.now()));
+                new LoginResponse("token", "refresh", "Bearer", 3600, UUID.randomUUID(), "fagner", org.application.model.UserRole.USER, false, false, OffsetDateTime.now()));
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -81,7 +81,7 @@ class AuthControllerTest {
     @Test
     void shouldRefreshSession() throws Exception {
         when(authService.refresh("refresh")).thenReturn(
-                new LoginResponse("token-2", "refresh-2", "Bearer", 3600, UUID.randomUUID(), "fagner", org.application.model.UserRole.USER, false, OffsetDateTime.now()));
+                new LoginResponse("token-2", "refresh-2", "Bearer", 3600, UUID.randomUUID(), "fagner", org.application.model.UserRole.USER, false, false, OffsetDateTime.now()));
 
         mockMvc.perform(post("/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
