@@ -1,38 +1,43 @@
 <script setup lang="ts">
+import BackendOfflineScreen from '@/components/layout/BackendOfflineScreen.vue'
 import BaseToast from '@/components/base/BaseToast.vue'
 import PatchNotesModal from '@/components/patchnotes/PatchNotesModal.vue'
 import { dismissNavigationError, navigationState } from '@/app/router'
 import { authNotice, dismissAuthNotice } from '@/composables/useAuthNotice'
+import { backendStatus } from '@/composables/useBackendStatus'
 </script>
 
 <template>
-  <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
-  <div
-    v-if="navigationState.pending"
-    class="navigation-progress"
-    role="progressbar"
-    aria-label="Carregando página"
-  />
-  <div v-if="navigationState.error || authNotice.visible" class="global-toast">
-    <BaseToast
-      v-if="navigationState.error"
-      title="Erro de navegação"
-      kind="error"
-      @dismiss="dismissNavigationError"
-    >
-      {{ navigationState.error }}
-    </BaseToast>
-    <BaseToast
-      v-if="authNotice.visible"
-      title="Entre para continuar"
-      kind="warning"
-      @dismiss="dismissAuthNotice"
-    >
-      Você precisa estar conectado para realizar essa ação.
-    </BaseToast>
-  </div>
-  <RouterView />
-  <PatchNotesModal />
+  <BackendOfflineScreen v-if="backendStatus.offline" />
+  <template v-else>
+    <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
+    <div
+      v-if="navigationState.pending"
+      class="navigation-progress"
+      role="progressbar"
+      aria-label="Carregando página"
+    />
+    <div v-if="navigationState.error || authNotice.visible" class="global-toast">
+      <BaseToast
+        v-if="navigationState.error"
+        title="Erro de navegação"
+        kind="error"
+        @dismiss="dismissNavigationError"
+      >
+        {{ navigationState.error }}
+      </BaseToast>
+      <BaseToast
+        v-if="authNotice.visible"
+        title="Entre para continuar"
+        kind="warning"
+        @dismiss="dismissAuthNotice"
+      >
+        Você precisa estar conectado para realizar essa ação.
+      </BaseToast>
+    </div>
+    <RouterView />
+    <PatchNotesModal />
+  </template>
 </template>
 
 <style scoped>
