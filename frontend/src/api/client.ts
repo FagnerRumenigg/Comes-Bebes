@@ -7,6 +7,10 @@ const unreachableStatuses = new Set([502, 503, 504])
 
 function isBackendUnreachable(error: unknown): boolean {
   if (!axios.isAxiosError(error)) return false
+  // Requisição cancelada (ex.: TanStack Query aborta uma query ao desmontar
+  // o componente durante uma navegação) não diz nada sobre o backend estar
+  // ou não alcançável - não é falha de rede.
+  if (axios.isCancel(error) || error.code === 'ERR_CANCELED') return false
   const status = error.response?.status
   // Sem response = falha de rede/timeout (o caso mais comum quando o
   // container está mesmo desligado). Um 502/503/504 cobre o caso em que o
