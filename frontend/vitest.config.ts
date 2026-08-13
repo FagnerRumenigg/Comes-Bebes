@@ -5,6 +5,9 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [vue()],
+  define: {
+    __APP_COMMIT_HASH__: JSON.stringify('test'),
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

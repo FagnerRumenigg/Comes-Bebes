@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppFooter from '@/components/layout/AppFooter.vue'
 import PageContainer from '@/components/layout/PageContainer.vue'
 import BrandMark from '@/components/layout/BrandMark.vue'
 import ThemeSwitch from '@/components/layout/ThemeSwitch.vue'
@@ -19,9 +20,12 @@ import ThemeSwitch from '@/components/layout/ThemeSwitch.vue'
 
     <main id="main-content" class="auth-layout__main">
       <div class="auth-layout__theme"><ThemeSwitch /></div>
-      <PageContainer size="narrow">
-        <RouterView />
-      </PageContainer>
+      <div class="auth-layout__content">
+        <PageContainer size="narrow">
+          <RouterView />
+        </PageContainer>
+      </div>
+      <AppFooter />
     </main>
   </div>
 </template>
@@ -76,10 +80,17 @@ import ThemeSwitch from '@/components/layout/ThemeSwitch.vue'
 
 .auth-layout__main {
   position: relative;
-  display: grid;
-  align-items: center;
-  padding-block: var(--space-16);
+  display: flex;
+  flex-direction: column;
+  padding-block-start: var(--space-16);
   background: var(--color-background);
+}
+
+.auth-layout__content {
+  display: grid;
+  flex: 1;
+  align-items: center;
+  padding-block-end: var(--space-16);
 }
 
 .auth-layout__theme {
@@ -107,8 +118,12 @@ import ThemeSwitch from '@/components/layout/ThemeSwitch.vue'
   }
 
   .auth-layout__main {
+    padding-block-start: var(--space-10);
+  }
+
+  .auth-layout__content {
     align-items: start;
-    padding-block: var(--space-10);
+    padding-block-end: var(--space-10);
   }
 }
 </style>
