@@ -2,12 +2,11 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { mount } from '@vue/test-utils'
 import { http, HttpResponse } from 'msw'
 import { createPinia, setActivePinia } from 'pinia'
-import { createMemoryHistory, createRouter } from 'vue-router'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import type { PatchNoteResponse } from '@/api/generated/models'
+import PatchNotesModal from '@/components/patchnotes/PatchNotesModal.vue'
 import { useAuthStore } from '@/stores/auth.store'
-import PatchNotesView from '@/views/PatchNotesView.vue'
 import { mockServer } from './setup'
 
 const notes: PatchNoteResponse[] = [
@@ -25,7 +24,9 @@ const notes: PatchNoteResponse[] = [
   },
 ]
 
-function mountPatchNotesView() {
+function mountModal(
+  identityOverrides: Partial<{ onboardingCompleted: boolean; hasUnseenPatchNotes: boolean }> = {},
+) {
   const pinia = createPinia()
   setActivePinia(pinia)
   const authStore = useAuthStore()
@@ -36,49 +37,81 @@ function mountPatchNotesView() {
     role: 'USER',
     onboardingCompleted: true,
     hasUnseenPatchNotes: true,
+    ...identityOverrides,
   }
 
-  const router = createRouter({
-    history: createMemoryHistory(),
-    routes: [
-      { path: '/', name: 'feed', component: { template: '<div>Feed</div>' } },
-      { path: '/novidades', name: 'patch-notes', component: PatchNotesView },
-    ],
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
+  const wrapper = mount(PatchNotesModal, {
+    global: { plugins: [pinia, [VueQueryPlugin, { queryClient }]] },
   })
 
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
-
-  return { authStore, router, queryClient, pinia }
+  return { authStore, wrapper }
 }
+
+beforeAll(() => {
+  HTMLDialogElement.prototype.showModal = function showModal() {
+    this.open = true
+  }
+  HTMLDialogElement.prototype.close = function close() {
+    this.open = false
+    this.dispatchEvent(new Event('close'))
+  }
+})
 
 afterEach(() => mockServer.resetHandlers())
 
-describe('notas de versão', () => {
-  it('exibe as notas não vistas e confirma leitura', async () => {
+describe('modal de notas de versão', () => {
+  it('abre com as notas não vistas e confirma leitura ao clicar em Entendi', async () => {
     mockServer.use(
       http.get('*/patch-notes/unseen', () => HttpResponse.json(notes)),
       http.patch('*/users/:id/patch-notes/seen', () => new HttpResponse(null, { status: 204 })),
     )
 
-    const { authStore, router, queryClient, pinia } = mountPatchNotesView()
-    await router.push('/novidades')
-    await router.isReady()
-
-    const wrapper = mount(PatchNotesView, {
-      global: { plugins: [pinia, router, [VueQueryPlugin, { queryClient }]] },
-    })
+    const { authStore, wrapper } = mountModal()
 
     await vi.waitFor(() => {
+      expect(wrapper.find('dialog').attributes('open')).toBeDefined()
       expect(wrapper.text()).toContain('Rodapé com versão')
       expect(wrapper.text()).toContain('Reações expandidas')
     })
 
-    await wrapper.get('button').trigger('click')
+    const confirmButton = wrapper.findAll('button').find((button) => button.text() === 'Entendi')
+    await confirmButton?.trigger('click')
 
     await vi.waitFor(() => {
       expect(authStore.identity?.hasUnseenPatchNotes).toBe(false)
     })
-    expect(router.currentRoute.value.name).toBe('feed')
+  })
+
+  it('não abre quando não há notas pendentes', () => {
+    const { wrapper } = mountModal({ hasUnseenPatchNotes: false })
+
+    expect(wrapper.find('dialog').attributes('open')).toBeUndefined()
+  })
+
+  it('não abre enquanto o onboarding estiver pendente', () => {
+    const { wrapper } = mountModal({ onboardingCompleted: false, hasUnseenPatchNotes: true })
+
+    expect(wrapper.find('dialog').attributes('open')).toBeUndefined()
+  })
+
+  it('marca como visto ao fechar pelo botão de fechar (backdrop/Esc)', async () => {
+    mockServer.use(
+      http.get('*/patch-notes/unseen', () => HttpResponse.json(notes)),
+      http.patch('*/users/:id/patch-notes/seen', () => new HttpResponse(null, { status: 204 })),
+    )
+
+    const { authStore, wrapper } = mountModal()
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('Rodapé com versão')
+    })
+
+    await wrapper.get('[aria-label="Fechar novidades"]').trigger('click')
+
+    await vi.waitFor(() => {
+      expect(authStore.identity?.hasUnseenPatchNotes).toBe(false)
+    })
   })
 
   it('permite tentar novamente após falha ao carregar as novidades', async () => {
@@ -88,13 +121,7 @@ describe('notas de versão', () => {
       ),
     )
 
-    const { router, queryClient, pinia } = mountPatchNotesView()
-    await router.push('/novidades')
-    await router.isReady()
-
-    const wrapper = mount(PatchNotesView, {
-      global: { plugins: [pinia, router, [VueQueryPlugin, { queryClient }]] },
-    })
+    const { wrapper } = mountModal()
 
     await vi.waitFor(() => {
       expect(wrapper.get('[role="alert"]').text()).toContain('Falha temporária.')

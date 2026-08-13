@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BaseToast from '@/components/base/BaseToast.vue'
+import PatchNotesModal from '@/components/patchnotes/PatchNotesModal.vue'
 import { dismissNavigationError, navigationState } from '@/app/router'
 import { authNotice, dismissAuthNotice } from '@/composables/useAuthNotice'
 </script>
@@ -31,6 +32,7 @@ import { authNotice, dismissAuthNotice } from '@/composables/useAuthNotice'
     </BaseToast>
   </div>
   <RouterView />
+  <PatchNotesModal />
 </template>
 
 <style scoped>

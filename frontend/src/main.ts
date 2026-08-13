@@ -45,7 +45,6 @@ async function bootstrap(): Promise<void> {
       authenticated: authStore.authenticated,
       role: authStore.identity?.role ?? null,
       onboardingCompleted: authStore.identity?.onboardingCompleted ?? true,
-      hasUnseenPatchNotes: authStore.identity?.hasUnseenPatchNotes ?? false,
     }
   })
 
