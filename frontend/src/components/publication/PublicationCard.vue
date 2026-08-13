@@ -87,7 +87,7 @@ const imageAlt = computed(
         class="publication-card__versions"
         :to="`/publicar/minha-versao/${publication.id}`"
       >
-        Fiz também ({{ publication.versionsCount }})
+        Publicar minha versão ({{ publication.versionsCount }})
       </RouterLink>
       <button
         v-else-if="publication.type === 'RECIPE' || publication.type === 'MY_VERSION'"
@@ -95,7 +95,7 @@ const imageAlt = computed(
         class="publication-card__versions"
         @click="showAuthNotice"
       >
-        Fiz também ({{ publication.versionsCount }})
+        Publicar minha versão ({{ publication.versionsCount }})
       </button>
     </div>
   </article>

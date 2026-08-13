@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQueryClient } from '@tanstack/vue-query'
 
@@ -200,9 +200,11 @@ function finish(id: string): void {
   void router.push(`/publicacoes/${id}`)
 }
 
-function useOriginalRecipe(): void {
-  const recipe = recipeQuery.data.value
-  if (!recipe) return
+const prefilled = ref(false)
+
+watch(recipeQuery.data, (recipe) => {
+  if (!recipe || prefilled.value) return
+  prefilled.value = true
   ingredients.value = recipe.ingredients.map((item) => ({
     name: item.name,
     quantity: item.quantity == null ? '' : String(item.quantity),
@@ -212,8 +214,7 @@ function useOriginalRecipe(): void {
   instructions.value = recipe.instructions
   yieldQuantity.value = recipe.yieldQuantity == null ? '' : String(recipe.yieldQuantity)
   yieldUnit.value = recipe.yieldUnit ?? ''
-  if (!title.value) title.value = sourceQuery.data.value?.title ?? ''
-}
+})
 
 const sourceTitle = computed(() => sourceQuery.data.value?.title ?? 'receita original')
 const sourceLoadError = computed(() => {
@@ -239,18 +240,11 @@ onBeforeUnmount(clearImagePreview)
     </div>
     <form v-else class="create-publication__form" novalidate @submit.prevent="submit">
       <section v-if="isMyVersion" class="create-publication__source">
-        <p>Os ingredientes da publicação original não são alterados.</p>
-        <button
-          type="button"
-          :disabled="recipeQuery.isPending.value || !recipeQuery.data.value"
-          @click="useOriginalRecipe"
-        >
-          {{
-            recipeQuery.isPending.value
-              ? 'Carregando receita original…'
-              : 'Usar receita original como ponto de partida'
-          }}
-        </button>
+        <p v-if="recipeQuery.isPending.value">Carregando a receita original…</p>
+        <p v-else>
+          Começamos com a receita original para facilitar. Ajuste os ingredientes, o preparo e o
+          rendimento para mostrar como você fez a sua versão.
+        </p>
       </section>
       <BaseSelect v-if="!isMyVersion" v-model="type" label="Tipo de publicação" required>
         <option value="DISH">Prato</option>
@@ -403,18 +397,7 @@ onBeforeUnmount(clearImagePreview)
   width: fit-content;
 }
 .create-publication__source p {
-  margin: 0 0 var(--space-2);
-}
-.create-publication__source button {
-  padding: 0;
-  color: var(--color-primary);
-  text-decoration: underline;
-  background: none;
-  border: 0;
-}
-.create-publication__source button:disabled {
-  opacity: 0.6;
-  cursor: wait;
+  margin: 0;
 }
 .create-publication__image {
   display: grid;
