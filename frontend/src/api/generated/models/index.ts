@@ -31,6 +31,7 @@ export * from './decideModerationCaseRequest';
 export * from './decideModerationCaseRequestDecision';
 export * from './decideModerationCaseRequestDecisionNote';
 export * from './feedParams';
+export * from './feedTypesItem';
 export * from './getUserPublicationsParams';
 export * from './ingredientResponse';
 export * from './ingredientResponseNote';
