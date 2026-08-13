@@ -37,7 +37,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 
+import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.List;
 import java.time.Clock;
@@ -55,6 +57,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(MockitoExtension.class)
 class PublicationServiceTest {
@@ -113,7 +116,7 @@ class PublicationServiceTest {
 
     @Test
     void shouldListFeedSearchAndProfile() {
-        when(publicationRepository.findByStatusAndVisibilityOrderByPublishedAtDescIdDesc(any(), any(), any()))
+        when(publicationRepository.findByStatusAndVisibilityAndTypeInOrderByPublishedAtDescIdDesc(any(), any(), any(), any()))
                 .thenReturn(Page.empty());
         when(publicationRepository.findByStatusAndVisibilityAndTitleContainingIgnoreCaseOrderByPublishedAtDescIdDesc(any(), any(), any(), any()))
                 .thenReturn(Page.empty());
@@ -123,6 +126,37 @@ class PublicationServiceTest {
         assertThat(publicationService.feed(Pageable.unpaged())).isEmpty();
         assertThat(publicationService.search("bolo", Pageable.unpaged())).isEmpty();
         assertThat(publicationService.profile(UUID.randomUUID(), Pageable.unpaged())).isEmpty();
+    }
+
+    @Test
+    void shouldFilterFeedByTypeForVisitor() {
+        when(publicationRepository.findByStatusAndVisibilityAndTypeInOrderByPublishedAtDescIdDesc(
+                eq(PublicationStatus.ACTIVE), eq(PublicationVisibility.PUBLIC), eq(Set.of(PublicationType.DISH)), any()))
+                .thenReturn(Page.empty());
+
+        assertThat(publicationService.feed(Pageable.unpaged(), null, Set.of(PublicationType.DISH))).isEmpty();
+        verify(publicationRepository, never()).findByStatusAndTypeInOrderByPublishedAtDescIdDesc(any(), any(), any());
+    }
+
+    @Test
+    void shouldFilterFeedByTypeForAuthenticatedUser() {
+        UUID viewerId = UUID.randomUUID();
+        Set<PublicationType> receitas = Set.of(PublicationType.RECIPE, PublicationType.MY_VERSION);
+        when(publicationRepository.findByStatusAndTypeInOrderByPublishedAtDescIdDesc(
+                eq(PublicationStatus.ACTIVE), eq(receitas), any()))
+                .thenReturn(Page.empty());
+
+        assertThat(publicationService.feed(Pageable.unpaged(), viewerId, receitas)).isEmpty();
+    }
+
+    @Test
+    void shouldDefaultToAllTypesWhenNoneRequested() {
+        when(publicationRepository.findByStatusAndVisibilityAndTypeInOrderByPublishedAtDescIdDesc(
+                eq(PublicationStatus.ACTIVE), eq(PublicationVisibility.PUBLIC),
+                eq(EnumSet.allOf(PublicationType.class)), any()))
+                .thenReturn(Page.empty());
+
+        assertThat(publicationService.feed(Pageable.unpaged(), null, Set.of())).isEmpty();
     }
 
     @Test

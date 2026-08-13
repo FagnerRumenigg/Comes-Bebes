@@ -32,6 +32,7 @@ import org.springframework.mock.web.MockMultipartFile;
 
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -109,13 +110,22 @@ class PublicationControllerTest {
 
     @Test
     void shouldListFeedAndSearch() throws Exception {
-        when(publicationService.feed(any(org.springframework.data.domain.Pageable.class), nullable(UUID.class)))
+        when(publicationService.feed(any(org.springframework.data.domain.Pageable.class), nullable(UUID.class), nullable(java.util.Set.class)))
                 .thenReturn(new PageImpl<>(List.of()));
         when(publicationService.search(any(), any(), any(org.springframework.data.domain.Pageable.class), nullable(UUID.class)))
                 .thenReturn(new PageImpl<>(List.of()));
 
         mockMvc.perform(get("/publications/feed")).andExpect(status().isOk());
         mockMvc.perform(get("/publications/search?title=lasanha")).andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldFilterFeedByTypes() throws Exception {
+        when(publicationService.feed(any(org.springframework.data.domain.Pageable.class), nullable(UUID.class),
+                eq(java.util.Set.of(PublicationType.DISH))))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/publications/feed?types=DISH")).andExpect(status().isOk());
     }
 
     @Test

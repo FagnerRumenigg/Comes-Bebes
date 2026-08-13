@@ -1,17 +1,86 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import BaseButton from '@/components/base/BaseButton.vue'
 import PublicationCard from '@/components/publication/PublicationCard.vue'
 import { normalizeHttpError } from '@/api/errors'
-import { useInfiniteFeed } from '@/features/feed/feed.queries'
+import { FEED_FILTERS, isFeedFilter, useInfiniteFeed, type FeedFilter } from '@/features/feed/feed.queries'
 import { useFeedRefresh } from '@/features/feed/useFeedRefresh'
+import { useAuthStore } from '@/stores/auth.store'
 
 const PULL_TRIGGER_DISTANCE = 70
 const PULL_MAX_DISTANCE = 100
 const PULL_DRAG_RATIO = 0.5
+const FEED_FILTER_STORAGE_KEY = 'comes-e-bebes:feed-filter'
 
-const feedQuery = useInfiniteFeed()
+const FILTER_LABELS: Record<FeedFilter, string> = {
+  mix: 'Mix',
+  pratos: 'Pratos',
+  receitas: 'Receitas',
+}
+
+const EMPTY_STATE_TEXT: Record<FeedFilter, { title: string; description: string }> = {
+  mix: {
+    title: 'A cozinha está quieta por enquanto.',
+    description: 'Quando novas publicações chegarem, elas aparecerão aqui.',
+  },
+  pratos: {
+    title: 'Ainda não há pratos por aqui.',
+    description: 'Quando novos pratos chegarem, eles aparecerão aqui.',
+  },
+  receitas: {
+    title: 'Ainda não há receitas por aqui.',
+    description: 'Que tal publicar a primeira?',
+  },
+}
+
+const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
+
+function readStoredFilter(): FeedFilter | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const value = window.localStorage.getItem(FEED_FILTER_STORAGE_KEY)
+    return isFeedFilter(value) ? value : null
+  } catch {
+    return null
+  }
+}
+
+function persistFilter(value: FeedFilter): void {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(FEED_FILTER_STORAGE_KEY, value)
+  } catch {
+    // A preferência só dura a sessão atual quando o storage está indisponível.
+  }
+}
+
+const filter = computed<FeedFilter>(() =>
+  isFeedFilter(route.query.tipo) ? route.query.tipo : 'mix',
+)
+
+function selectFilter(next: FeedFilter): void {
+  if (filter.value === next) return
+  void router.replace({ query: { ...route.query, tipo: next === 'mix' ? undefined : next } })
+  if (authStore.authenticated) persistFilter(next)
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+onMounted(() => {
+  // Visitante sempre abre em Mix; usuário autenticado retoma a última
+  // visualização escolhida quando a URL não já define um filtro.
+  if (!isFeedFilter(route.query.tipo) && authStore.authenticated) {
+    const stored = readStoredFilter()
+    if (stored && stored !== 'mix') {
+      void router.replace({ query: { ...route.query, tipo: stored } })
+    }
+  }
+})
+
+const feedQuery = useInfiniteFeed(filter)
 const { refreshFeed } = useFeedRefresh()
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 const supportsInfiniteScroll = ref(true)
@@ -132,6 +201,20 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
       <span>Publicações recentes, em ordem cronológica.</span>
     </header>
 
+    <div class="feed-view__filters" role="group" aria-label="Filtrar por tipo de publicação">
+      <button
+        v-for="option in FEED_FILTERS"
+        :key="option"
+        type="button"
+        class="feed-view__filter"
+        :class="{ 'feed-view__filter--active': filter === option }"
+        :aria-pressed="filter === option"
+        @click="selectFilter(option)"
+      >
+        {{ FILTER_LABELS[option] }}
+      </button>
+    </div>
+
     <div v-if="feedQuery.isPending.value" class="feed-view__skeletons" aria-label="Carregando feed">
       <div v-for="index in 2" :key="index" class="feed-view__skeleton" />
     </div>
@@ -144,8 +227,8 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
 
     <div v-else-if="publications.length === 0" class="feed-view__state">
       <span aria-hidden="true">◇</span>
-      <strong>A cozinha está quieta por enquanto.</strong>
-      <p>Quando novas publicações chegarem, elas aparecerão aqui.</p>
+      <strong>{{ EMPTY_STATE_TEXT[filter].title }}</strong>
+      <p>{{ EMPTY_STATE_TEXT[filter].description }}</p>
     </div>
 
     <template v-else>
@@ -215,6 +298,36 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
 
 .feed-view__heading span {
   color: var(--color-text-secondary);
+}
+
+.feed-view__filters {
+  display: flex;
+  gap: var(--space-2);
+  margin-block-end: var(--space-8);
+  overflow-x: auto;
+}
+
+.feed-view__filter {
+  min-height: 2.25rem;
+  padding: var(--space-2) var(--space-4);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+}
+
+.feed-view__filter:hover:not(.feed-view__filter--active) {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.feed-view__filter--active {
+  color: var(--color-primary-contrast);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .feed-view__list,

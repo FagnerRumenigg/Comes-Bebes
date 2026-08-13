@@ -5,8 +5,13 @@
  * API RESTful da rede social de comida ComeSebebes.
  * OpenAPI spec version: v1
  */
+import type { FeedTypesItem } from './feedTypesItem';
 
 export type FeedParams = {
+/**
+ * Filtra por um ou mais tipos de publicação. Sem valor, retorna todos (Mix).
+ */
+types?: FeedTypesItem[];
 /**
  * Número da página, iniciando em 1.
  * @minimum 1

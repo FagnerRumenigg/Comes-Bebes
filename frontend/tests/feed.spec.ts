@@ -14,7 +14,7 @@ import { mockServer } from './setup'
 
 afterEach(() => vi.unstubAllGlobals())
 
-async function mountFeed() {
+async function mountFeed(options?: { authenticated?: boolean; initialPath?: string }) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -27,19 +27,35 @@ async function mountFeed() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   })
-  await router.push('/')
+  const pinia = createPinia()
+
+  if (options?.authenticated) {
+    const authStore = useAuthStore(pinia)
+    authStore.status = 'authenticated'
+    authStore.identity = {
+      userId: 'user-1',
+      username: 'visitante',
+      role: 'USER',
+      onboardingCompleted: true,
+      hasUnseenPatchNotes: false,
+    }
+  }
+
+  await router.push(options?.initialPath ?? '/')
   await router.isReady()
 
-  return mount(FeedView, {
+  const wrapper = mount(FeedView, {
     global: {
-      plugins: [createPinia(), router, [VueQueryPlugin, { queryClient }]],
+      plugins: [pinia, router, [VueQueryPlugin, { queryClient }]],
     },
   })
+
+  return { wrapper, router }
 }
 
 describe('feed', () => {
   it('exibe carregamento e renderiza apenas publicações públicas para visitantes', async () => {
-    const wrapper = await mountFeed()
+    const { wrapper } = await mountFeed()
 
     expect(wrapper.find('[aria-label="Carregando feed"]').exists()).toBe(true)
 
@@ -64,7 +80,7 @@ describe('feed', () => {
       ),
     )
 
-    const wrapper = await mountFeed()
+    const { wrapper } = await mountFeed()
     await vi.waitFor(() => {
       expect(wrapper.text()).toContain('A cozinha está quieta por enquanto.')
     })
@@ -77,11 +93,11 @@ describe('feed', () => {
       ),
     )
 
-    const wrapper = await mountFeed()
+    const { wrapper } = await mountFeed()
     await vi.waitFor(() => {
       expect(wrapper.get('[role="alert"]').text()).toContain('Falha temporária no feed.')
     })
-    expect(wrapper.get('button').text()).toContain('Tentar novamente')
+    expect(wrapper.get('[role="alert"] button').text()).toContain('Tentar novamente')
   })
 
   it('carrega a próxima página automaticamente ao alcançar o fim da lista', async () => {
@@ -125,7 +141,7 @@ describe('feed', () => {
       }),
     )
 
-    const wrapper = await mountFeed()
+    const { wrapper } = await mountFeed()
     await vi.waitFor(() => {
       expect(wrapper.text()).toContain('Risoto de cogumelos')
     })
@@ -145,6 +161,96 @@ describe('feed', () => {
 
     wrapper.unmount()
     expect(disconnect).toHaveBeenCalled()
+  })
+
+  it('filtra o feed por tipo ao selecionar Pratos e atualiza a URL', async () => {
+    let lastTypes: string[] | null = null
+    mockServer.use(
+      http.get('*/publications/feed', ({ request }) => {
+        const params = new URL(request.url).searchParams
+        lastTypes = [...params.entries()]
+          .filter(([key]) => key.startsWith('types'))
+          .map(([, value]) => value)
+        return HttpResponse.json<PageResponsePublicationResponse>({
+          content: [],
+          page: 1,
+          size: 4,
+          totalElements: 0,
+          totalPages: 1,
+          first: true,
+          last: true,
+        })
+      }),
+    )
+
+    const { wrapper, router } = await mountFeed()
+    await vi.waitFor(() => {
+      expect(lastTypes).toEqual([])
+    })
+
+    const pratosButton = wrapper.findAll('.feed-view__filter').find((b) => b.text() === 'Pratos')
+    await pratosButton?.trigger('click')
+    await flushPromises()
+
+    await vi.waitFor(() => {
+      expect(router.currentRoute.value.query.tipo).toBe('pratos')
+    })
+    await vi.waitFor(() => {
+      expect(lastTypes).toEqual(['DISH'])
+    })
+  })
+
+  it('persiste o filtro escolhido apenas para usuários autenticados', async () => {
+    mockServer.use(
+      http.get('*/publications/feed', () =>
+        HttpResponse.json<PageResponsePublicationResponse>({
+          content: [],
+          page: 1,
+          size: 4,
+          totalElements: 0,
+          totalPages: 1,
+          first: true,
+          last: true,
+        }),
+      ),
+    )
+    window.localStorage.removeItem('comes-e-bebes:feed-filter')
+
+    const { wrapper } = await mountFeed()
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('A cozinha está quieta por enquanto.')
+    })
+
+    const receitasButton = wrapper.findAll('.feed-view__filter').find((b) => b.text() === 'Receitas')
+    await receitasButton?.trigger('click')
+    await flushPromises()
+
+    expect(window.localStorage.getItem('comes-e-bebes:feed-filter')).toBeNull()
+    window.localStorage.removeItem('comes-e-bebes:feed-filter')
+  })
+
+  it('restaura o filtro salvo ao montar sem tipo na URL para usuário autenticado', async () => {
+    mockServer.use(
+      http.get('*/publications/feed', () =>
+        HttpResponse.json<PageResponsePublicationResponse>({
+          content: [],
+          page: 1,
+          size: 4,
+          totalElements: 0,
+          totalPages: 1,
+          first: true,
+          last: true,
+        }),
+      ),
+    )
+    window.localStorage.setItem('comes-e-bebes:feed-filter', 'receitas')
+
+    const { router } = await mountFeed({ authenticated: true })
+
+    await vi.waitFor(() => {
+      expect(router.currentRoute.value.query.tipo).toBe('receitas')
+    })
+    window.localStorage.removeItem('comes-e-bebes:feed-filter')
   })
 })
 

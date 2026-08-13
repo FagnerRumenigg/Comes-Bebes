@@ -50,7 +50,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.time.ZoneId;
+import java.util.Set;
 import java.util.UUID;
+import org.application.model.PublicationType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.RequestParam;
 import java.net.URI;
@@ -70,7 +72,7 @@ public class PublicationController {
     private final ImageStorage imageStorage;
 
     @GetMapping("/feed")
-    @Operation(summary = "Listar feed", description = "Retorna publicações ativas paginadas. Visitantes recebem somente PUBLIC; usuários autenticados podem receber PUBLIC e INTERNAL. A primeira página é 1.")
+    @Operation(summary = "Listar feed", description = "Retorna publicações ativas paginadas. Visitantes recebem somente PUBLIC; usuários autenticados podem receber PUBLIC e INTERNAL. A primeira página é 1. Sem o parâmetro types, retorna todos os tipos (Mix).")
     @Parameters({
             @Parameter(name = "page", description = "Número da página, iniciando em 1.", schema = @Schema(type = "integer", minimum = "1", example = "1")),
             @Parameter(name = "size", description = "Quantidade de itens por página.", schema = @Schema(type = "integer", minimum = "1", maximum = "50", example = "20")),
@@ -78,9 +80,11 @@ public class PublicationController {
     @ApiResponse(responseCode = "200", description = "Feed retornado.")
     public PageResponse<PublicationResponse> feed(
             @Parameter(hidden = true) Pageable pageable,
+            @Parameter(description = "Filtra por um ou mais tipos de publicação. Sem valor, retorna todos (Mix).")
+            @RequestParam(required = false) Set<PublicationType> types,
             Authentication authentication
     ) {
-        return PageResponse.of(publicationService.feed(pageable, viewerId(authentication)), item -> responseFactory.of(item, applicationZoneId, viewerId(authentication)));
+        return PageResponse.of(publicationService.feed(pageable, viewerId(authentication), types), item -> responseFactory.of(item, applicationZoneId, viewerId(authentication)));
     }
 
     @GetMapping("/search")

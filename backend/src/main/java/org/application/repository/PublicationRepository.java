@@ -2,8 +2,10 @@ package org.application.repository;
 
 import org.application.model.Publication;
 import org.application.model.PublicationStatus;
+import org.application.model.PublicationType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -18,6 +20,8 @@ public interface PublicationRepository extends JpaRepository<Publication, UUID> 
     Optional<Publication> findByIdAndStatusAndVisibility(UUID id, PublicationStatus status, PublicationVisibility visibility);
     Page<Publication> findByStatusOrderByPublishedAtDescIdDesc(PublicationStatus status, Pageable pageable);
     Page<Publication> findByStatusAndVisibilityOrderByPublishedAtDescIdDesc(PublicationStatus status, PublicationVisibility visibility, Pageable pageable);
+    Page<Publication> findByStatusAndTypeInOrderByPublishedAtDescIdDesc(PublicationStatus status, Collection<PublicationType> types, Pageable pageable);
+    Page<Publication> findByStatusAndVisibilityAndTypeInOrderByPublishedAtDescIdDesc(PublicationStatus status, PublicationVisibility visibility, Collection<PublicationType> types, Pageable pageable);
     Page<Publication> findByStatusAndVisibilityAndTitleContainingIgnoreCaseOrderByPublishedAtDescIdDesc(PublicationStatus status, PublicationVisibility visibility, String title, Pageable pageable);
     Page<Publication> findByStatusAndTitleContainingIgnoreCaseOrderByPublishedAtDescIdDesc(PublicationStatus status, String title, Pageable pageable);
     @Query("""

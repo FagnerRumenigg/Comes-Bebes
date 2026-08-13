@@ -34,8 +34,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.math.BigDecimal;
 import org.springframework.data.domain.Page;
@@ -214,16 +216,26 @@ public class PublicationService {
                 .orElseThrow(() -> new ResourceNotFoundException("PUBLICATION_NOT_FOUND", "Publicação não encontrada."));
     }
 
+    private static final Set<PublicationType> ALL_PUBLICATION_TYPES = EnumSet.allOf(PublicationType.class);
+
     @Transactional(readOnly = true)
     public Page<Publication> feed(Pageable pageable) {
-        return publicationRepository.findByStatusAndVisibilityOrderByPublishedAtDescIdDesc(PublicationStatus.ACTIVE, PublicationVisibility.PUBLIC, pageable);
+        return feed(pageable, null, null);
     }
 
     @Transactional(readOnly = true)
     public Page<Publication> feed(Pageable pageable, UUID viewerId) {
+        return feed(pageable, viewerId, null);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Publication> feed(Pageable pageable, UUID viewerId, Set<PublicationType> types) {
+        Set<PublicationType> effectiveTypes = types == null || types.isEmpty() ? ALL_PUBLICATION_TYPES : types;
         return viewerId == null
-                ? feed(pageable)
-                : publicationRepository.findByStatusOrderByPublishedAtDescIdDesc(PublicationStatus.ACTIVE, pageable);
+                ? publicationRepository.findByStatusAndVisibilityAndTypeInOrderByPublishedAtDescIdDesc(
+                        PublicationStatus.ACTIVE, PublicationVisibility.PUBLIC, effectiveTypes, pageable)
+                : publicationRepository.findByStatusAndTypeInOrderByPublishedAtDescIdDesc(
+                        PublicationStatus.ACTIVE, effectiveTypes, pageable);
     }
 
     @Transactional(readOnly = true)
