@@ -62,6 +62,7 @@ const adminSession = (adminId: string): LoginResponse => ({
   username: 'admin',
   role: 'ADMIN',
   onboardingCompleted: true,
+  hasUnseenPatchNotes: false,
   sessionId: 'c2c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f33',
 })
 
@@ -75,6 +76,7 @@ const strangerSession = (userId: string): LoginResponse => ({
   username: 'outro_usuario',
   role: 'USER',
   onboardingCompleted: true,
+  hasUnseenPatchNotes: false,
   sessionId: 'd2c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f44',
 })
 

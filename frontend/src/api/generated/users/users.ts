@@ -246,6 +246,68 @@ export const useUpdateCurrentUser = <TError = ApiErrorResponse,
       return useMutation(mutationOptions, queryClient);
     }
     /**
+ * Marca todas as notas de versão publicadas até agora como vistas pela conta autenticada.
+ * @summary Confirmar leitura das notas de versão
+ */
+export const markPatchNotesSeen = (
+    id: MaybeRef<string>,
+ options?: SecondParameter<typeof apiRequest>,) => {
+      id = unref(id);
+      
+      return apiRequest<void>(
+      {url: `/users/${id}/patch-notes/seen`, method: 'PATCH'
+    },
+      options);
+    }
+  
+
+
+export const getMarkPatchNotesSeenMutationOptions = <TError = ApiErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markPatchNotesSeen>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof markPatchNotesSeen>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['markPatchNotesSeen'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markPatchNotesSeen>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  markPatchNotesSeen(id,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkPatchNotesSeenMutationResult = NonNullable<Awaited<ReturnType<typeof markPatchNotesSeen>>>
+    
+    export type MarkPatchNotesSeenMutationError = ApiErrorResponse
+
+    /**
+ * @summary Confirmar leitura das notas de versão
+ */
+export const useMarkPatchNotesSeen = <TError = ApiErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markPatchNotesSeen>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof markPatchNotesSeen>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+
+      const mutationOptions = getMarkPatchNotesSeenMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Altera a senha da conta autenticada mediante confirmação da senha atual.
  * @summary Alterar senha
  */

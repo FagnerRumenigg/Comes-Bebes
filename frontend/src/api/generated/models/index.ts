@@ -49,6 +49,7 @@ export * from './notificationsParams';
 export * from './pageResponseNotificationResponse';
 export * from './pageResponsePublicationResponse';
 export * from './pageResponseSavedPublicationResponse';
+export * from './patchNoteResponse';
 export * from './publicationResponse';
 export * from './publicationResponseDescription';
 export * from './publicationResponseOriginalPublicationId';

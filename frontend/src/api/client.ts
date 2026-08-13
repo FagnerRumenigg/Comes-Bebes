@@ -1,6 +1,18 @@
 import axios, { type AxiosRequestConfig } from 'axios'
 
+import { markBackendOffline, markBackendOnline } from '@/composables/useBackendStatus'
+
 const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8082'
+const unreachableStatuses = new Set([502, 503, 504])
+
+function isBackendUnreachable(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) return false
+  const status = error.response?.status
+  // Sem response = falha de rede/timeout (o caso mais comum quando o
+  // container está mesmo desligado). Um 502/503/504 cobre o caso em que o
+  // ngrok responde no lugar do backend indisponível.
+  return status === undefined || unreachableStatuses.has(status)
+}
 const defaultHeaders: Record<string, string> = {
   Accept: 'application/json',
 }
@@ -64,6 +76,22 @@ httpClient.interceptors.request.use((config) => {
 
   return config
 })
+
+httpClient.interceptors.response.use(
+  (response) => {
+    markBackendOnline()
+    return response
+  },
+  (error: unknown) => {
+    if (isBackendUnreachable(error)) {
+      markBackendOffline()
+    } else if (axios.isAxiosError(error) && error.response) {
+      // O servidor respondeu (mesmo com erro 4xx) - está alcançável.
+      markBackendOnline()
+    }
+    return Promise.reject(error)
+  },
+)
 
 httpClient.interceptors.response.use(undefined, async (error: unknown) => {
   if (!axios.isAxiosError(error) || error.response?.status !== 401 || !error.config) {

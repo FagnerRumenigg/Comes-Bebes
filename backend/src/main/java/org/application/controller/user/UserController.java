@@ -166,6 +166,23 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    @PatchMapping("/{id}/patch-notes/seen")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Confirmar leitura das notas de versão", description = "Marca todas as notas de versão publicadas até agora como vistas pela conta autenticada.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Notas marcadas como vistas."),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado.", content = @Content(schema = @Schema(implementation = org.application.controller.response.ApiErrorResponse.class)))
+    })
+    public ResponseEntity<Void> markPatchNotesSeen(
+            @PathVariable UUID id,
+            Authentication authentication
+    ) {
+        ensureCurrentUser(id, authentication);
+        userService.markPatchNotesSeen(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @PatchMapping("/{id}/password")
     @PreAuthorize("isAuthenticated()")
     @SecurityRequirement(name = "bearerAuth")

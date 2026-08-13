@@ -158,6 +158,7 @@ describe('PublicationCard', () => {
       username: 'autor',
       role: 'USER',
       onboardingCompleted: true,
+      hasUnseenPatchNotes: false,
     }
 
     const wrapper = mount(PublicationCard, {

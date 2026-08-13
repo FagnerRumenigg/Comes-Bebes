@@ -81,6 +81,24 @@ describe('mapa de rotas', () => {
     })
     expect(resolveRouteAccess(moderation, { authenticated: true, role: 'ADMIN' })).toBe(true)
   })
+
+  it('redireciona para onboarding enquanto pendente', () => {
+    const router = createTestRouter()
+    const feed = router.resolve('/') as RouteLocationNormalized
+    const onboarding = router.resolve('/onboarding') as RouteLocationNormalized
+
+    expect(
+      resolveRouteAccess(feed, { authenticated: true, role: 'USER', onboardingCompleted: false }),
+    ).toEqual({ name: 'onboarding' })
+
+    expect(
+      resolveRouteAccess(onboarding, {
+        authenticated: true,
+        role: 'USER',
+        onboardingCompleted: false,
+      }),
+    ).toBe(true)
+  })
 })
 
 describe('layouts e navegação', () => {
@@ -147,6 +165,7 @@ describe('layouts e navegação', () => {
       username: 'cozinha',
       role: 'USER',
       onboardingCompleted: true,
+      hasUnseenPatchNotes: false,
     }
 
     const mobile = mount(MobileNavigation, { global: { plugins: [pinia, router] } })
@@ -201,7 +220,10 @@ describe('layouts e navegação', () => {
     navigationState.pending = true
     navigationState.error = 'Falha ao carregar.'
     const wrapper = mount(App, {
-      global: { stubs: ['RouterView'] },
+      global: {
+        plugins: [createPinia(), [VueQueryPlugin, { queryClient: new QueryClient() }]],
+        stubs: ['RouterView'],
+      },
     })
 
     expect(wrapper.get('.skip-link').attributes('href')).toBe('#main-content')

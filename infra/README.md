@@ -91,6 +91,20 @@ docker compose --env-file .\infra\.env -f .\infra\compose.yml up -d api
 
 Trocar `API_VERSION`/`VALIDATOR_VERSION` de volta para uma versão anterior já publicada e repetir `pull`+`up -d` do serviço correspondente. Uma versão já publicada nunca deve ser sobrescrita — em caso de correção, publicar `0.X.(Y+1)` em vez de reutilizar a tag.
 
+## Notas de versão (patch notes)
+
+Não existe tela de admin para isso: cada nota é inserida diretamente no banco depois que uma ideia é publicada (ver IDEIA-013 no planejamento). O usuário só vê o modal de novidades quando existe pelo menos uma nota com `published_at` mais recente que o `last_seen_patch_note_at` dele.
+
+```powershell
+docker exec platform-postgres-1 psql -U comesebebes_app -d comesebebes -c "
+INSERT INTO application.patch_notes (id, title, body, published_at)
+VALUES (gen_random_uuid(), 'Título curto', 'Texto explicando a novidade em uma ou duas frases.', now())
+RETURNING id, title, published_at;
+"
+```
+
+Não precisa reiniciar nada: a próxima renovação de sessão (login ou o refresh automático que já roda no boot do app) recalcula sozinha se há notas não vistas.
+
 ## Persistência
 
 - Imagens: `backend/uploads/images` no host, montada em `/app/uploads/images`.

@@ -20,6 +20,8 @@ export interface LoginResponse {
   username: string;
   role: LoginResponseRole;
   onboardingCompleted: boolean;
+  /** Indica se existem notas de versão publicadas ainda não vistas pelo usuário. */
+  hasUnseenPatchNotes: boolean;
   expiresAt: string;
   sessionId: string;
 }

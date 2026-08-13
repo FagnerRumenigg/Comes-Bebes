@@ -10,7 +10,10 @@ import type { LoginResponse, LoginResponseRole } from '@/api/generated/models'
 export const AUTH_STORAGE_KEY = 'comes-e-bebes:session'
 
 type SessionStatus = 'idle' | 'initializing' | 'anonymous' | 'authenticated'
-type SessionIdentity = Pick<LoginResponse, 'userId' | 'username' | 'role' | 'onboardingCompleted'>
+type SessionIdentity = Pick<
+  LoginResponse,
+  'userId' | 'username' | 'role' | 'onboardingCompleted' | 'hasUnseenPatchNotes'
+>
 
 interface StoredSession extends SessionIdentity {
   refreshToken: string
@@ -32,6 +35,7 @@ function parseStoredSession(value: string | null): StoredSession | null {
       typeof session.username !== 'string' ||
       typeof session.remember !== 'boolean' ||
       typeof session.onboardingCompleted !== 'boolean' ||
+      typeof session.hasUnseenPatchNotes !== 'boolean' ||
       !isRole(session.role)
     ) {
       return null
@@ -147,6 +151,7 @@ export const useAuthStore = defineStore('auth', () => {
       username: response.username,
       role: response.role,
       onboardingCompleted: response.onboardingCompleted,
+      hasUnseenPatchNotes: response.hasUnseenPatchNotes,
     }
     rememberSession.value = remember
     status.value = 'authenticated'
@@ -208,6 +213,7 @@ export const useAuthStore = defineStore('auth', () => {
         username: storedSession.username,
         role: storedSession.role,
         onboardingCompleted: storedSession.onboardingCompleted,
+        hasUnseenPatchNotes: storedSession.hasUnseenPatchNotes,
       }
       rememberSession.value = storedSession.remember
       try {
@@ -240,6 +246,7 @@ export const useAuthStore = defineStore('auth', () => {
         username: storedSession.username,
         role: storedSession.role,
         onboardingCompleted: storedSession.onboardingCompleted,
+        hasUnseenPatchNotes: storedSession.hasUnseenPatchNotes,
       }
       rememberSession.value = storedSession.remember
       await renewSession()
