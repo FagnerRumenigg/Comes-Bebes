@@ -63,11 +63,10 @@ test('criação de receita exige ingrediente e preparo', async ({ page }) => {
   await expect(page).toHaveURL(/\/publicacoes\//)
 })
 
-test('minha versão preserva a origem e permite carregar a receita original', async ({ page }) => {
+test('minha versão preserva a origem e pré-carrega a receita original', async ({ page }) => {
   await login(page)
   await page.goto('/publicar/minha-versao/7b0200b5-66e3-47b1-a80c-a2369379e1d3')
   await expect(page.getByRole('heading', { name: 'Publicar minha versão' })).toBeVisible()
-  await page.getByRole('button', { name: /Usar receita original/ }).click()
   await expect(page.getByLabel('Ingrediente 1')).toHaveValue('cenoura')
   await page.getByLabel('Sufixo do título').fill('com cobertura cítrica')
   await page.locator('input[type="file"]').setInputFiles(image)

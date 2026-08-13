@@ -87,7 +87,7 @@ test('detalhe permite reagir, salvar, denunciar e iniciar minha versão', async 
   await expect(page.getByRole('button', { name: 'Remover dos salvos' })).toHaveText('Salvo')
   await expect(page.getByText('Denúncia enviada')).toBeVisible()
 
-  await page.getByRole('button', { name: /Fiz também/ }).click()
+  await page.getByRole('button', { name: /Publicar minha versão/ }).click()
   await page.getByRole('link', { name: 'Cadastrar minha versão' }).click()
   await expect(page).toHaveURL(/\/publicar\/minha-versao\//)
 })

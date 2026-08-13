@@ -148,7 +148,7 @@ function confirmDelete(): void {
           variant="secondary"
           @click="startMyVersion"
         >
-          Fiz também ({{ publicationQuery.data.value.versionsCount }})
+          Publicar minha versão ({{ publicationQuery.data.value.versionsCount }})
         </BaseButton>
       </div>
 
@@ -167,8 +167,8 @@ function confirmDelete(): void {
 
       <BaseDialog
         v-model:open="myVersionOpen"
-        title="Fiz também"
-        description="Você vai cadastrar sua própria receita, com uma imagem e os ingredientes que usou."
+        title="Publicar minha versão"
+        description="Começamos com os ingredientes e o preparo da receita original — você ajusta à vontade e envia uma nova foto para mostrar como ficou a sua versão."
       >
         <div class="publication-details__dialog-actions">
           <BaseButton variant="ghost" @click="myVersionOpen = false">Cancelar</BaseButton>
