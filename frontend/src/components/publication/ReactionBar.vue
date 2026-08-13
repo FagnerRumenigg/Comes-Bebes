@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 
+import BaseDialog from '@/components/base/BaseDialog.vue'
 import { applyReaction, removeReaction } from '@/api/generated/publications/publications'
 import type { PublicationResponse, ReactionRequestReactionCode } from '@/api/generated/models'
 import { normalizeHttpError } from '@/api/errors'
@@ -10,17 +11,36 @@ import { useAuthStore } from '@/stores/auth.store'
 
 const props = defineProps<{ publication: PublicationResponse }>()
 
-const authStore = useAuthStore()
-const queryClient = useQueryClient()
-const selected = ref<ReactionRequestReactionCode[]>([...props.publication.selectedReactions])
-const errorMessage = ref<string | null>(null)
-const isOwnPublication = computed(() => authStore.identity?.userId === props.publication.authorId)
+const MAX_REACTIONS = 3
 
-const reactions: Array<{ code: ReactionRequestReactionCode; label: string }> = [
+const PRIMARY_REACTIONS: Array<{ code: ReactionRequestReactionCode; label: string }> = [
   { code: 'WOULD_EAT', label: 'Eu comeria' },
   { code: 'WANT_TO_MAKE', label: 'Quero fazer' },
   { code: 'COMFORT_FOOD', label: 'Comida afetiva' },
 ]
+
+const SECONDARY_REACTIONS: Array<{ code: ReactionRequestReactionCode; label: string }> = [
+  { code: 'HUNGRY', label: 'Me deu fome' },
+  { code: 'BEAUTIFUL', label: 'Ficou lindo' },
+  { code: 'PERFECT_COMBO', label: 'Combinação perfeita' },
+  { code: 'NEVER_TRIED', label: 'Nunca provei' },
+  { code: 'WANT_TO_TRY', label: 'Quero tentar' },
+  { code: 'SUNDAY_LUNCH_VIBES', label: 'Cara de almoço de domingo' },
+  { code: 'GOES_WITH_COFFEE', label: 'Isso com café...' },
+  { code: 'DANGEROUSLY_GOOD', label: 'Perigoso de bom' },
+  { code: 'NEED_RECIPE', label: 'Preciso da receita!' },
+]
+
+const authStore = useAuthStore()
+const queryClient = useQueryClient()
+const selected = ref<ReactionRequestReactionCode[]>([...props.publication.selectedReactions])
+const errorMessage = ref<string | null>(null)
+const moreOpen = ref(false)
+const isOwnPublication = computed(() => authStore.identity?.userId === props.publication.authorId)
+const atLimit = computed(() => selected.value.length >= MAX_REACTIONS)
+const activeSecondary = computed(() =>
+  SECONDARY_REACTIONS.filter((reaction) => selected.value.includes(reaction.code)),
+)
 
 watch(
   () => props.publication.selectedReactions,
@@ -53,8 +73,12 @@ function isSelected(code: ReactionRequestReactionCode): boolean {
   return selected.value.includes(code)
 }
 
+function isDisabled(code: ReactionRequestReactionCode): boolean {
+  return mutation.isPending.value || (atLimit.value && !isSelected(code))
+}
+
 function toggle(code: ReactionRequestReactionCode): void {
-  if (mutation.isPending.value || isOwnPublication.value) return
+  if (isOwnPublication.value || isDisabled(code)) return
   errorMessage.value = null
   const active = !isSelected(code)
   selected.value = active
@@ -62,19 +86,24 @@ function toggle(code: ReactionRequestReactionCode): void {
     : selected.value.filter((item) => item !== code)
   mutation.mutate({ code, active })
 }
+
+function openMore(): void {
+  if (isOwnPublication.value) return
+  moreOpen.value = true
+}
 </script>
 
 <template>
   <div class="reaction-bar" aria-label="Reações">
     <template v-if="authStore.authenticated">
       <button
-        v-for="reaction in reactions"
+        v-for="reaction in [...PRIMARY_REACTIONS, ...activeSecondary]"
         :key="reaction.code"
         type="button"
         class="reaction-bar__button"
         :class="{ 'reaction-bar__button--selected': isSelected(reaction.code) }"
         :aria-pressed="isSelected(reaction.code)"
-        :disabled="mutation.isPending.value || isOwnPublication"
+        :disabled="isOwnPublication || isDisabled(reaction.code)"
         @click="toggle(reaction.code)"
       >
         <span>{{ reaction.label }}</span>
@@ -82,10 +111,18 @@ function toggle(code: ReactionRequestReactionCode): void {
           {{ total(reaction.code) }}
         </span>
       </button>
+      <button
+        type="button"
+        class="reaction-bar__button reaction-bar__more"
+        :disabled="isOwnPublication"
+        @click="openMore"
+      >
+        + Reagir
+      </button>
     </template>
     <template v-else>
       <button
-        v-for="reaction in reactions"
+        v-for="reaction in PRIMARY_REACTIONS"
         :key="reaction.code"
         type="button"
         class="reaction-bar__button"
@@ -96,11 +133,41 @@ function toggle(code: ReactionRequestReactionCode): void {
           {{ total(reaction.code) }}
         </span>
       </button>
+      <button type="button" class="reaction-bar__button reaction-bar__more" @click="showAuthNotice">
+        + Reagir
+      </button>
     </template>
     <span v-if="isOwnPublication" class="reaction-bar__hint">
       Você não pode reagir à própria publicação.
     </span>
+    <span v-else-if="atLimit && authStore.authenticated" class="reaction-bar__hint">
+      Você pode escolher até 3 reações para esta publicação.
+    </span>
     <span v-if="errorMessage" class="reaction-bar__error" role="alert">{{ errorMessage }}</span>
+
+    <BaseDialog
+      v-model:open="moreOpen"
+      title="Mais reações"
+      description="Escolha até 3 reações no total para esta publicação."
+    >
+      <div class="reaction-bar__more-grid">
+        <button
+          v-for="reaction in SECONDARY_REACTIONS"
+          :key="reaction.code"
+          type="button"
+          class="reaction-bar__button"
+          :class="{ 'reaction-bar__button--selected': isSelected(reaction.code) }"
+          :aria-pressed="isSelected(reaction.code)"
+          :disabled="isDisabled(reaction.code)"
+          @click="toggle(reaction.code)"
+        >
+          <span>{{ reaction.label }}</span>
+          <span v-if="publication.showReactionCounts" class="reaction-bar__count">
+            {{ total(reaction.code) }}
+          </span>
+        </button>
+      </div>
+    </BaseDialog>
   </div>
 </template>
 
@@ -142,6 +209,11 @@ function toggle(code: ReactionRequestReactionCode): void {
   opacity: 0.6;
 }
 
+.reaction-bar__more {
+  font-weight: var(--font-weight-semibold);
+  border-style: dashed;
+}
+
 .reaction-bar__count {
   font-weight: var(--font-weight-bold);
 }
@@ -158,6 +230,12 @@ function toggle(code: ReactionRequestReactionCode): void {
 
 .reaction-bar__hint {
   color: var(--color-text-secondary);
+}
+
+.reaction-bar__more-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 @media (max-width: 30rem) {

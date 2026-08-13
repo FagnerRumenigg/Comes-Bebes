@@ -37,18 +37,29 @@ public class ReactionService {
         apply(publicationId, request, request.userId());
     }
 
+    private static final int MAX_REACTIONS_PER_USER = 3;
+
     @Transactional
     public void apply(java.util.UUID publicationId, ReactionRequest request, java.util.UUID userId) {
         validateActors(publicationId, userId);
         var type = reactionTypeRepository.findByCodeAndActiveTrue(stringNormalizer.normalize(request.reactionCode()).toUpperCase(Locale.ROOT))
                 .orElseThrow(() -> new ResourceNotFoundException("REACTION_TYPE_NOT_FOUND", "Tipo de reação não encontrado."));
         PublicationReactionId id = new PublicationReactionId(publicationId, userId, type.getId());
-        PublicationReaction reaction = reactionRepository.findById(id)
-                .orElseGet(() -> PublicationReaction.builder()
-                        .publicationId(publicationId)
-                        .userId(userId)
-                        .reactionTypeId(type.getId())
-                        .build());
+        PublicationReaction reaction = reactionRepository.findById(id).orElse(null);
+        boolean alreadyActive = reaction != null && reaction.getDeletedAt() == null;
+        if (!alreadyActive) {
+            long activeCount = reactionRepository.countByPublicationIdAndUserIdAndDeletedAtIsNull(publicationId, userId);
+            if (activeCount >= MAX_REACTIONS_PER_USER) {
+                throw new InvalidOperationException("REACTION_LIMIT_REACHED", "Você pode escolher até 3 reações para esta publicação.");
+            }
+        }
+        if (reaction == null) {
+            reaction = PublicationReaction.builder()
+                    .publicationId(publicationId)
+                    .userId(userId)
+                    .reactionTypeId(type.getId())
+                    .build();
+        }
         reaction.reactivate();
         reactionRepository.save(reaction);
     }

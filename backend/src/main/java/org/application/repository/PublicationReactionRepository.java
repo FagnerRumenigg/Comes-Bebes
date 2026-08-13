@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PublicationReactionRepository extends JpaRepository<PublicationReaction, PublicationReactionId> {
     java.util.List<PublicationReaction> findByPublicationIdAndDeletedAtIsNull(java.util.UUID publicationId);
+
+    long countByPublicationIdAndUserIdAndDeletedAtIsNull(java.util.UUID publicationId, java.util.UUID userId);
 }
