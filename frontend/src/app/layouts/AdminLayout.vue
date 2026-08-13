@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import BaseButton from '@/components/base/BaseButton.vue'
+import AppFooter from '@/components/layout/AppFooter.vue'
 import PageContainer from '@/components/layout/PageContainer.vue'
 import ThemeSwitch from '@/components/layout/ThemeSwitch.vue'
 import { useAuthStore } from '@/stores/auth.store'
@@ -49,11 +50,14 @@ async function logout(): Promise<void> {
         <RouterView />
       </PageContainer>
     </main>
+    <AppFooter />
   </div>
 </template>
 
 <style scoped>
 .admin-layout {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
 }
 
@@ -118,6 +122,7 @@ async function logout(): Promise<void> {
 }
 
 .admin-layout__main {
+  flex: 1;
   padding-block: var(--space-10) var(--space-20);
 }
 
