@@ -45,6 +45,22 @@ describe('detecção de backend indisponível', () => {
     expect(backendStatus.offline).toBe(false)
   })
 
+  it('não marca offline quando a requisição é cancelada (ex.: navegação desmonta a query)', async () => {
+    mockServer.use(
+      http.get('*/ping', async () => {
+        await new Promise((resolve) => setTimeout(resolve, 200))
+        return HttpResponse.json({})
+      }),
+    )
+
+    const controller = new AbortController()
+    const request = httpClient.get('/ping', { signal: controller.signal })
+    controller.abort()
+
+    await expect(request).rejects.toBeTruthy()
+    expect(backendStatus.offline).toBe(false)
+  })
+
   it('App.vue mostra a tela de fallback e some com o RouterView quando offline', async () => {
     const router = createRouter({
       history: createMemoryHistory(),
