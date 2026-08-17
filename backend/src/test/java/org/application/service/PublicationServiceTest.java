@@ -36,6 +36,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.EnumSet;
 import java.util.Optional;
@@ -44,6 +45,7 @@ import java.util.UUID;
 import java.util.List;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.math.BigDecimal;
 import org.springframework.data.domain.Page;
@@ -92,6 +94,11 @@ class PublicationServiceTest {
 
     @InjectMocks
     private PublicationService publicationService;
+
+    @BeforeEach
+    void setUpZone() {
+        ReflectionTestUtils.setField(publicationService, "applicationZoneId", ZoneOffset.UTC);
+    }
 
     @Test
     void shouldFindActivePublication() {
@@ -345,7 +352,7 @@ class PublicationServiceTest {
         byte[] processedContent = {4, 5, 6, 7};
         Publication saved = publication(UUID.randomUUID());
         ImageValidatorClient.ValidationResult validation = new ImageValidatorClient.ValidationResult(
-                processedContent, "image/webp", 800, 600, 0.98, 0.75);
+                processedContent, "image/webp", 800, 600, 0.98, 0.75, null);
 
         when(imageValidatorClient.validate(content, "dish.png", "image/png")).thenReturn(validation);
         when(userRepository.findByIdAndStatus(authorId, UserStatus.ACTIVE))
@@ -364,6 +371,61 @@ class PublicationServiceTest {
         verify(imageValidatorClient).validate(content, "dish.png", "image/png");
         verify(imageStorage).store(processedContent, "dish.png", "image/webp");
         verify(publicationImageCheckRepository).save(any());
+        // Sem EXIF, não deve haver um segundo save só para gravar photoTakenAt.
+        verify(publicationRepository, times(1)).save(any(Publication.class));
+    }
+
+    @Test
+    void shouldRecordPhotoTakenAtWhenValidatorReturnsExifDateTime() {
+        UUID authorId = UUID.randomUUID();
+        byte[] content = {1, 2, 3};
+        byte[] processedContent = {4, 5, 6, 7};
+        Publication saved = publication(UUID.randomUUID());
+        ImageValidatorClient.ValidationResult validation = new ImageValidatorClient.ValidationResult(
+                processedContent, "image/webp", 800, 600, 0.98, 0.75, "2026-08-15T14:32:07");
+
+        when(imageValidatorClient.validate(content, "dish.png", "image/png")).thenReturn(validation);
+        when(userRepository.findByIdAndStatus(authorId, UserStatus.ACTIVE))
+                .thenReturn(Optional.of(User.builder().id(authorId).status(UserStatus.ACTIVE).build()));
+        when(imageStorage.store(processedContent, "dish.png", "image/webp"))
+                .thenReturn(StoredImage.builder().bucket("bucket").objectName("dish.png").build());
+        when(publicationRepository.save(any(Publication.class))).thenReturn(saved);
+        when(clock.instant()).thenReturn(Instant.parse("2026-08-09T12:00:00Z"));
+        when(clock.getZone()).thenReturn(ZoneOffset.UTC);
+
+        publicationService.createUpload(
+                new CreatePublicationUploadRequest("DISH", "PUBLIC", null, null, null),
+                authorId, content, "dish.png", "image/png");
+
+        assertThat(saved.getPhotoTakenAt()).isEqualTo(OffsetDateTime.parse("2026-08-15T14:32:07Z"));
+        // Um save para criar a publicação, outro para gravar o photoTakenAt lido do EXIF.
+        verify(publicationRepository, times(2)).save(any(Publication.class));
+    }
+
+    @Test
+    void shouldIgnoreMalformedPhotoTakenAtFromValidator() {
+        UUID authorId = UUID.randomUUID();
+        byte[] content = {1, 2, 3};
+        byte[] processedContent = {4, 5, 6, 7};
+        Publication saved = publication(UUID.randomUUID());
+        ImageValidatorClient.ValidationResult validation = new ImageValidatorClient.ValidationResult(
+                processedContent, "image/webp", 800, 600, 0.98, 0.75, "not-a-valid-datetime");
+
+        when(imageValidatorClient.validate(content, "dish.png", "image/png")).thenReturn(validation);
+        when(userRepository.findByIdAndStatus(authorId, UserStatus.ACTIVE))
+                .thenReturn(Optional.of(User.builder().id(authorId).status(UserStatus.ACTIVE).build()));
+        when(imageStorage.store(processedContent, "dish.png", "image/webp"))
+                .thenReturn(StoredImage.builder().bucket("bucket").objectName("dish.png").build());
+        when(publicationRepository.save(any(Publication.class))).thenReturn(saved);
+        when(clock.instant()).thenReturn(Instant.parse("2026-08-09T12:00:00Z"));
+        when(clock.getZone()).thenReturn(ZoneOffset.UTC);
+
+        publicationService.createUpload(
+                new CreatePublicationUploadRequest("DISH", "PUBLIC", null, null, null),
+                authorId, content, "dish.png", "image/png");
+
+        assertThat(saved.getPhotoTakenAt()).isNull();
+        verify(publicationRepository, times(1)).save(any(Publication.class));
     }
 
     @Test

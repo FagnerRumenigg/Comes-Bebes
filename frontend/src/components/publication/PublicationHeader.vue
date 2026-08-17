@@ -10,6 +10,7 @@ const props = defineProps<{
   authorDisplayName: string
   authorUsername: string
   publishedAt: string
+  photoTakenAt?: string | null
   visibility: PublicationResponseVisibility
 }>()
 
@@ -19,6 +20,17 @@ const publishedLabel = computed(() =>
     month: 'short',
     year: 'numeric',
   }).format(new Date(props.publishedAt)),
+)
+
+const photoTakenAtLabel = computed(() =>
+  props.photoTakenAt
+    ? new Intl.DateTimeFormat('pt-BR', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(new Date(props.photoTakenAt))
+    : null,
 )
 </script>
 
@@ -32,6 +44,9 @@ const publishedLabel = computed(() =>
         @{{ authorUsername }}
         <span aria-hidden="true">·</span>
         <time :datetime="publishedAt">{{ publishedLabel }}</time>
+      </span>
+      <span v-if="photoTakenAtLabel" class="publication-header__photo-meta">
+        Foto tirada em <time :datetime="photoTakenAt!">{{ photoTakenAtLabel }}</time>
       </span>
     </div>
     <div class="publication-header__actions">
@@ -82,6 +97,11 @@ const publishedLabel = computed(() =>
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.publication-header__photo-meta {
   color: var(--color-text-secondary);
   font-size: var(--font-size-xs);
 }

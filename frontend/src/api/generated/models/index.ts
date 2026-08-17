@@ -55,6 +55,7 @@ export * from './patchNoteResponse';
 export * from './publicationResponse';
 export * from './publicationResponseDescription';
 export * from './publicationResponseOriginalPublicationId';
+export * from './publicationResponsePhotoTakenAt';
 export * from './publicationResponseReactionTotals';
 export * from './publicationResponseRecipePreview';
 export * from './publicationResponseSelectedReactionsItem';

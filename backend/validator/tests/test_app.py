@@ -42,10 +42,31 @@ def test_validate_returns_processed_webp_image_and_metadata_headers(monkeypatch)
     assert response.headers["x-image-height"] == "800"
     assert response.headers["x-food-score"] == "0.91"
     assert response.headers["x-food-threshold"] == "0.5"
+    assert response.headers["x-photo-taken-at"] == ""
 
     with Image.open(BytesIO(response.content)) as image:
         assert image.format == "WEBP"
         assert image.size == (1200, 800)
+
+
+def test_validate_returns_photo_taken_at_header_when_exif_has_it(monkeypatch) -> None:
+    monkeypatch.setattr("validator.app.get_classifier", lambda: FakeApprovingClassifier())
+    client = TestClient(app)
+
+    base = Image.new("RGB", (1200, 800), "#d97706")
+    exif = base.getexif()
+    exif[36867] = "2026:08:15 14:32:07"  # DateTimeOriginal
+    buffer = BytesIO()
+    base.save(buffer, format="JPEG", exif=exif)
+    buffer.seek(0)
+
+    response = client.post(
+        "/validate",
+        files={"file": ("dish.jpg", buffer, "image/jpeg")},
+    )
+
+    assert response.status_code == 200
+    assert response.headers["x-photo-taken-at"] == "2026-08-15T14:32:07"
 
 
 def test_validate_rejects_image_that_is_not_food(monkeypatch) -> None:

@@ -83,6 +83,7 @@ def validate(file: UploadFile = File(...)) -> dict[str, object]:
                 "X-Sha256": result.sha256,
                 "X-Food-Score": str(classification.food_score),
                 "X-Food-Threshold": str(DEFAULT_FOOD_THRESHOLD),
+                "X-Photo-Taken-At": result.photo_taken_at or "",
             },
         )
     finally:

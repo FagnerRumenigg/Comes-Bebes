@@ -78,6 +78,7 @@ public class PublicationResponseFactory {
                 .description(publication.getDescription())
                 .status(publication.getStatus())
                 .publishedAt(DateTimeConverter.toApplicationTime(publication.getPublishedAt(), zoneId))
+                .photoTakenAt(DateTimeConverter.toApplicationTime(publication.getPhotoTakenAt(), zoneId))
                 .imageUrl("/images/" + publication.getGcsObjectName())
                 .authorUsername(author.map(org.application.model.User::getUsername).orElse(null))
                 .authorDisplayName(author.map(org.application.model.User::getDisplayName).orElse(null))

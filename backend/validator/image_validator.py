@@ -5,6 +5,7 @@ import os
 import tempfile
 import warnings
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -27,6 +28,10 @@ WEBP_QUALITY = 85
 ALLOWED_FORMATS = {"JPEG", "MPO", "PNG", "WEBP", "HEIC", "HEIF"}
 SOURCE_FORMAT_ALIASES = {"MPO": "JPEG"}
 
+# DateTimeOriginal, DateTimeDigitized, DateTime — nessa ordem de preferência.
+_EXIF_DATETIME_TAGS = (36867, 36868, 306)
+_EXIF_DATETIME_FORMAT = "%Y:%m:%d %H:%M:%S"
+
 
 class ImageValidationError(ValueError):
     def __init__(self, code: str, message: str):
@@ -45,6 +50,7 @@ class ValidationResult:
     size_bytes: int
     sha256: str
     output_path: str
+    photo_taken_at: str | None = None
 
 
 def validate_and_normalize(input_path: Path, output_directory: Path) -> ValidationResult:
@@ -71,6 +77,7 @@ def validate_and_normalize(input_path: Path, output_directory: Path) -> Validati
             source_format = SOURCE_FORMAT_ALIASES.get(detected_format, detected_format)
 
             with Image.open(input_path) as image:
+                photo_taken_at = _extract_photo_taken_at(image)
                 normalized_image = ImageOps.exif_transpose(image)
                 normalized_image = normalized_image.copy()
                 width, height = normalized_image.size
@@ -118,7 +125,36 @@ def validate_and_normalize(input_path: Path, output_directory: Path) -> Validati
         size_bytes=output_size,
         sha256=digest,
         output_path=os.fspath(temporary_output_path),
+        photo_taken_at=photo_taken_at,
     )
+
+
+def _extract_photo_taken_at(image: Image.Image) -> str | None:
+    """Lê a data/hora em que a foto foi tirada a partir do EXIF, se existir.
+
+    A maioria dos prints de tela, imagens reencaminhadas pelo WhatsApp e PNGs
+    não carrega essa informação — nesses casos retorna None e o chamador trata
+    como campo opcional. O valor devolvido é ingênuo (sem fuso), porque o EXIF
+    não garante um offset confiável; quem consome decide como interpretar.
+    """
+    try:
+        exif = image.getexif()
+    except Exception:
+        return None
+    if not exif:
+        return None
+
+    for tag in _EXIF_DATETIME_TAGS:
+        raw_value = exif.get(tag)
+        if not raw_value:
+            continue
+        try:
+            parsed = datetime.strptime(str(raw_value).strip(), _EXIF_DATETIME_FORMAT)
+        except ValueError:
+            continue
+        return parsed.isoformat()
+
+    return None
 
 
 def _sha256(file_path: Path) -> str:
