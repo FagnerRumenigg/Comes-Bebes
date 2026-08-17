@@ -89,6 +89,11 @@
             <artifactId>webp-imageio</artifactId>
             <version>0.1.6</version>
         </dependency>
+        <dependency>
+            <groupId>com.yubico</groupId>
+            <artifactId>webauthn-server-core</artifactId>
+            <version>2.7.0</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -82,6 +82,7 @@ const adminSession = (adminId: string): LoginResponse => ({
   onboardingCompleted: true,
   hasUnseenPatchNotes: false,
   sessionId: 'f2c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f66',
+  deviceId: 'd2c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f66',
 })
 
 const userSession = (userId: string): LoginResponse => ({
@@ -96,6 +97,7 @@ const userSession = (userId: string): LoginResponse => ({
   onboardingCompleted: true,
   hasUnseenPatchNotes: false,
   sessionId: 'a1c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f77',
+  deviceId: 'd1c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f77',
 })
 
 describe('perfil público', () => {

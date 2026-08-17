@@ -18,6 +18,9 @@ app:
     url: ${COMESEBEBES_IMAGE_VALIDATOR_URL:http://localhost:8001}
   cors:
     allowed-origins: ${COMESEBEBES_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+  webauthn:
+    relying-party-id: ${COMESEBEBES_WEBAUTHN_RP_ID:localhost}
+    relying-party-name: ${COMESEBEBES_WEBAUTHN_RP_NAME:Comes&Bebes}
 
 spring:
   servlet:
