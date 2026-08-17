@@ -203,6 +203,78 @@ def test_normalizes_heic_input(tmp_path: Path) -> None:
         assert output_image.format == "WEBP"
 
 
+EXIF_DATE_TIME_ORIGINAL_TAG = 36867
+EXIF_DATE_TIME_DIGITIZED_TAG = 36868
+EXIF_DATE_TIME_TAG = 306
+
+
+def test_exif_date_time_original_is_captured(tmp_path: Path) -> None:
+    base = _quadrant_image()
+    exif = base.getexif()
+    exif[EXIF_DATE_TIME_ORIGINAL_TAG] = "2026:08:15 14:32:07"
+    input_path = tmp_path / "with-datetime.jpg"
+    base.save(input_path, format="JPEG", quality=95, exif=exif)
+
+    result = validate_and_normalize(input_path, tmp_path / "normalized")
+
+    assert result.photo_taken_at == "2026-08-15T14:32:07"
+
+
+def test_exif_date_time_falls_back_when_original_is_missing(tmp_path: Path) -> None:
+    base = _quadrant_image()
+    exif = base.getexif()
+    exif[EXIF_DATE_TIME_DIGITIZED_TAG] = "2025:01:02 09:00:00"
+    input_path = tmp_path / "with-digitized-only.jpg"
+    base.save(input_path, format="JPEG", quality=95, exif=exif)
+
+    result = validate_and_normalize(input_path, tmp_path / "normalized")
+
+    assert result.photo_taken_at == "2025-01-02T09:00:00"
+
+
+def test_exif_date_time_original_takes_priority_over_digitized(tmp_path: Path) -> None:
+    base = _quadrant_image()
+    exif = base.getexif()
+    exif[EXIF_DATE_TIME_ORIGINAL_TAG] = "2026:08:15 14:32:07"
+    exif[EXIF_DATE_TIME_DIGITIZED_TAG] = "2020:01:01 00:00:00"
+    input_path = tmp_path / "with-both.jpg"
+    base.save(input_path, format="JPEG", quality=95, exif=exif)
+
+    result = validate_and_normalize(input_path, tmp_path / "normalized")
+
+    assert result.photo_taken_at == "2026-08-15T14:32:07"
+
+
+def test_image_without_exif_datetime_returns_none(tmp_path: Path) -> None:
+    input_path = tmp_path / "no-datetime.jpg"
+    _quadrant_image().save(input_path, format="JPEG", quality=95)
+
+    result = validate_and_normalize(input_path, tmp_path / "normalized")
+
+    assert result.photo_taken_at is None
+
+
+def test_png_input_never_has_photo_taken_at(tmp_path: Path) -> None:
+    input_path = tmp_path / "dish.png"
+    _quadrant_image().save(input_path, format="PNG")
+
+    result = validate_and_normalize(input_path, tmp_path / "normalized")
+
+    assert result.photo_taken_at is None
+
+
+def test_malformed_exif_datetime_is_ignored(tmp_path: Path) -> None:
+    base = _quadrant_image()
+    exif = base.getexif()
+    exif[EXIF_DATE_TIME_ORIGINAL_TAG] = "not-a-date"
+    input_path = tmp_path / "malformed-datetime.jpg"
+    base.save(input_path, format="JPEG", quality=95, exif=exif)
+
+    result = validate_and_normalize(input_path, tmp_path / "normalized")
+
+    assert result.photo_taken_at is None
+
+
 def test_rejects_corrupted_image(tmp_path: Path) -> None:
     input_path = tmp_path / "dish.jpg"
     Image.new("RGB", (100, 100), "white").save(input_path, format="JPEG")

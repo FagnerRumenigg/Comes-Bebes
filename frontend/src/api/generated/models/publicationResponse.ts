@@ -14,6 +14,7 @@ import type { PublicationResponseReactionTotals } from './publicationResponseRea
 import type { PublicationResponseSelectedReactionsItem } from './publicationResponseSelectedReactionsItem';
 import type { PublicationResponseOriginalPublicationId } from './publicationResponseOriginalPublicationId';
 import type { PublicationResponseRecipePreview } from './publicationResponseRecipePreview';
+import type { PublicationResponsePhotoTakenAt } from './publicationResponsePhotoTakenAt';
 
 /**
  * Dados públicos de uma publicação ativa.
@@ -49,4 +50,6 @@ export interface PublicationResponse {
   recipePreview: PublicationResponseRecipePreview;
   /** Indica se a publicação foi editada por um administrador. */
   editedByAdmin: boolean;
+  /** Data/hora em que a foto foi tirada, lida do EXIF automaticamente. Nula quando a imagem não carrega essa informação (prints, PNGs, fotos reenviadas por apps que removem metadados). */
+  photoTakenAt: PublicationResponsePhotoTakenAt;
 }

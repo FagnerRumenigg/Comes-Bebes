@@ -87,7 +87,8 @@ public class ImageValidatorClient {
                 width,
                 height,
                 parseDoubleHeader(responseHeaders, "X-Food-Score"),
-                parseDoubleHeader(responseHeaders, "X-Food-Threshold"));
+                parseDoubleHeader(responseHeaders, "X-Food-Threshold"),
+                parseStringHeader(responseHeaders, "X-Photo-Taken-At"));
     }
 
     private Integer parseIntHeader(HttpHeaders headers, String name) {
@@ -106,6 +107,11 @@ public class ImageValidatorClient {
         } catch (NumberFormatException exception) {
             return null;
         }
+    }
+
+    private String parseStringHeader(HttpHeaders headers, String name) {
+        String value = headers.getFirst(name);
+        return value == null || value.isBlank() ? null : value;
     }
 
     private String normalizeContentType(String contentType, String filename, byte[] content) {
@@ -178,8 +184,13 @@ public class ImageValidatorClient {
         }
     }
 
+    /**
+     * photoTakenAt: ISO-8601 sem fuso (ex.: "2026-08-15T14:32:07"), lido do EXIF pelo validador
+     * antes de removê-lo. Nulo quando a imagem não carrega essa informação (prints, PNGs, fotos
+     * reenviadas por apps que removem metadados).
+     */
     public record ValidationResult(byte[] imageBytes, String contentType, int width, int height,
-                                    Double foodScore, Double threshold) {
+                                    Double foodScore, Double threshold, String photoTakenAt) {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

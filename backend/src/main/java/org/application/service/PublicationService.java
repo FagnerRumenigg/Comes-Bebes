@@ -32,8 +32,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -58,6 +61,7 @@ public class PublicationService {
     private final Clock clock;
     private final ImageValidatorClient imageValidatorClient;
     private final PublicationImageCheckRepository publicationImageCheckRepository;
+    private final ZoneId applicationZoneId;
 
     private final PublicationOriginRepository publicationOriginRepository;
 
@@ -174,6 +178,7 @@ public class PublicationService {
         Publication publication = create(publicationRequest, authorId,
                 imageStorage.store(validation.imageBytes(), filename, validation.contentType()));
         saveApprovedImageCheck(publication, validation);
+        applyPhotoTakenAt(publication, validation);
         return publication;
     }
 
@@ -184,7 +189,33 @@ public class PublicationService {
         Publication publication = createMyVersion(sourcePublicationId, request, authorId,
                 imageStorage.store(validation.imageBytes(), filename, validation.contentType()));
         saveApprovedImageCheck(publication, validation);
+        applyPhotoTakenAt(publication, validation);
         return publication;
+    }
+
+    /**
+     * O EXIF não garante fuso confiável, então o horário "ingênuo" devolvido pelo validador é
+     * interpretado no fuso da aplicação (o mesmo já usado para exibir outras datas ao usuário).
+     */
+    private void applyPhotoTakenAt(Publication publication, ImageValidatorClient.ValidationResult validation) {
+        OffsetDateTime photoTakenAt = parsePhotoTakenAt(validation.photoTakenAt());
+        if (photoTakenAt == null) {
+            return;
+        }
+        publication.recordPhotoTakenAt(photoTakenAt);
+        publicationRepository.save(publication);
+    }
+
+    private OffsetDateTime parsePhotoTakenAt(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDateTime.parse(raw).atZone(applicationZoneId).toOffsetDateTime();
+        } catch (DateTimeParseException exception) {
+            log.warn("event=photo_taken_at_parse_failed value={}", raw);
+            return null;
+        }
     }
 
     private void saveApprovedImageCheck(Publication publication, ImageValidatorClient.ValidationResult validation) {

@@ -47,7 +47,11 @@ public record PublicationResponse(
         boolean reportedByCurrentUser,
         RecipeResponse recipePreview,
         @Schema(description = "Indica se a publicação foi editada por um administrador.")
-        boolean editedByAdmin
+        boolean editedByAdmin,
+        @Schema(description = "Data/hora em que a foto foi tirada, lida do EXIF automaticamente. "
+                + "Nula quando a imagem não carrega essa informação (prints, PNGs, fotos reenviadas por apps que removem metadados).",
+                example = "2026-08-15T14:32:07-03:00", nullable = true)
+        OffsetDateTime photoTakenAt
 ) {
 
     public static PublicationResponse of(Publication publication, ZoneId zoneId) {
@@ -60,6 +64,7 @@ public record PublicationResponse(
                 .description(publication.getDescription())
                 .status(publication.getStatus())
                 .publishedAt(DateTimeConverter.toApplicationTime(publication.getPublishedAt(), zoneId))
+                .photoTakenAt(DateTimeConverter.toApplicationTime(publication.getPhotoTakenAt(), zoneId))
                 .build();
     }
 }
