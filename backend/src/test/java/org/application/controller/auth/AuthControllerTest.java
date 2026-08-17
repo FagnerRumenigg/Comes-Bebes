@@ -6,6 +6,7 @@ import org.application.controller.auth.request.RefreshTokenRequest;
 import org.application.controller.auth.response.LoginResponse;
 import org.application.controller.user.request.CreateUserRequest;
 import org.application.controller.user.response.UserResponse;
+import org.application.config.CurrentUser;
 import org.application.service.AuthService;
 import org.application.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,17 +32,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AuthControllerTest {
     @Mock private AuthService authService;
     @Mock private UserService userService;
+    @Mock private CurrentUser currentUser;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new AuthController(authService, userService))
+        mockMvc = MockMvcBuilders.standaloneSetup(new AuthController(authService, userService, currentUser))
                 .setControllerAdvice(new ApiExceptionHandler()).build();
     }
 
     @Test
     void shouldLoginAndReturnToken() throws Exception {
-        when(authService.login(any(LoginRequest.class), any(String.class))).thenReturn(
+        when(authService.login(any(LoginRequest.class), any(String.class), any(), any())).thenReturn(
                 new LoginResponse("token", "refresh", "Bearer", 3600, UUID.randomUUID(), "fagner", org.application.model.UserRole.USER, false, false, OffsetDateTime.now()));
 
         mockMvc.perform(post("/auth/login")
@@ -98,5 +100,16 @@ class AuthControllerTest {
                 .andExpect(status().isNoContent());
 
         verify(authService).logout("refresh");
+    }
+
+    @Test
+    void shouldLogoutAllSessions() throws Exception {
+        UUID userId = UUID.randomUUID();
+        when(currentUser.id(any())).thenReturn(userId);
+
+        mockMvc.perform(post("/auth/logout-all"))
+                .andExpect(status().isNoContent());
+
+        verify(authService).logoutAll(userId);
     }
 }

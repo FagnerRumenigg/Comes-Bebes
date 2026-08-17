@@ -30,7 +30,7 @@ public class UserNotification {
     @Column(nullable = false, length = 40)
     private String type;
 
-    @Column(name = "moderation_case_id", nullable = false)
+    @Column(name = "moderation_case_id")
     private UUID moderationCaseId;
 
     @Column(name = "publication_id")

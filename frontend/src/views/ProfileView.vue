@@ -33,6 +33,12 @@ const canBlock = computed(
     profileQuery.data.value?.status !== 'BLOCKED',
 )
 
+const isOwnProfile = computed(
+  () =>
+    Boolean(profileQuery.data.value) &&
+    profileQuery.data.value?.id === authStore.identity?.userId,
+)
+
 const blockMutation = useBlock({
   mutation: {
     onSuccess: () => {
@@ -76,6 +82,9 @@ function confirmBlock(): void {
         >
           Bloquear usuário
         </BaseButton>
+        <RouterLink v-if="isOwnProfile" class="profile-view__devices-link" to="/dispositivos">
+          Meus dispositivos
+        </RouterLink>
       </header>
 
       <BaseDialog
@@ -144,6 +153,13 @@ function confirmBlock(): void {
 .profile-view__block {
   margin-block-start: var(--space-4);
   color: var(--color-danger);
+}
+
+.profile-view__devices-link {
+  display: inline-block;
+  margin-block-start: var(--space-4);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
 }
 
 .profile-view__dialog-actions {

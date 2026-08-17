@@ -11,6 +11,7 @@ const labels: Record<string, string> = {
   PUBLICATION_APPROVED: 'Sua publicação foi aprovada.',
   PUBLICATION_REPORTED: 'Uma publicação foi denunciada.',
   REPORT_REJECTED_WARNING: 'Sua denúncia foi analisada e a publicação foi mantida.',
+  NEW_DEVICE_LOGIN: 'Novo login detectado em um dispositivo. Não foi você? Revogue o acesso.',
 }
 </script>
 
@@ -45,7 +46,11 @@ const labels: Record<string, string> = {
       >
         <strong>{{ labels[notification.type] ?? 'Você recebeu uma nova notificação.' }}</strong
         ><span>{{ notification.readAt ? 'Lida' : 'Não lida' }}</span
-        ><RouterLink :to="`/publicacoes/${notification.publicationId}`">Ver publicação</RouterLink>
+        ><RouterLink v-if="notification.publicationId" :to="`/publicacoes/${notification.publicationId}`"
+          >Ver publicação</RouterLink
+        ><RouterLink v-else-if="notification.type === 'NEW_DEVICE_LOGIN'" to="/dispositivos"
+          >Ver dispositivos</RouterLink
+        >
       </li>
     </ul>
   </section>

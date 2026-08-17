@@ -30,6 +30,9 @@ public class RefreshToken {
     @Column(name = "session_id", nullable = false)
     private UUID sessionId;
 
+    @Column(name = "device_id")
+    private UUID deviceId;
+
     @Column(name = "token_hash", nullable = false, unique = true, length = 64)
     private String tokenHash;
 

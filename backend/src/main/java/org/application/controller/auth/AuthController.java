@@ -14,6 +14,7 @@ import org.application.controller.user.request.CreateUserRequest;
 import org.application.controller.auth.response.LoginResponse;
 import org.application.controller.auth.response.CreatedUserResponse;
 import org.application.controller.response.ApiErrorResponse;
+import org.application.config.CurrentUser;
 import org.application.service.AuthService;
 import org.application.service.UserService;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
@@ -33,6 +35,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 public class AuthController {
     private final AuthService authService;
     private final UserService userService;
+    private final CurrentUser currentUser;
 
     @PostMapping("/register")
     @Operation(summary = "Criar conta", description = "Cria uma conta usando username e senha. O e-mail não participa do cadastro no MVP.")
@@ -55,7 +58,7 @@ public class AuthController {
     })
     public LoginResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         String key = httpRequest.getRemoteAddr() + "|" + request.username().trim().toLowerCase(java.util.Locale.ROOT);
-        return authService.login(request, key);
+        return authService.login(request, key, httpRequest.getHeader("User-Agent"), clientIp(httpRequest));
     }
 
     @PostMapping("/refresh")
@@ -73,5 +76,23 @@ public class AuthController {
     public ResponseEntity<Void> logout(@Valid @RequestBody RefreshTokenRequest request) {
         authService.logout(request.refreshToken());
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/logout-all")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Encerrar todas as sessões", description = "Revoga os refresh tokens de todos os dispositivos da conta autenticada.")
+    @ApiResponse(responseCode = "204", description = "Todas as sessões foram encerradas.")
+    public ResponseEntity<Void> logoutAll(Authentication authentication) {
+        authService.logoutAll(currentUser.id(authentication));
+        return ResponseEntity.noContent().build();
+    }
+
+    private String clientIp(HttpServletRequest request) {
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            return forwardedFor.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 }
