@@ -38,6 +38,8 @@ class DeviceServiceTest {
     private static final Instant NOW = Instant.parse("2026-08-08T15:00:00Z");
     private static final String CHROME_WINDOWS_UA =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36";
+    private static final String CHROME_ANDROID_UA =
+            "Mozilla/5.0 (Linux; Android 14; SM-G991B) AppleWebKit/537.36 Chrome/126.0 Mobile Safari/537.36";
 
     @BeforeEach
     void setUp() {
@@ -57,6 +59,16 @@ class DeviceServiceTest {
         assertThat(lookup.device().getDeviceName()).isEqualTo("Chrome no Windows");
         assertThat(lookup.device().isActive()).isTrue();
         assertThat(lookup.device().isTrusted()).isFalse();
+    }
+
+    @Test
+    void shouldDetectAndroidInsteadOfLinuxInUserAgent() {
+        UUID userId = UUID.randomUUID();
+        when(deviceRepository.findByUserIdAndDeviceHash(any(), any())).thenReturn(Optional.empty());
+
+        var lookup = service.getOrCreateDevice(userId, CHROME_ANDROID_UA, "1.2.3.4");
+
+        assertThat(lookup.device().getDeviceName()).isEqualTo("Chrome no Android");
     }
 
     @Test

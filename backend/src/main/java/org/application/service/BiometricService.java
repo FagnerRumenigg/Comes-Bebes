@@ -87,7 +87,7 @@ public class BiometricService {
                         .build());
 
         return BiometricRegistrationStartResponse.builder()
-                .publicKeyCredentialCreationOptions(parseJson(toJsonUnchecked(options::toCredentialsCreateJson)))
+                .publicKeyCredentialCreationOptions(unwrapPublicKey(toJsonUnchecked(options::toCredentialsCreateJson)))
                 .state(toJsonUnchecked(options::toJson))
                 .build();
     }
@@ -149,7 +149,7 @@ public class BiometricService {
                         .build());
 
         return BiometricAuthenticationStartResponse.builder()
-                .publicKeyCredentialRequestOptions(parseJson(toJsonUnchecked(assertionRequest::toCredentialsGetJson)))
+                .publicKeyCredentialRequestOptions(unwrapPublicKey(toJsonUnchecked(assertionRequest::toCredentialsGetJson)))
                 .state(toJsonUnchecked(assertionRequest::toJson))
                 .build();
     }
@@ -240,8 +240,19 @@ public class BiometricService {
         }
     }
 
-    private JsonNode parseJson(String rawJson) {
-        return objectMapper.readTree(rawJson);
+    /**
+     * toCredentialsCreateJson()/toCredentialsGetJson() (Yubico) envelopam o resultado como
+     * {"publicKey": {...}} — formato pensado para navigator.credentials.create/get() manual.
+     * PublicKeyCredential.parseCreationOptionsFromJSON()/parseRequestOptionsFromJSON() (nativo do
+     * navegador) esperam o objeto de opções sem esse envelope, então desembrulhamos aqui.
+     */
+    private JsonNode unwrapPublicKey(String credentialsJson) {
+        JsonNode envelope = objectMapper.readTree(credentialsJson);
+        JsonNode publicKey = envelope.get("publicKey");
+        if (publicKey == null) {
+            throw new IllegalStateException("Resposta WebAuthn sem o campo 'publicKey' esperado.");
+        }
+        return publicKey;
     }
 
     /**

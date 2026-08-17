@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { normalizeHttpError } from '@/api/errors'
 import { useLogin } from '@/api/generated/authentication/authentication'
-import type { LoginRequest } from '@/api/generated/models'
+import type { LoginRequest, LoginResponse } from '@/api/generated/models'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCheckbox from '@/components/base/BaseCheckbox.vue'
+import BaseDialog from '@/components/base/BaseDialog.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import BaseToast from '@/components/base/BaseToast.vue'
 import { isPlatformAuthenticatorAvailable, isWebAuthnSupported, useBiometric } from '@/composables/useBiometric'
@@ -17,7 +18,7 @@ import { useAuthStore } from '@/stores/auth.store'
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
-const { checkStatus, authenticate } = useBiometric()
+const { checkStatus, authenticate, register } = useBiometric()
 
 const form = reactive<LoginRequest>({ username: '', password: '' })
 const remember = ref(false)
@@ -27,6 +28,9 @@ const mocksEnabled = import.meta.env.DEV && import.meta.env.VITE_ENABLE_MOCKS !=
 
 const biometricAvailable = ref(false)
 const biometricPending = ref(false)
+const biometricPromptOpen = ref(false)
+const enrollingBiometricAfterLogin = ref(false)
+let pendingLoginResponse: LoginResponse | null = null
 
 if (typeof route.query.username === 'string') form.username = route.query.username
 
@@ -37,11 +41,48 @@ function goToDestination(onboardingCompleted: boolean): void {
   void router.replace(target)
 }
 
+async function maybeOfferBiometricEnrollment(response: LoginResponse): Promise<void> {
+  if (!isWebAuthnSupported()) {
+    goToDestination(response.onboardingCompleted)
+    return
+  }
+  const [platformReady, alreadyRegistered] = await Promise.all([
+    isPlatformAuthenticatorAvailable(),
+    checkStatus(response.deviceId).catch(() => true),
+  ])
+  if (!platformReady || alreadyRegistered) {
+    goToDestination(response.onboardingCompleted)
+    return
+  }
+  pendingLoginResponse = response
+  biometricPromptOpen.value = true
+}
+
+watch(biometricPromptOpen, (open) => {
+  if (open) return
+  const pending = pendingLoginResponse
+  pendingLoginResponse = null
+  if (pending) goToDestination(pending.onboardingCompleted)
+})
+
+async function confirmBiometricEnrollment(): Promise<void> {
+  if (!pendingLoginResponse) return
+  enrollingBiometricAfterLogin.value = true
+  try {
+    await register(pendingLoginResponse.deviceId)
+  } catch {
+    // O login já foi concluído; falha ao ativar biometria não deve travar o usuário.
+  } finally {
+    enrollingBiometricAfterLogin.value = false
+    biometricPromptOpen.value = false
+  }
+}
+
 const loginMutation = useLogin({
   mutation: {
     onSuccess(response) {
       authStore.acceptSession(response, remember.value)
-      goToDestination(response.onboardingCompleted)
+      void maybeOfferBiometricEnrollment(response)
     },
     onError(error) {
       const normalizedError = normalizeHttpError(error)
@@ -182,6 +223,23 @@ function submit(): void {
       Ainda não tem uma conta?
       <RouterLink to="/cadastro">Criar cadastro</RouterLink>
     </p>
+
+    <BaseDialog
+      v-model:open="biometricPromptOpen"
+      title="Ativar biometria?"
+      description="Use Face ID, digital ou Windows Hello para entrar mais rápido neste dispositivo da próxima vez."
+    >
+      <template #actions>
+        <BaseButton variant="ghost" @click="biometricPromptOpen = false">Agora não</BaseButton>
+        <BaseButton
+          variant="primary"
+          :loading="enrollingBiometricAfterLogin"
+          @click="confirmBiometricEnrollment"
+        >
+          Ativar
+        </BaseButton>
+      </template>
+    </BaseDialog>
   </section>
 </template>
 

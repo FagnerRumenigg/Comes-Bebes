@@ -31,7 +31,7 @@ public class DeviceService {
     private static final Pattern BROWSER_PATTERN =
             Pattern.compile("(Edg|OPR|Chrome|Firefox|Safari)/");
     private static final Pattern OS_PATTERN =
-            Pattern.compile("(Windows|Mac OS X|Android|iPhone|iPad|Linux)");
+            Pattern.compile("(Windows|Mac OS X|iPhone|iPad|Linux)");
 
     public record DeviceLookup(UserDevice device, boolean isNew) {
     }
@@ -127,7 +127,20 @@ public class DeviceService {
                     default -> match;
                 })
                 .orElse("Navegador");
-        String os = firstMatch(OS_PATTERN, userAgent, 1)
+        return browser + " no " + detectOs(userAgent);
+    }
+
+    /**
+     * User agents Android trazem "Linux" antes de "Android" (ex.: "Linux; Android 10; ..."),
+     * e como Matcher.find() retorna o match mais à esquerda, um regex único sempre acharia
+     * "Linux" primeiro independente da ordem da alternação. Por isso o caso Android é checado
+     * separadamente, com prioridade sobre o restante do OS_PATTERN.
+     */
+    private String detectOs(String userAgent) {
+        if (userAgent.contains("Android")) {
+            return "Android";
+        }
+        return firstMatch(OS_PATTERN, userAgent, 1)
                 .map(match -> switch (match) {
                     case "Mac OS X" -> "Mac";
                     case "iPhone" -> "iOS";
@@ -135,7 +148,6 @@ public class DeviceService {
                     default -> match;
                 })
                 .orElse("dispositivo desconhecido");
-        return browser + " no " + os;
     }
 
     private Optional<String> firstMatch(Pattern pattern, String input, int group) {

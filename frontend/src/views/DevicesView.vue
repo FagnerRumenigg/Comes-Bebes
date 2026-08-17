@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQueryClient } from '@tanstack/vue-query'
 
-import { getListQueryKey, useList, useRevoke, useUpdate } from '@/api/generated/devices/devices'
+import { getListQueryKey, useList, useRevoke } from '@/api/generated/devices/devices'
 import { getList1QueryKey, useList1, useRemove as useRemoveBiometric } from '@/api/generated/biometric/biometric'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseDialog from '@/components/base/BaseDialog.vue'
@@ -94,23 +94,9 @@ const revokeMutation = useRevoke({
   },
 })
 
-const trustMutation = useUpdate({
-  mutation: {
-    onSuccess: invalidateDevices,
-    onError: (error) => {
-      actionError.value = normalizeHttpError(error).message
-    },
-  },
-})
-
 function revokeDevice(id: string): void {
   actionError.value = ''
   revokeMutation.mutate({ id })
-}
-
-function trustDevice(id: string): void {
-  actionError.value = ''
-  trustMutation.mutate({ id, data: { isTrusted: true } })
 }
 
 async function confirmLogoutAll(): Promise<void> {
@@ -153,9 +139,6 @@ async function confirmLogoutAll(): Promise<void> {
           <div class="devices-view__name">
             <strong>{{ device.deviceName }}</strong>
             <span v-if="device.isCurrent" class="devices-view__badge">Este dispositivo</span>
-            <span v-if="device.isTrusted" class="devices-view__badge devices-view__badge--trusted"
-              >Confiável</span
-            >
             <span v-if="!device.isActive" class="devices-view__badge devices-view__badge--revoked"
               >Revogado</span
             >
@@ -163,14 +146,6 @@ async function confirmLogoutAll(): Promise<void> {
           <p class="devices-view__meta">Último acesso: {{ formatDate(device.lastActivityAt) }}</p>
         </div>
         <div v-if="device.isActive" class="devices-view__actions">
-          <BaseButton
-            v-if="!device.isTrusted"
-            variant="secondary"
-            :loading="trustMutation.isPending.value"
-            @click="trustDevice(device.id)"
-          >
-            Confiar
-          </BaseButton>
           <BaseButton
             v-if="!device.isCurrent"
             variant="danger"
@@ -296,11 +271,6 @@ async function confirmLogoutAll(): Promise<void> {
   background: var(--color-surface-raised);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
-}
-.devices-view__badge--trusted {
-  color: var(--color-primary-contrast);
-  background: var(--color-primary);
-  border-color: var(--color-primary);
 }
 .devices-view__badge--revoked {
   color: var(--color-danger);

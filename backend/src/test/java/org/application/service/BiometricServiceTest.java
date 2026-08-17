@@ -102,7 +102,7 @@ class BiometricServiceTest {
 
         PublicKeyCredentialCreationOptions options = mock(PublicKeyCredentialCreationOptions.class);
         try {
-            when(options.toCredentialsCreateJson()).thenReturn("{\"publicKey\":{}}");
+            when(options.toCredentialsCreateJson()).thenReturn("{\"publicKey\":{\"challenge\":\"abc\"}}");
             when(options.toJson()).thenReturn("{\"state\":true}");
         } catch (Exception ignored) {
             // toCredentialsCreateJson()/toJson() declaram JsonProcessingException checked
@@ -112,7 +112,9 @@ class BiometricServiceTest {
         var response = service.startRegistration(user, deviceId);
 
         assertThat(response.state()).isEqualTo("{\"state\":true}");
-        assertThat(response.publicKeyCredentialCreationOptions().get("publicKey")).isNotNull();
+        // parseCreationOptionsFromJSON() no navegador espera o objeto sem o envelope "publicKey" —
+        // toCredentialsCreateJson() envelopa, então o service precisa desembrulhar antes de expor.
+        assertThat(response.publicKeyCredentialCreationOptions().get("challenge").asString()).isEqualTo("abc");
     }
 
     @Test
