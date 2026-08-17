@@ -234,6 +234,69 @@ export const useLogout = <TError = unknown,
       return useMutation(mutationOptions, queryClient);
     }
     /**
+ * Revoga os refresh tokens de todos os dispositivos da conta autenticada.
+ * @summary Encerrar todas as sessões
+ */
+export const logoutAll = (
+    
+ options?: SecondParameter<typeof apiRequest>,signal?: AbortSignal
+) => {
+      
+      
+      return apiRequest<void>(
+      {url: `/auth/logout-all`, method: 'POST', signal
+    },
+      options);
+    }
+  
+
+
+export const getLogoutAllMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logoutAll>>, TError,void, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof logoutAll>>, TError,void, TContext> => {
+
+const mutationKey = ['logoutAll'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof logoutAll>>, void> = () => {
+          
+
+          return  logoutAll(requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LogoutAllMutationResult = NonNullable<Awaited<ReturnType<typeof logoutAll>>>
+    
+    export type LogoutAllMutationError = unknown
+
+    /**
+ * @summary Encerrar todas as sessões
+ */
+export const useLogoutAll = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logoutAll>>, TError,void, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof logoutAll>>,
+        TError,
+        void,
+        TContext
+      > => {
+
+      const mutationOptions = getLogoutAllMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Valida as credenciais e emite um JWT para os endpoints protegidos.
  * @summary Autenticar usuário
  */

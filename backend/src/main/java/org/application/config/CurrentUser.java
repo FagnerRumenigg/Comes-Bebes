@@ -2,6 +2,7 @@ package org.application.config;
 
 import org.application.service.exception.InvalidOperationException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
@@ -28,5 +29,20 @@ public class CurrentUser {
             return null;
         }
         return id(authentication, null);
+    }
+
+    public UUID deviceId(Authentication authentication) {
+        if (!(authentication instanceof JwtAuthenticationToken jwtAuthentication)) {
+            return null;
+        }
+        Object deviceId = jwtAuthentication.getTokenAttributes().get("device_id");
+        if (deviceId == null) {
+            return null;
+        }
+        try {
+            return UUID.fromString(deviceId.toString());
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
     }
 }

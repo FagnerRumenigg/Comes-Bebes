@@ -65,6 +65,16 @@ export const getLogoutMockHandler = (overrideResponse?: void | ((info: Parameter
   }, options)
 }
 
+export const getLogoutAllMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
+  return http.post('*/auth/logout-all', async (info) => {await delay(1000);
+  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
+    return new HttpResponse(null,
+      { status: 204,
+        
+      })
+  }, options)
+}
+
 export const getLoginMockHandler = (overrideResponse?: LoginResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<LoginResponse> | LoginResponse), options?: RequestHandlerOptions) => {
   return http.post('*/auth/login', async (info) => {await delay(1000);
   
@@ -80,5 +90,6 @@ export const getAuthenticationMock = () => [
   getRegisterMockHandler(),
   getRefreshMockHandler(),
   getLogoutMockHandler(),
+  getLogoutAllMockHandler(),
   getLoginMockHandler()
 ]

@@ -6,6 +6,7 @@ app:
     jwt-issuer: ${COMESEBEBES_JWT_ISSUER:comesebebes}
     jwt-expiration-minutes: ${COMESEBEBES_JWT_EXPIRATION_MINUTES:60}
     refresh-token-expiration-days: ${COMESEBEBES_REFRESH_TOKEN_EXPIRATION_DAYS:30}
+    device-inactivity-timeout-days: ${COMESEBEBES_DEVICE_INACTIVITY_TIMEOUT_DAYS:7}
   rate-limit:
     login:
       max-attempts: ${COMESEBEBES_LOGIN_RATE_LIMIT_MAX_ATTEMPTS:5}

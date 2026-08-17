@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 
 import {
   logout as logoutRequest,
+  logoutAll as logoutAllRequest,
   refresh as refreshRequest,
 } from '@/api/generated/authentication/authentication'
 import type { LoginResponse, LoginResponseRole } from '@/api/generated/models'
@@ -268,6 +269,14 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function logoutAll(): Promise<void> {
+    try {
+      if (authenticated.value) await logoutAllRequest()
+    } finally {
+      clearSession()
+    }
+  }
+
   function dispose(): void {
     clearRefreshTimer()
     if (monitoringStarted && typeof window !== 'undefined') {
@@ -292,6 +301,7 @@ export const useAuthStore = defineStore('auth', () => {
     initialize,
     renewSession,
     logout,
+    logoutAll,
     dispose,
   }
 })

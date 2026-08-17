@@ -15,6 +15,7 @@ import SearchView from '@/views/SearchView.vue'
 import SavedView from '@/views/SavedView.vue'
 import OnboardingView from '@/views/OnboardingView.vue'
 import NotificationsView from '@/views/NotificationsView.vue'
+import DevicesView from '@/views/DevicesView.vue'
 import ModerationQueueView from '@/views/ModerationQueueView.vue'
 import ModerationCaseView from '@/views/ModerationCaseView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
@@ -79,6 +80,12 @@ export const routes: RouteRecordRaw[] = [
         name: 'notifications',
         component: NotificationsView,
         meta: { access: 'authenticated', pageTitle: 'Notificações' },
+      },
+      {
+        path: 'dispositivos',
+        name: 'devices',
+        component: DevicesView,
+        meta: { access: 'authenticated', pageTitle: 'Meus dispositivos' },
       },
       {
         path: 'onboarding',

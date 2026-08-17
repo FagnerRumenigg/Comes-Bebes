@@ -3,10 +3,14 @@ package org.application.service;
 import lombok.RequiredArgsConstructor;
 import org.application.controller.auth.request.LoginRequest;
 import org.application.controller.auth.response.LoginResponse;
+import org.application.model.User;
+import org.application.model.UserDevice;
+import org.application.model.UserNotification;
 import org.application.model.UserStatus;
 import org.application.model.RefreshToken;
 import org.application.repository.UserRepository;
 import org.application.repository.RefreshTokenRepository;
+import org.application.repository.UserNotificationRepository;
 import org.application.service.exception.ResourceNotFoundException;
 import org.application.service.exception.InvalidOperationException;
 import org.application.util.StringNormalizer;
@@ -22,6 +26,7 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import java.security.SecureRandom;
 import java.util.HexFormat;
@@ -33,6 +38,8 @@ import org.slf4j.LoggerFactory;
 @RequiredArgsConstructor
 public class AuthService {
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+    private static final String NEW_DEVICE_LOGIN = "NEW_DEVICE_LOGIN";
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final StringNormalizer normalizer;
@@ -41,6 +48,8 @@ public class AuthService {
     private final LoginRateLimiter loginRateLimiter;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PatchNoteService patchNoteService;
+    private final DeviceService deviceService;
+    private final UserNotificationRepository notificationRepository;
 
     @Value("${app.security.jwt-issuer}")
     private String issuer;
@@ -48,12 +57,18 @@ public class AuthService {
     private long expirationMinutes;
     @Value("${app.security.refresh-token-expiration-days}")
     private long refreshTokenExpirationDays;
+    @Value("${app.security.device-inactivity-timeout-days}")
+    private long deviceInactivityTimeoutDays;
 
     public LoginResponse login(LoginRequest request) {
-        return login(request, request.username());
+        return login(request, request.username(), null, null);
     }
 
     public LoginResponse login(LoginRequest request, String rateLimitKey) {
+        return login(request, rateLimitKey, null, null);
+    }
+
+    public LoginResponse login(LoginRequest request, String rateLimitKey, String userAgent, String ipAddress) {
         String username = normalizer.normalize(request.username());
         loginRateLimiter.check(rateLimitKey);
         var userOptional = userRepository.findByUsernameIgnoreCase(username)
@@ -67,8 +82,14 @@ public class AuthService {
         var user = userOptional.get();
         loginRateLimiter.reset(rateLimitKey);
 
-        LoginResponse response = issueSession(user, UUID.randomUUID());
-        log.info("event=login_success username={} userId={} sessionId={}", user.getUsername(), user.getId(), response.sessionId());
+        var deviceLookup = deviceService.getOrCreateDevice(user.getId(), userAgent, ipAddress);
+        if (deviceLookup.isNew()) {
+            notifyNewDevice(user.getId(), deviceLookup.device());
+        }
+
+        LoginResponse response = issueSession(user, UUID.randomUUID(), deviceLookup.device());
+        log.info("event=login_success username={} userId={} sessionId={} deviceId={}",
+                user.getUsername(), user.getId(), response.sessionId(), deviceLookup.device().getId());
         return response;
     }
 
@@ -79,11 +100,15 @@ public class AuthService {
                 .orElseThrow(() -> new InvalidOperationException("REFRESH_TOKEN_INVALID", "Refresh token inválido ou expirado."));
         var user = userRepository.findByIdAndStatus(stored.getUserId(), UserStatus.ACTIVE)
                 .orElseThrow(() -> new ResourceNotFoundException("USER_NOT_FOUND", "Usuário não encontrado."));
+
+        UserDevice device = requireActiveDevice(stored, now);
+
         stored.revoke(now);
         refreshTokenRepository.save(stored);
         UUID sessionId = stored.getSessionId() == null ? UUID.randomUUID() : stored.getSessionId();
-        LoginResponse response = issueSession(user, sessionId);
-        log.info("event=session_refresh userId={} sessionId={}", user.getId(), sessionId);
+        deviceService.touchActivity(device);
+        LoginResponse response = issueSession(user, sessionId, device);
+        log.info("event=session_refresh userId={} sessionId={} deviceId={}", user.getId(), sessionId, device.getId());
         return response;
     }
 
@@ -95,7 +120,47 @@ public class AuthService {
         });
     }
 
-    private LoginResponse issueSession(org.application.model.User user, UUID sessionId) {
+    public void logoutAll(UUID userId) {
+        OffsetDateTime now = OffsetDateTime.now(clock).withOffsetSameInstant(ZoneOffset.UTC);
+        refreshTokenRepository.findByUserIdAndRevokedAtIsNull(userId).forEach(token -> {
+            token.revoke(now);
+            refreshTokenRepository.save(token);
+        });
+        log.info("event=logout_all userId={}", userId);
+    }
+
+    /**
+     * Um device inativo (nem sequer os refreshes silenciosos em segundo plano rodaram) por
+     * mais de app.security.device-inactivity-timeout-days é revogado — mas usar o app com
+     * frequência, mesmo sem digitar a senha de novo, conta como atividade e mantém a sessão viva.
+     */
+    private UserDevice requireActiveDevice(RefreshToken stored, OffsetDateTime now) {
+        UUID deviceId = stored.getDeviceId();
+        UserDevice device = deviceId == null ? null : deviceService.find(deviceId).orElse(null);
+        if (device == null || !device.isActive()) {
+            throw new InvalidOperationException("REFRESH_TOKEN_INVALID", "Refresh token inválido ou expirado.");
+        }
+        long daysSinceLastActivity = ChronoUnit.DAYS.between(device.getLastActivityAt(), now);
+        if (daysSinceLastActivity > deviceInactivityTimeoutDays) {
+            stored.revoke(now);
+            refreshTokenRepository.save(stored);
+            deviceService.revokeDevice(device.getId(), device.getUserId());
+            throw new InvalidOperationException("DEVICE_INACTIVE_TIMEOUT",
+                    "Você ficou muito tempo sem acessar. Faça login novamente por segurança.");
+        }
+        return device;
+    }
+
+    private void notifyNewDevice(UUID userId, UserDevice device) {
+        notificationRepository.save(UserNotification.builder()
+                .id(UUID.randomUUID())
+                .userId(userId)
+                .type(NEW_DEVICE_LOGIN)
+                .build());
+        log.info("event=new_device_detected userId={} deviceId={} deviceName={}", userId, device.getId(), device.getDeviceName());
+    }
+
+    private LoginResponse issueSession(User user, UUID sessionId, UserDevice device) {
         OffsetDateTime issuedAt = OffsetDateTime.now(clock).withOffsetSameInstant(ZoneOffset.UTC);
         OffsetDateTime expiresAt = issuedAt.plusMinutes(expirationMinutes);
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -106,6 +171,7 @@ public class AuthService {
                 .claim("username", user.getUsername())
                 .claim("role", user.getRole().name())
                 .claim("session_id", sessionId.toString())
+                .claim("device_id", device.getId().toString())
                 .build();
         String token = jwtEncoder.encode(JwtEncoderParameters.from(
                 JwsHeader.with(MacAlgorithm.HS256).build(), claims)).getTokenValue();
@@ -114,6 +180,7 @@ public class AuthService {
                 .id(UUID.randomUUID())
                 .userId(user.getId())
                 .sessionId(sessionId)
+                .deviceId(device.getId())
                 .tokenHash(hash(rawRefreshToken))
                 .expiresAt(issuedAt.plusDays(refreshTokenExpirationDays))
                 .build());
