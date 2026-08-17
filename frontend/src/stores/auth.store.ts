@@ -9,6 +9,7 @@ import {
 import type { LoginResponse, LoginResponseRole } from '@/api/generated/models'
 
 export const AUTH_STORAGE_KEY = 'comes-e-bebes:session'
+export const DEVICE_ID_STORAGE_KEY = 'comes-e-bebes:device_id'
 
 type SessionStatus = 'idle' | 'initializing' | 'anonymous' | 'authenticated'
 type SessionIdentity = Pick<
@@ -60,12 +61,37 @@ function readStoredSession(): StoredSession | null {
   }
 }
 
+/**
+ * Identifica o dispositivo/navegador, não a sessão — sobrevive a logout() para permitir
+ * login por biometria mesmo depois de sair da conta. Só é apagado se o próprio backend
+ * revogar o dispositivo (a IDEIA-020 não precisa limpar isso localmente: sem sessão válida,
+ * o /auth/biometric/status simplesmente para de reconhecer o device).
+ */
+function readStoredDeviceId(): string | null {
+  if (typeof window === 'undefined') return null
+  try {
+    return window.localStorage.getItem(DEVICE_ID_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+function persistDeviceId(deviceId: string): void {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(DEVICE_ID_STORAGE_KEY, deviceId)
+  } catch {
+    // Sem device_id persistido, o botão de biometria simplesmente não aparece.
+  }
+}
+
 export const useAuthStore = defineStore('auth', () => {
   const status = ref<SessionStatus>('idle')
   const accessToken = ref<string | null>(null)
   const refreshToken = ref<string | null>(null)
   const identity = ref<SessionIdentity | null>(null)
   const rememberSession = ref(false)
+  const deviceId = ref<string | null>(readStoredDeviceId())
   let refreshTimer: ReturnType<typeof setTimeout> | undefined
   let initializationPromise: Promise<void> | undefined
   let renewalPromise: Promise<boolean> | undefined
@@ -156,6 +182,8 @@ export const useAuthStore = defineStore('auth', () => {
     }
     rememberSession.value = remember
     status.value = 'authenticated'
+    deviceId.value = response.deviceId
+    persistDeviceId(response.deviceId)
     persistSession()
     scheduleRefresh(response)
     startSessionMonitoring()
@@ -293,6 +321,7 @@ export const useAuthStore = defineStore('auth', () => {
     refreshToken,
     identity,
     rememberSession,
+    deviceId,
     initialized,
     authenticated,
     isAdmin,

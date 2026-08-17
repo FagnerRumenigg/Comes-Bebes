@@ -160,7 +160,7 @@ public class AuthService {
         log.info("event=new_device_detected userId={} deviceId={} deviceName={}", userId, device.getId(), device.getDeviceName());
     }
 
-    private LoginResponse issueSession(User user, UUID sessionId, UserDevice device) {
+    LoginResponse issueSession(User user, UUID sessionId, UserDevice device) {
         OffsetDateTime issuedAt = OffsetDateTime.now(clock).withOffsetSameInstant(ZoneOffset.UTC);
         OffsetDateTime expiresAt = issuedAt.plusMinutes(expirationMinutes);
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -184,7 +184,7 @@ public class AuthService {
                 .tokenHash(hash(rawRefreshToken))
                 .expiresAt(issuedAt.plusDays(refreshTokenExpirationDays))
                 .build());
-        return new LoginResponse(token, rawRefreshToken, "Bearer", expirationMinutes * 60, user.getId(), user.getUsername(), user.getRole(), user.isOnboardingCompleted(), patchNoteService.hasUnseen(user), expiresAt, sessionId);
+        return new LoginResponse(token, rawRefreshToken, "Bearer", expirationMinutes * 60, user.getId(), user.getUsername(), user.getRole(), user.isOnboardingCompleted(), patchNoteService.hasUnseen(user), expiresAt, sessionId, device.getId());
     }
 
     private String generateRefreshToken() {

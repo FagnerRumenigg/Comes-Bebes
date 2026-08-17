@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { normalizeHttpError } from '@/api/errors'
@@ -9,6 +9,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCheckbox from '@/components/base/BaseCheckbox.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import BaseToast from '@/components/base/BaseToast.vue'
+import { isPlatformAuthenticatorAvailable, isWebAuthnSupported, useBiometric } from '@/composables/useBiometric'
 import PasswordInput from '@/features/auth/components/PasswordInput.vue'
 import { mockCredentials } from '@/mocks/fixtures/auth'
 import { useAuthStore } from '@/stores/auth.store'
@@ -16,6 +17,7 @@ import { useAuthStore } from '@/stores/auth.store'
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const { checkStatus, authenticate } = useBiometric()
 
 const form = reactive<LoginRequest>({ username: '', password: '' })
 const remember = ref(false)
@@ -23,16 +25,23 @@ const fieldErrors = reactive<Record<string, string>>({})
 const generalError = ref<string | null>(null)
 const mocksEnabled = import.meta.env.DEV && import.meta.env.VITE_ENABLE_MOCKS !== 'false'
 
+const biometricAvailable = ref(false)
+const biometricPending = ref(false)
+
 if (typeof route.query.username === 'string') form.username = route.query.username
+
+function goToDestination(onboardingCompleted: boolean): void {
+  const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
+  const safeRedirect = redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/'
+  const target = onboardingCompleted ? safeRedirect : '/onboarding'
+  void router.replace(target)
+}
 
 const loginMutation = useLogin({
   mutation: {
     onSuccess(response) {
       authStore.acceptSession(response, remember.value)
-      const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
-      const safeRedirect = redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/'
-      const target = response.onboardingCompleted ? safeRedirect : '/onboarding'
-      void router.replace(target)
+      goToDestination(response.onboardingCompleted)
     },
     onError(error) {
       const normalizedError = normalizeHttpError(error)
@@ -41,6 +50,32 @@ const loginMutation = useLogin({
     },
   },
 })
+
+onMounted(async () => {
+  const deviceId = authStore.deviceId
+  if (!deviceId || !isWebAuthnSupported()) return
+  const [platformReady, hasBiometric] = await Promise.all([
+    isPlatformAuthenticatorAvailable(),
+    checkStatus(deviceId).catch(() => false),
+  ])
+  biometricAvailable.value = platformReady && hasBiometric
+})
+
+async function submitBiometric(): Promise<void> {
+  const deviceId = authStore.deviceId
+  if (!deviceId || biometricPending.value) return
+  biometricPending.value = true
+  generalError.value = null
+  try {
+    const response = await authenticate(deviceId)
+    authStore.acceptSession(response, remember.value)
+    goToDestination(response.onboardingCompleted)
+  } catch (error) {
+    generalError.value = normalizeHttpError(error).message
+  } finally {
+    biometricPending.value = false
+  }
+}
 
 function clearErrors(): void {
   for (const key of Object.keys(fieldErrors)) delete fieldErrors[key]
@@ -89,6 +124,18 @@ function submit(): void {
     >
       {{ generalError }}
     </BaseToast>
+
+    <BaseButton
+      v-if="biometricAvailable"
+      class="auth-form__biometric"
+      variant="secondary"
+      :loading="biometricPending"
+      @click="submitBiometric"
+    >
+      Entrar com biometria
+    </BaseButton>
+
+    <p v-if="biometricAvailable" class="auth-view__divider" role="separator">ou entre com sua senha</p>
 
     <form class="auth-form" novalidate @submit.prevent="submit">
       <BaseInput
@@ -159,6 +206,16 @@ function submit(): void {
   font-weight: var(--font-weight-semibold);
   letter-spacing: var(--letter-spacing-wide);
   text-transform: uppercase;
+}
+
+.auth-form__biometric {
+  width: 100%;
+}
+
+.auth-view__divider {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  text-align: center;
 }
 
 .auth-form {

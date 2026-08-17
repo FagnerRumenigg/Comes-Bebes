@@ -24,4 +24,6 @@ export interface LoginResponse {
   hasUnseenPatchNotes: boolean;
   expiresAt: string;
   sessionId: string;
+  /** Dispositivo vinculado a esta sessão. Guarde-o para permitir login por biometria neste dispositivo mais tarde. */
+  deviceId: string;
 }

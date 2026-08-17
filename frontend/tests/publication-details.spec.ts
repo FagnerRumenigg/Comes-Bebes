@@ -64,6 +64,7 @@ const adminSession = (adminId: string): LoginResponse => ({
   onboardingCompleted: true,
   hasUnseenPatchNotes: false,
   sessionId: 'c2c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f33',
+  deviceId: 'e2c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f33',
 })
 
 const strangerSession = (userId: string): LoginResponse => ({
@@ -78,6 +79,7 @@ const strangerSession = (userId: string): LoginResponse => ({
   onboardingCompleted: true,
   hasUnseenPatchNotes: false,
   sessionId: 'd2c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f44',
+  deviceId: 'f2c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f44',
 })
 
 describe('detalhes da publicação', () => {

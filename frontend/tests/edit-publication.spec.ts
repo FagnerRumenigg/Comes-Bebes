@@ -47,6 +47,7 @@ describe('edição de publicação', () => {
       onboardingCompleted: true,
       hasUnseenPatchNotes: false,
       sessionId: 'a4f0f2b0-df43-4b40-9df1-4f6da3e6f36e',
+      deviceId: 'e1f0f2b0-df43-4b40-9df1-4f6da3e6f36e',
     })
     setAccessTokenProvider(() => authStore.accessToken)
 
@@ -110,6 +111,7 @@ describe('edição de publicação', () => {
       onboardingCompleted: true,
       hasUnseenPatchNotes: false,
       sessionId: 'b2c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f22',
+      deviceId: 'f2c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f22',
     })
     setAccessTokenProvider(() => authStore.accessToken)
 

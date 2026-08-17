@@ -26,6 +26,7 @@ async function mountMyVersion() {
     onboardingCompleted: true,
     hasUnseenPatchNotes: false,
     sessionId: 'a4f0f2b0-df43-4b40-9df1-4f6da3e6f36e',
+    deviceId: 'e1f0f2b0-df43-4b40-9df1-4f6da3e6f36e',
   })
   setAccessTokenProvider(() => authStore.accessToken)
 
