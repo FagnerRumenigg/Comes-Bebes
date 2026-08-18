@@ -117,6 +117,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/biometric/authenticate/start", "/auth/biometric/authenticate/complete", "/auth/biometric/status").permitAll()
                         .requestMatchers("/publications/feed", "/publications/search", "/publications/*", "/publications/*/recipe", "/users/*", "/users/*/publications", "/u/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/images/**").permitAll()
+                        .requestMatchers("/actuator/health/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(resourceServer -> resourceServer
                         .jwt(jwt -> jwt.decoder(jwtDecoder).jwtAuthenticationConverter(jwtAuthenticationConverter)))

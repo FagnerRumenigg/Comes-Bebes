@@ -45,7 +45,16 @@ services:
     volumes:
       - ../backend/uploads/images:/app/uploads/images
     healthcheck:
-      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8082"]
+      # A imagem nao tem curl/wget; abre a conexao via /dev/tcp e confirma que a
+      # resposta HTTP de /actuator/health foi 200 (nao so que a porta aceita TCP).
+      test:
+        - CMD
+        - bash
+        - -c
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/8082 &&
+          printf 'GET /actuator/health HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+          head -n 1 <&3 | grep -q ' 200 '
       interval: 10s
       timeout: 5s
       retries: 12
