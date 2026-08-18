@@ -15,8 +15,13 @@ app:
       max-attempts: ${COMESEBEBES_PUBLICATION_RATE_LIMIT_MAX_ATTEMPTS:3}
       window-seconds: ${COMESEBEBES_PUBLICATION_RATE_LIMIT_WINDOW_SECONDS:600}
   storage:
+    # "local" (padrao, filesystem) ou "blob" (Azure Blob Storage, Managed Identity).
+    type: ${COMESEBEBES_STORAGE_TYPE:local}
     local:
       path: ${COMESEBEBES_IMAGE_STORAGE_PATH:./uploads/images}
+    blob:
+      account-url: ${COMESEBEBES_STORAGE_BLOB_ACCOUNT_URL:}
+      container: ${COMESEBEBES_STORAGE_BLOB_CONTAINER:comesebebes-images}
   image-validator:
     url: ${COMESEBEBES_IMAGE_VALIDATOR_URL:http://localhost:8001}
     connect-timeout-ms: ${COMESEBEBES_IMAGE_VALIDATOR_CONNECT_TIMEOUT_MS:5000}
