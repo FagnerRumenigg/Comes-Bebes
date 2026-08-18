@@ -14,6 +14,8 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.application.controller.user.request.UpdateUserRequest;
 import org.application.controller.user.request.BlockUserRequest;
 import org.application.controller.user.request.ChangePasswordRequest;
+import org.application.controller.user.request.UpdateNotificationPreferencesRequest;
+import org.application.controller.user.response.NotificationPreferencesResponse;
 import org.application.controller.user.response.UserResponse;
 import org.application.controller.publication.response.PublicationResponse;
 import org.application.controller.user.response.NotificationResponse;
@@ -211,6 +213,34 @@ public class UserController {
     ) {
         ensureCurrentUser(id, authentication);
         return PageResponse.of(userService.notifications(id, pageable), NotificationResponse::of);
+    }
+
+    @GetMapping("/{id}/notification-preferences")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Consultar preferências de notificação", description = "Retorna as preferências de notificação da conta autenticada.")
+    @ApiResponse(responseCode = "200", description = "Preferências retornadas.")
+    public NotificationPreferencesResponse notificationPreferences(
+            @PathVariable UUID id,
+            Authentication authentication
+    ) {
+        ensureCurrentUser(id, authentication);
+        return NotificationPreferencesResponse.of(userService.findActive(id));
+    }
+
+    @PatchMapping("/{id}/notification-preferences")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Atualizar preferências de notificação", description = "Atualiza as preferências de notificação da conta autenticada.")
+    @ApiResponse(responseCode = "204", description = "Preferências atualizadas.")
+    public ResponseEntity<Void> updateNotificationPreferences(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateNotificationPreferencesRequest request,
+            Authentication authentication
+    ) {
+        ensureCurrentUser(id, authentication);
+        userService.updateNotifyOnFollowedPublish(id, request.notifyOnFollowedPublish());
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}")

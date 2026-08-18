@@ -19,6 +19,7 @@ import type {
 } from 'msw';
 
 import type {
+  NotificationPreferencesResponse,
   PageResponseNotificationResponse,
   PageResponsePublicationResponse,
   PageResponseUserResponse,
@@ -29,6 +30,8 @@ import type {
 export const getGetUserByIdResponseMock = (overrideResponse: Partial< UserResponse > = {}): UserResponse => ({id: faker.string.uuid(), username: faker.string.alpha({length: {min: 10, max: 20}}), displayName: faker.string.alpha({length: {min: 10, max: 20}}), role: faker.helpers.arrayElement(['USER','ADMIN'] as const), status: faker.helpers.arrayElement(['ACTIVE','BLOCKED','DELETED'] as const), showReactionCounts: faker.datatype.boolean(), onboardingCompleted: faker.datatype.boolean(), followersCount: faker.number.int({min: undefined, max: undefined}), followingCount: faker.number.int({min: undefined, max: undefined}), followedByCurrentUser: faker.helpers.arrayElement([faker.datatype.boolean(),null,]), ...overrideResponse})
 
 export const getUpdateCurrentUserResponseMock = (overrideResponse: Partial< UserResponse > = {}): UserResponse => ({id: faker.string.uuid(), username: faker.string.alpha({length: {min: 10, max: 20}}), displayName: faker.string.alpha({length: {min: 10, max: 20}}), role: faker.helpers.arrayElement(['USER','ADMIN'] as const), status: faker.helpers.arrayElement(['ACTIVE','BLOCKED','DELETED'] as const), showReactionCounts: faker.datatype.boolean(), onboardingCompleted: faker.datatype.boolean(), followersCount: faker.number.int({min: undefined, max: undefined}), followingCount: faker.number.int({min: undefined, max: undefined}), followedByCurrentUser: faker.helpers.arrayElement([faker.datatype.boolean(),null,]), ...overrideResponse})
+
+export const getNotificationPreferencesResponseMock = (overrideResponse: Partial< NotificationPreferencesResponse > = {}): NotificationPreferencesResponse => ({notifyOnFollowedPublish: faker.datatype.boolean(), ...overrideResponse})
 
 export const getGetUserPublicationsResponseMock = (overrideResponse: Partial< PageResponsePublicationResponse > = {}): PageResponsePublicationResponse => ({content: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.uuid(), authorId: faker.string.uuid(), type: faker.helpers.arrayElement(['DISH','RECIPE','MY_VERSION'] as const), visibility: faker.helpers.arrayElement(['PUBLIC','INTERNAL'] as const), title: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), status: faker.helpers.arrayElement(['PENDING_VALIDATION','ACTIVE','UNDER_REVIEW','HIDDEN','REJECTED','REMOVED'] as const), publishedAt: `${faker.date.past().toISOString().split('.')[0]}Z`, imageUrl: faker.string.alpha({length: {min: 10, max: 20}}), authorUsername: faker.string.alpha({length: {min: 10, max: 20}}), authorDisplayName: faker.string.alpha({length: {min: 10, max: 20}}), showReactionCounts: faker.datatype.boolean(), reactionTotals: {
         [faker.string.alphanumeric(5)]: faker.number.int({min: undefined, max: undefined})
@@ -125,6 +128,28 @@ export const getCompleteOnboardingMockHandler = (overrideResponse?: void | ((inf
   }, options)
 }
 
+export const getNotificationPreferencesMockHandler = (overrideResponse?: NotificationPreferencesResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<NotificationPreferencesResponse> | NotificationPreferencesResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/users/:id/notification-preferences', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getNotificationPreferencesResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
+export const getUpdateNotificationPreferencesMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
+  return http.patch('*/users/:id/notification-preferences', async (info) => {await delay(1000);
+  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
+    return new HttpResponse(null,
+      { status: 204,
+        
+      })
+  }, options)
+}
+
 export const getBlockMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
   return http.patch('*/users/:id/block', async (info) => {await delay(1000);
   if (typeof overrideResponse === 'function') {await overrideResponse(info); }
@@ -201,6 +226,8 @@ export const getUsersMock = () => [
   getMarkPatchNotesSeenMockHandler(),
   getChangePasswordMockHandler(),
   getCompleteOnboardingMockHandler(),
+  getNotificationPreferencesMockHandler(),
+  getUpdateNotificationPreferencesMockHandler(),
   getBlockMockHandler(),
   getGetUserPublicationsMockHandler(),
   getNotificationsMockHandler(),

@@ -5,7 +5,13 @@ import { useQueryClient } from '@tanstack/vue-query'
 
 import { getListQueryKey, useList, useRevoke } from '@/api/generated/devices/devices'
 import { getList1QueryKey, useList1, useRemove as useRemoveBiometric } from '@/api/generated/biometric/biometric'
+import {
+  getNotificationPreferencesQueryKey,
+  useNotificationPreferences,
+  useUpdateNotificationPreferences,
+} from '@/api/generated/users/users'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseCheckbox from '@/components/base/BaseCheckbox.vue'
 import BaseDialog from '@/components/base/BaseDialog.vue'
 import { normalizeHttpError } from '@/api/errors'
 import { isPlatformAuthenticatorAvailable, isWebAuthnSupported, useBiometric } from '@/composables/useBiometric'
@@ -15,6 +21,31 @@ const router = useRouter()
 const queryClient = useQueryClient()
 const authStore = useAuthStore()
 const { register: registerBiometricCredential } = useBiometric()
+
+const currentUserId = computed(() => authStore.identity?.userId ?? '')
+const notificationPreferencesQuery = useNotificationPreferences(currentUserId, {
+  query: { enabled: computed(() => !!currentUserId.value) },
+})
+const notificationPreferencesError = ref('')
+const updateNotificationPreferencesMutation = useUpdateNotificationPreferences({
+  mutation: {
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: getNotificationPreferencesQueryKey(currentUserId) })
+    },
+    onError: (error) => {
+      notificationPreferencesError.value = normalizeHttpError(error).message
+    },
+  },
+})
+
+function toggleNotifyOnFollowedPublish(value: boolean): void {
+  if (!currentUserId.value) return
+  notificationPreferencesError.value = ''
+  updateNotificationPreferencesMutation.mutate({
+    id: currentUserId.value,
+    data: { notifyOnFollowedPublish: value },
+  })
+}
 
 const devicesQuery = useList()
 const actionError = ref('')
@@ -189,6 +220,19 @@ async function confirmLogoutAll(): Promise<void> {
       <p v-if="biometricError" class="devices-view__error" role="alert">{{ biometricError }}</p>
     </div>
 
+    <div class="devices-view__notifications">
+      <h2>Notificações</h2>
+      <BaseCheckbox
+        :model-value="notificationPreferencesQuery.data.value?.notifyOnFollowedPublish ?? true"
+        label="Me notificar quando alguém que eu sigo publicar"
+        :disabled="notificationPreferencesQuery.isPending.value || updateNotificationPreferencesMutation.isPending.value"
+        @update:model-value="toggleNotifyOnFollowedPublish"
+      />
+      <p v-if="notificationPreferencesError" class="devices-view__error" role="alert">
+        {{ notificationPreferencesError }}
+      </p>
+    </div>
+
     <div class="devices-view__logout-all">
       <h2>Logout global</h2>
       <p>Encerra a sessão em todos os dispositivos, inclusive este.</p>
@@ -304,6 +348,17 @@ async function confirmLogoutAll(): Promise<void> {
 .devices-view__biometric > p:nth-child(2) {
   margin-block: var(--space-2) var(--space-4);
   color: var(--color-text-secondary);
+}
+.devices-view__notifications {
+  margin-block-start: var(--space-8);
+  padding: var(--space-6);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+.devices-view__notifications h2 {
+  margin: 0 0 var(--space-4);
+  font-size: var(--font-size-lg);
 }
 .devices-view__logout-all {
   margin-block-start: var(--space-10);

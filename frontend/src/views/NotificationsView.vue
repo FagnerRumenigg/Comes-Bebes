@@ -12,6 +12,8 @@ const labels: Record<string, string> = {
   PUBLICATION_REPORTED: 'Uma publicação foi denunciada.',
   REPORT_REJECTED_WARNING: 'Sua denúncia foi analisada e a publicação foi mantida.',
   NEW_DEVICE_LOGIN: 'Novo login detectado em um dispositivo. Não foi você? Revogue o acesso.',
+  NEW_FOLLOWER: 'Alguém começou a seguir você.',
+  FOLLOWED_USER_PUBLISHED: 'Alguém que você segue publicou algo novo.',
 }
 </script>
 

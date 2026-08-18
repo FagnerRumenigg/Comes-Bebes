@@ -159,6 +159,20 @@ class UserServiceTest {
     }
 
     @Test
+    void shouldUpdateNotifyOnFollowedPublishPreference() {
+        UUID id = UUID.randomUUID();
+        User user = User.of(org.application.dto.UserData.builder()
+                .email(null).passwordHash("old-hash").username("fagner").displayName("Fagner").build());
+        when(userRepository.findByIdAndStatus(id, UserStatus.ACTIVE)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+
+        userService.updateNotifyOnFollowedPublish(id, false);
+
+        assertThat(user.isNotifyOnFollowedPublish()).isFalse();
+        verify(userRepository).save(user);
+    }
+
+    @Test
     void shouldChangePasswordWhenCurrentPasswordIsValid() {
         UUID id = UUID.randomUUID();
         User user = User.of(org.application.dto.UserData.builder()

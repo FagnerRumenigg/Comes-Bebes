@@ -36,10 +36,12 @@ import type {
   FollowersParams,
   FollowingParams,
   GetUserPublicationsParams,
+  NotificationPreferencesResponse,
   NotificationsParams,
   PageResponseNotificationResponse,
   PageResponsePublicationResponse,
   PageResponseUserResponse,
+  UpdateNotificationPreferencesRequest,
   UpdateUserRequest,
   UserResponse
 } from '.././models';
@@ -559,6 +561,141 @@ export const useCompleteOnboarding = <TError = ApiErrorResponse,
       > => {
 
       const mutationOptions = getCompleteOnboardingMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
+ * Retorna as preferências de notificação da conta autenticada.
+ * @summary Consultar preferências de notificação
+ */
+export const notificationPreferences = (
+    id: MaybeRef<string>,
+ options?: SecondParameter<typeof apiRequest>,signal?: AbortSignal
+) => {
+      id = unref(id);
+      
+      return apiRequest<NotificationPreferencesResponse>(
+      {url: `/users/${id}/notification-preferences`, method: 'GET', signal
+    },
+      options);
+    }
+  
+
+
+
+export const getNotificationPreferencesQueryKey = (id?: MaybeRef<string>,) => {
+    return [
+    'users',id,'notification-preferences'
+    ] as const;
+    }
+
+    
+export const getNotificationPreferencesQueryOptions = <TData = Awaited<ReturnType<typeof notificationPreferences>>, TError = unknown>(id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof notificationPreferences>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  getNotificationPreferencesQueryKey(id);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof notificationPreferences>>> = ({ signal }) => notificationPreferences(id, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: computed(() => !!(unref(id))), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof notificationPreferences>>, TError, TData> 
+}
+
+export type NotificationPreferencesQueryResult = NonNullable<Awaited<ReturnType<typeof notificationPreferences>>>
+export type NotificationPreferencesQueryError = unknown
+
+
+/**
+ * @summary Consultar preferências de notificação
+ */
+
+export function useNotificationPreferences<TData = Awaited<ReturnType<typeof notificationPreferences>>, TError = unknown>(
+ id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof notificationPreferences>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient 
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getNotificationPreferencesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+/**
+ * Atualiza as preferências de notificação da conta autenticada.
+ * @summary Atualizar preferências de notificação
+ */
+export const updateNotificationPreferences = (
+    id: MaybeRef<string>,
+    updateNotificationPreferencesRequest: MaybeRef<UpdateNotificationPreferencesRequest>,
+ options?: SecondParameter<typeof apiRequest>,) => {
+      id = unref(id);
+updateNotificationPreferencesRequest = unref(updateNotificationPreferencesRequest);
+      
+      return apiRequest<void>(
+      {url: `/users/${id}/notification-preferences`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateNotificationPreferencesRequest
+    },
+      options);
+    }
+  
+
+
+export const getUpdateNotificationPreferencesMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateNotificationPreferences>>, TError,{id: string;data: UpdateNotificationPreferencesRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateNotificationPreferences>>, TError,{id: string;data: UpdateNotificationPreferencesRequest}, TContext> => {
+
+const mutationKey = ['updateNotificationPreferences'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateNotificationPreferences>>, {id: string;data: UpdateNotificationPreferencesRequest}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateNotificationPreferences(id,data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateNotificationPreferencesMutationResult = NonNullable<Awaited<ReturnType<typeof updateNotificationPreferences>>>
+    export type UpdateNotificationPreferencesMutationBody = UpdateNotificationPreferencesRequest
+    export type UpdateNotificationPreferencesMutationError = unknown
+
+    /**
+ * @summary Atualizar preferências de notificação
+ */
+export const useUpdateNotificationPreferences = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateNotificationPreferences>>, TError,{id: string;data: UpdateNotificationPreferencesRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof updateNotificationPreferences>>,
+        TError,
+        {id: string;data: UpdateNotificationPreferencesRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateNotificationPreferencesMutationOptions(options);
 
       return useMutation(mutationOptions, queryClient);
     }

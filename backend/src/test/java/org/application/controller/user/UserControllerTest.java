@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -34,6 +35,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -148,5 +150,30 @@ class UserControllerTest {
         mockMvc.perform(get("/users/{id}", profileId).principal(authentication))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.followedByCurrentUser").value(true));
+    }
+
+    @Test
+    void shouldReturnNotificationPreferences() throws Exception {
+        UUID userId = UUID.randomUUID();
+        when(currentUser.id(any(), eq(userId))).thenReturn(userId);
+        when(userService.findActive(userId)).thenReturn(
+                User.builder().id(userId).username("fagner").notifyOnFollowedPublish(false).build());
+
+        mockMvc.perform(get("/users/{id}/notification-preferences", userId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.notifyOnFollowedPublish").value(false));
+    }
+
+    @Test
+    void shouldUpdateNotificationPreferences() throws Exception {
+        UUID userId = UUID.randomUUID();
+        when(currentUser.id(any(), eq(userId))).thenReturn(userId);
+
+        mockMvc.perform(patch("/users/{id}/notification-preferences", userId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"notifyOnFollowedPublish\":false}"))
+                .andExpect(status().isNoContent());
+
+        verify(userService).updateNotifyOnFollowedPublish(userId, false);
     }
 }
