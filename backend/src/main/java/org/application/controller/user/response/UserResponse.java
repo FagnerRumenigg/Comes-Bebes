@@ -24,10 +24,16 @@ public record UserResponse(
         @Schema(description = "Indica se os totais das reações ficam visíveis.", example = "true")
         boolean showReactionCounts,
         @Schema(description = "Indica se o onboarding do primeiro login já foi concluído.", example = "false")
-        boolean onboardingCompleted
+        boolean onboardingCompleted,
+        @Schema(description = "Quantidade de seguidores.", example = "12")
+        long followersCount,
+        @Schema(description = "Quantidade de perfis que este usuário segue.", example = "5")
+        long followingCount,
+        @Schema(description = "Indica se a conta autenticada segue este usuário. Nulo para visitantes ou ao consultar o próprio perfil.", nullable = true)
+        Boolean followedByCurrentUser
 ) {
 
-    public static UserResponse of(User user, ZoneId zoneId) {
+    public static UserResponse of(User user, ZoneId zoneId, long followersCount, long followingCount, Boolean followedByCurrentUser) {
         return UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
@@ -36,6 +42,9 @@ public record UserResponse(
                 .status(user.getStatus())
                 .showReactionCounts(user.isShowReactionCounts())
                 .onboardingCompleted(user.isOnboardingCompleted())
+                .followersCount(followersCount)
+                .followingCount(followingCount)
+                .followedByCurrentUser(followedByCurrentUser)
                 .build();
     }
 }

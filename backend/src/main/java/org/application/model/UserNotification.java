@@ -36,6 +36,9 @@ public class UserNotification {
     @Column(name = "publication_id")
     private UUID publicationId;
 
+    @Column(name = "actor_id")
+    private UUID actorId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 

@@ -9,6 +9,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import BaseDialog from '@/components/base/BaseDialog.vue'
 import BaseFieldError from '@/components/base/BaseFieldError.vue'
 import BaseTextarea from '@/components/base/BaseTextarea.vue'
+import FollowButton from '@/components/profile/FollowButton.vue'
 import PublicationCard from '@/components/publication/PublicationCard.vue'
 import { normalizeHttpError } from '@/api/errors'
 import { useAuthStore } from '@/stores/auth.store'
@@ -38,6 +39,12 @@ const isOwnProfile = computed(
     Boolean(profileQuery.data.value) &&
     profileQuery.data.value?.id === authStore.identity?.userId,
 )
+
+const showFollowButton = computed(() => Boolean(profileQuery.data.value) && !isOwnProfile.value)
+
+function refreshProfile(): void {
+  void queryClient.invalidateQueries({ queryKey: getFindByUsernameQueryKey(username) })
+}
 
 const blockMutation = useBlock({
   mutation: {
@@ -74,6 +81,17 @@ function confirmBlock(): void {
         <p class="profile-view__eyebrow">Perfil público</p>
         <h1>{{ profileQuery.data.value.displayName }}</h1>
         <p class="profile-view__username">@{{ profileQuery.data.value.username }}</p>
+        <p class="profile-view__counts">
+          <strong>{{ profileQuery.data.value.followersCount }}</strong> seguidores ·
+          <strong>{{ profileQuery.data.value.followingCount }}</strong> seguindo
+        </p>
+        <FollowButton
+          v-if="showFollowButton"
+          class="profile-view__follow"
+          :user-id="profileQuery.data.value.id"
+          :following="Boolean(profileQuery.data.value.followedByCurrentUser)"
+          @toggled="refreshProfile"
+        />
         <BaseButton
           v-if="canBlock"
           variant="ghost"
@@ -148,6 +166,20 @@ function confirmBlock(): void {
 .profile-view__username {
   margin-block-start: var(--space-2);
   color: var(--color-text-secondary);
+}
+
+.profile-view__counts {
+  margin-block-start: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.profile-view__counts strong {
+  color: var(--color-text);
+}
+
+.profile-view__follow {
+  margin-block-start: var(--space-4);
 }
 
 .profile-view__block {

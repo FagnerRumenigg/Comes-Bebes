@@ -33,10 +33,13 @@ import type {
   ApiErrorResponse,
   BlockUserRequest,
   ChangePasswordRequest,
+  FollowersParams,
+  FollowingParams,
   GetUserPublicationsParams,
   NotificationsParams,
   PageResponseNotificationResponse,
   PageResponsePublicationResponse,
+  PageResponseUserResponse,
   UpdateUserRequest,
   UserResponse
 } from '.././models';
@@ -49,6 +52,130 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 /**
+ * Passa a seguir o usuário informado.
+ * @summary Seguir usuário
+ */
+export const follow = (
+    id: MaybeRef<string>,
+ options?: SecondParameter<typeof apiRequest>,) => {
+      id = unref(id);
+      
+      return apiRequest<void>(
+      {url: `/users/${id}/follow`, method: 'PUT'
+    },
+      options);
+    }
+  
+
+
+export const getFollowMutationOptions = <TError = ApiErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof follow>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof follow>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['follow'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof follow>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  follow(id,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type FollowMutationResult = NonNullable<Awaited<ReturnType<typeof follow>>>
+    
+    export type FollowMutationError = ApiErrorResponse
+
+    /**
+ * @summary Seguir usuário
+ */
+export const useFollow = <TError = ApiErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof follow>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof follow>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+
+      const mutationOptions = getFollowMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
+ * Remove logicamente o vínculo de seguir o usuário informado.
+ * @summary Deixar de seguir usuário
+ */
+export const unfollow = (
+    id: MaybeRef<string>,
+ options?: SecondParameter<typeof apiRequest>,) => {
+      id = unref(id);
+      
+      return apiRequest<void>(
+      {url: `/users/${id}/follow`, method: 'DELETE'
+    },
+      options);
+    }
+  
+
+
+export const getUnfollowMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unfollow>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof unfollow>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['unfollow'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unfollow>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  unfollow(id,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnfollowMutationResult = NonNullable<Awaited<ReturnType<typeof unfollow>>>
+    
+    export type UnfollowMutationError = unknown
+
+    /**
+ * @summary Deixar de seguir usuário
+ */
+export const useUnfollow = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unfollow>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof unfollow>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+
+      const mutationOptions = getUnfollowMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna os dados públicos de um usuário ativo.
  * @summary Consultar usuário
  */
@@ -640,6 +767,156 @@ export function useNotifications<TData = Awaited<ReturnType<typeof notifications
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getNotificationsQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+/**
+ * Retorna os perfis seguidos pelo usuário, paginados.
+ * @summary Listar quem o usuário segue
+ */
+export const following = (
+    id: MaybeRef<string>,
+    params?: MaybeRef<FollowingParams>,
+ options?: SecondParameter<typeof apiRequest>,signal?: AbortSignal
+) => {
+      id = unref(id);
+params = unref(params);
+      
+      return apiRequest<PageResponseUserResponse>(
+      {url: `/users/${id}/following`, method: 'GET',
+        params: unref(params), signal
+    },
+      options);
+    }
+  
+
+
+
+export const getFollowingQueryKey = (id?: MaybeRef<string>,
+    params?: MaybeRef<FollowingParams>,) => {
+    return [
+    'users',id,'following', ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getFollowingQueryOptions = <TData = Awaited<ReturnType<typeof following>>, TError = unknown>(id: MaybeRef<string>,
+    params?: MaybeRef<FollowingParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof following>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  getFollowingQueryKey(id,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof following>>> = ({ signal }) => following(id,params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: computed(() => !!(unref(id))), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof following>>, TError, TData> 
+}
+
+export type FollowingQueryResult = NonNullable<Awaited<ReturnType<typeof following>>>
+export type FollowingQueryError = unknown
+
+
+/**
+ * @summary Listar quem o usuário segue
+ */
+
+export function useFollowing<TData = Awaited<ReturnType<typeof following>>, TError = unknown>(
+ id: MaybeRef<string>,
+    params?: MaybeRef<FollowingParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof following>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient 
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getFollowingQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+/**
+ * Retorna os seguidores ativos do usuário, paginados.
+ * @summary Listar seguidores
+ */
+export const followers = (
+    id: MaybeRef<string>,
+    params?: MaybeRef<FollowersParams>,
+ options?: SecondParameter<typeof apiRequest>,signal?: AbortSignal
+) => {
+      id = unref(id);
+params = unref(params);
+      
+      return apiRequest<PageResponseUserResponse>(
+      {url: `/users/${id}/followers`, method: 'GET',
+        params: unref(params), signal
+    },
+      options);
+    }
+  
+
+
+
+export const getFollowersQueryKey = (id?: MaybeRef<string>,
+    params?: MaybeRef<FollowersParams>,) => {
+    return [
+    'users',id,'followers', ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getFollowersQueryOptions = <TData = Awaited<ReturnType<typeof followers>>, TError = unknown>(id: MaybeRef<string>,
+    params?: MaybeRef<FollowersParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof followers>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  getFollowersQueryKey(id,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof followers>>> = ({ signal }) => followers(id,params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: computed(() => !!(unref(id))), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof followers>>, TError, TData> 
+}
+
+export type FollowersQueryResult = NonNullable<Awaited<ReturnType<typeof followers>>>
+export type FollowersQueryError = unknown
+
+
+/**
+ * @summary Listar seguidores
+ */
+
+export function useFollowers<TData = Awaited<ReturnType<typeof followers>>, TError = unknown>(
+ id: MaybeRef<string>,
+    params?: MaybeRef<FollowersParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof followers>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient 
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getFollowersQueryOptions(id,params,options)
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

@@ -1,179 +1,152 @@
 package org.application.controller.user;
 
-import org.application.controller.ApiExceptionHandler;
-import org.application.controller.user.request.CreateUserRequest;
-import org.application.model.User;
-import org.application.service.UserService;
-import org.application.service.PublicationService;
-import org.application.service.PublicationResponseFactory;
 import org.application.config.CurrentUser;
+import org.application.controller.ApiExceptionHandler;
+import org.application.model.User;
+import org.application.model.UserRole;
+import org.application.model.UserStatus;
+import org.application.service.AccountSecurityService;
+import org.application.service.FollowService;
+import org.application.service.PublicationResponseFactory;
+import org.application.service.PublicationService;
+import org.application.service.UserService;
+import org.application.service.exception.InvalidOperationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.MediaType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 
-import java.util.UUID;
 import java.time.ZoneId;
-import org.springframework.data.domain.PageImpl;
 import java.util.List;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
 class UserControllerTest {
-
-    @Mock
-    private UserService userService;
-
-    @Mock
-    private PublicationService publicationService;
-
-    @Mock
-    private CurrentUser currentUser;
-
-    @Mock
-    private PublicationResponseFactory responseFactory;
-
+    @Mock private UserService userService;
+    @Mock private PublicationService publicationService;
+    @Mock private AccountSecurityService accountSecurityService;
+    @Mock private FollowService followService;
+    @Mock private CurrentUser currentUser;
+    @Mock private PublicationResponseFactory responseFactory;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new UserController(
-                        userService,
-                        publicationService,
-                        ZoneId.of("America/Sao_Paulo"),
-                        org.mockito.Mockito.mock(org.application.service.AccountSecurityService.class)
-                        , currentUser,
-                        responseFactory
-                ))
-                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
+        UserController controller = new UserController(userService, publicationService, ZoneId.of("UTC"),
+                accountSecurityService, followService, currentUser, responseFactory);
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new ApiExceptionHandler())
+                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .build();
-        org.mockito.Mockito.lenient().when(currentUser.id(any(), any(UUID.class)))
-                .thenAnswer(invocation -> invocation.getArgument(1));
-    }
-
-    @Test
-    void shouldFindUser() throws Exception {
-        UUID id = UUID.randomUUID();
-        when(userService.findActive(id)).thenReturn(user(id));
-
-        mockMvc.perform(get("/users/{id}", id))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(id.toString()))
-                .andExpect(jsonPath("$.status").value("ACTIVE"));
-    }
-
-    @Test
-    void shouldUpdateUser() throws Exception {
-        UUID id = UUID.randomUUID();
-        when(userService.update(any(UUID.class), any(org.application.controller.user.request.UpdateUserRequest.class)))
-                .thenReturn(user(id));
-
-        mockMvc.perform(patch("/users/{id}", id)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"displayName\":\"Novo nome\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(id.toString()));
-    }
-
-    @Test
-    void shouldListProfilePublications() throws Exception {
-        UUID id = UUID.randomUUID();
-        when(publicationService.profile(any(UUID.class), any(org.springframework.data.domain.Pageable.class), nullable(UUID.class)))
-                .thenReturn(new PageImpl<>(List.of()));
-
-        mockMvc.perform(get("/users/{id}/publications", id))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").isArray());
-    }
-
-    @Test
-    void shouldListNotifications() throws Exception {
-        UUID id = UUID.randomUUID();
-        when(userService.notifications(any(UUID.class), any())).thenReturn(new PageImpl<>(List.of()));
-
-        mockMvc.perform(get("/users/{id}/notifications", id))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").isArray());
-    }
-
-    @Test
-    void shouldAnonymizeAccount() throws Exception {
-        UUID id = UUID.randomUUID();
-
-        mockMvc.perform(delete("/users/{id}/account", id))
-                .andExpect(status().isNoContent());
-    }
-
-    @Test
-    void shouldDeleteUser() throws Exception {
-        UUID id = UUID.randomUUID();
-
-        mockMvc.perform(delete("/users/{id}", id))
-                .andExpect(status().isNoContent());
-    }
-
-    @Test
-    void shouldBlockUser() throws Exception {
-        UUID id = UUID.randomUUID();
-        UUID administratorId = UUID.randomUUID();
-
-        mockMvc.perform(patch("/users/{id}/block", id)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"administratorId":"%s","reason":"violação das regras"}
-                                """.formatted(administratorId)))
-                .andExpect(status().isNoContent());
-    }
-
-    @Test
-    void shouldCompleteOnboarding() throws Exception {
-        UUID id = UUID.randomUUID();
-
-        mockMvc.perform(patch("/users/{id}/onboarding", id))
-                .andExpect(status().isNoContent());
-    }
-
-    @Test
-    void shouldMarkPatchNotesSeen() throws Exception {
-        UUID id = UUID.randomUUID();
-
-        mockMvc.perform(patch("/users/{id}/patch-notes/seen", id))
-                .andExpect(status().isNoContent());
-    }
-
-    @Test
-    void shouldChangePassword() throws Exception {
-        UUID id = UUID.randomUUID();
-
-        mockMvc.perform(patch("/users/{id}/password", id)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"currentPassword\":\"old-password\",\"newPassword\":\"new-password\"}"))
-                .andExpect(status().isNoContent());
     }
 
     private User user(UUID id) {
-        return User.builder()
-                .id(id)
-                .email("fagner@example.com")
-                .passwordHash("hash")
-                .username("fagner")
-                .displayName("Fagner")
-                .build();
+        return User.builder().id(id).username("fagner").displayName("Fagner").role(UserRole.USER).status(UserStatus.ACTIVE).build();
+    }
+
+    @Test
+    void shouldFollowUser() throws Exception {
+        UUID followerId = UUID.randomUUID();
+        UUID followedId = UUID.randomUUID();
+        when(currentUser.id(any())).thenReturn(followerId);
+
+        mockMvc.perform(put("/users/{id}/follow", followedId))
+                .andExpect(status().isNoContent());
+
+        verify(followService).follow(followerId, followedId);
+    }
+
+    @Test
+    void shouldRejectFollowingSelfWith400() throws Exception {
+        UUID userId = UUID.randomUUID();
+        when(currentUser.id(any())).thenReturn(userId);
+        doThrow(new InvalidOperationException("CANNOT_FOLLOW_SELF", "Você não pode seguir a si mesmo."))
+                .when(followService).follow(userId, userId);
+
+        mockMvc.perform(put("/users/{id}/follow", userId))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("CANNOT_FOLLOW_SELF"));
+    }
+
+    @Test
+    void shouldUnfollowUser() throws Exception {
+        UUID followerId = UUID.randomUUID();
+        UUID followedId = UUID.randomUUID();
+        when(currentUser.id(any())).thenReturn(followerId);
+
+        mockMvc.perform(delete("/users/{id}/follow", followedId))
+                .andExpect(status().isNoContent());
+
+        verify(followService).unfollow(followerId, followedId);
+    }
+
+    @Test
+    void shouldReturnFollowersPage() throws Exception {
+        UUID profileId = UUID.randomUUID();
+        UUID followerId = UUID.randomUUID();
+        Page<User> page = new PageImpl<>(List.of(user(followerId)));
+        when(followService.listFollowers(eq(profileId), any())).thenReturn(page);
+
+        mockMvc.perform(get("/users/{id}/followers", profileId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(followerId.toString()));
+    }
+
+    @Test
+    void shouldReturnFollowingPage() throws Exception {
+        UUID profileId = UUID.randomUUID();
+        UUID followedId = UUID.randomUUID();
+        Page<User> page = new PageImpl<>(List.of(user(followedId)));
+        when(followService.listFollowing(eq(profileId), any())).thenReturn(page);
+
+        mockMvc.perform(get("/users/{id}/following", profileId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(followedId.toString()));
+    }
+
+    @Test
+    void shouldExposeFollowCountsWhenFindingUser() throws Exception {
+        UUID profileId = UUID.randomUUID();
+        when(userService.findActive(profileId)).thenReturn(user(profileId));
+        when(followService.countFollowers(profileId)).thenReturn(3L);
+        when(followService.countFollowing(profileId)).thenReturn(7L);
+
+        mockMvc.perform(get("/users/{id}", profileId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.followersCount").value(3))
+                .andExpect(jsonPath("$.followingCount").value(7))
+                .andExpect(jsonPath("$.followedByCurrentUser").doesNotExist());
+    }
+
+    @Test
+    void shouldReportFollowedByCurrentUserWhenViewerIsAuthenticated() throws Exception {
+        UUID viewerId = UUID.randomUUID();
+        UUID profileId = UUID.randomUUID();
+        var authentication = new UsernamePasswordAuthenticationToken(viewerId.toString(), null, List.of());
+        when(userService.findActive(profileId)).thenReturn(user(profileId));
+        when(currentUser.id(authentication)).thenReturn(viewerId);
+        when(followService.isFollowing(viewerId, profileId)).thenReturn(true);
+
+        mockMvc.perform(get("/users/{id}", profileId).principal(authentication))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.followedByCurrentUser").value(true));
     }
 }

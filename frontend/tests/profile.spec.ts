@@ -29,6 +29,9 @@ const targetProfile: UserResponse = {
   status: 'ACTIVE',
   showReactionCounts: true,
   onboardingCompleted: true,
+  followersCount: 0,
+  followingCount: 0,
+  followedByCurrentUser: false,
 }
 
 async function setup(profile: UserResponse, session?: LoginResponse) {
@@ -160,5 +163,68 @@ describe('perfil público', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Informe o motivo do bloqueio.')
+  })
+})
+
+describe('seguir usuário', () => {
+  it('mostra os contadores de seguidores e seguindo', async () => {
+    const { wrapper } = await setup(
+      { ...targetProfile, followersCount: 12, followingCount: 5 },
+      userSession('b2c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f22'),
+    )
+
+    expect(wrapper.find('.profile-view__counts').text()).toContain('12')
+    expect(wrapper.find('.profile-view__counts').text()).toContain('5')
+  })
+
+  it('mostra "Seguir" no perfil de outro usuário quando ainda não segue', async () => {
+    const { wrapper } = await setup(
+      { ...targetProfile, followedByCurrentUser: false },
+      userSession('b2c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f22'),
+    )
+
+    expect(wrapper.find('.profile-view__follow').text()).toBe('Seguir')
+  })
+
+  it('mostra "Deixar de seguir" quando já segue', async () => {
+    const { wrapper } = await setup(
+      { ...targetProfile, followedByCurrentUser: true },
+      userSession('b2c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f22'),
+    )
+
+    expect(wrapper.find('.profile-view__follow').text()).toBe('Deixar de seguir')
+  })
+
+  it('não mostra o botão de seguir no próprio perfil', async () => {
+    const ownId = 'b2c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f22'
+    const { wrapper } = await setup({ ...targetProfile, id: ownId }, userSession(ownId))
+
+    expect(wrapper.find('.profile-view__follow').exists()).toBe(false)
+  })
+
+  it('segue o usuário e atualiza para "Deixar de seguir"', async () => {
+    const { wrapper } = await setup(
+      { ...targetProfile, followedByCurrentUser: false },
+      userSession('b2c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f22'),
+    )
+
+    // A partir daqui sobrescreve o mock de setup(): o refetch disparado pelo clique
+    // precisa refletir o novo estado (setup() sempre devolveria followedByCurrentUser: false).
+    let following = false
+    mockServer.use(
+      http.get('*/u/:username', () =>
+        HttpResponse.json({ ...targetProfile, followedByCurrentUser: following }),
+      ),
+      http.put('*/users/:id/follow', () => {
+        following = true
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+
+    await wrapper.find('.profile-view__follow button').trigger('click')
+    await flushPromises()
+
+    expect(following).toBe(true)
+    await vi.waitFor(() => expect(wrapper.find('.profile-view__follow').text()).toBe('Deixar de seguir'))
   })
 })
