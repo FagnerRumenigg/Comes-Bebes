@@ -70,6 +70,7 @@ public class PublicationService {
     private final ZoneId applicationZoneId;
     private final FollowRepository followRepository;
     private final UserNotificationRepository notificationRepository;
+    private final PublicationRateLimiter publicationRateLimiter;
 
     private final PublicationOriginRepository publicationOriginRepository;
 
@@ -85,6 +86,7 @@ public class PublicationService {
 
     @Transactional
     public Publication createMyVersion(UUID sourcePublicationId, CreateMyVersionRequest request, UUID authorId, StoredImage image) {
+        publicationRateLimiter.recordAttempt(authorId);
         Publication source = findActive(sourcePublicationId);
         if (source.getTitle() == null || source.getTitle().isBlank()) {
             throw new InvalidOperationException("SOURCE_RECIPE_TITLE_REQUIRED", "A receita original precisa possuir um título.");
@@ -139,6 +141,7 @@ public class PublicationService {
 
     @Transactional
     public Publication create(CreatePublicationRequest request, UUID authorId, StoredImage image) {
+        publicationRateLimiter.recordAttempt(authorId);
         PublicationType type = parseType(request.type());
         PublicationVisibility visibility = parseVisibility(request.visibility());
         validateRecipe(type, request.recipe());

@@ -5,6 +5,7 @@ export interface NormalizedHttpError {
   code: string | null
   message: string
   fieldErrors: Record<string, string>
+  nextAvailableAt: string | null
   cause: unknown
 }
 
@@ -52,6 +53,7 @@ export function normalizeHttpError(error: unknown): NormalizedHttpError {
       code: null,
       message: error instanceof Error ? error.message : 'Erro inesperado.',
       fieldErrors: {},
+      nextAvailableAt: null,
       cause: error,
     }
   }
@@ -67,6 +69,7 @@ export function normalizeHttpError(error: unknown): NormalizedHttpError {
       (status ? defaultStatusMessages[status] : null) ??
       error.message,
     fieldErrors: readFieldErrors(payload),
+    nextAvailableAt: readString(payload, 'nextAvailableAt'),
     cause: error,
   }
 }

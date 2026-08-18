@@ -121,6 +121,21 @@ class ApiExceptionHandlerTest {
     }
 
     @Test
+    void shouldReturnTooManyRequestsWithNextAvailableAt() throws Exception {
+        java.time.OffsetDateTime nextAvailableAt = java.time.OffsetDateTime.parse("2026-08-09T12:10:00Z");
+        when(publicationService.findAccessible(any(UUID.class), nullable(UUID.class)))
+                .thenThrow(new org.application.service.exception.RateLimitExceededException(
+                        "Limite de publicações excedido. Tente novamente mais tarde.", nextAvailableAt));
+
+        mockMvc.perform(get("/publications/{id}", UUID.randomUUID()))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value("RATE_LIMIT_EXCEEDED"))
+                .andExpect(jsonPath("$.nextAvailableAt").value("2026-08-09T12:10:00Z"));
+
+        assertThat(appender.list).isEmpty();
+    }
+
+    @Test
     void shouldNotInterfereWithExistingResourceNotFoundHandling() throws Exception {
         when(publicationService.findAccessible(any(UUID.class), nullable(UUID.class)))
                 .thenThrow(new org.application.service.exception.ResourceNotFoundException(
