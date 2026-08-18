@@ -31,6 +31,7 @@ import org.application.controller.publication.request.CreateMyVersionRequest;
 import org.application.controller.publication.request.CreateIngredientRequest;
 import org.application.controller.publication.request.CreateRecipeRequest;
 import org.application.controller.publication.request.UpdatePublicationRequest;
+import org.application.service.exception.RateLimitExceededException;
 import org.application.service.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -83,6 +84,7 @@ class PublicationServiceTest {
     @Mock private PublicationImageCheckRepository publicationImageCheckRepository;
     @Mock private FollowRepository followRepository;
     @Mock private UserNotificationRepository notificationRepository;
+    @Mock private PublicationRateLimiter publicationRateLimiter;
 
     private ch.qos.logback.classic.Logger serviceLogger;
     private ListAppender<ILoggingEvent> appender;
@@ -412,6 +414,55 @@ class PublicationServiceTest {
                 authorId, content, "dish.png", "image/png");
 
         verify(notificationRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void shouldRejectCreateWhenRateLimitExceeded() {
+        UUID authorId = UUID.randomUUID();
+        byte[] content = {1, 2, 3};
+        byte[] processedContent = {4, 5, 6, 7};
+        ImageValidatorClient.ValidationResult validation = new ImageValidatorClient.ValidationResult(
+                processedContent, "image/webp", 800, 600, 0.98, 0.75, null);
+
+        when(imageValidatorClient.validate(content, "dish.png", "image/png")).thenReturn(validation);
+        when(imageStorage.store(processedContent, "dish.png", "image/webp"))
+                .thenReturn(StoredImage.builder().bucket("bucket").objectName("dish.png").build());
+        org.mockito.Mockito.doThrow(new RateLimitExceededException(
+                        "Limite de publicações excedido. Tente novamente mais tarde.",
+                        OffsetDateTime.parse("2026-08-09T12:10:00Z")))
+                .when(publicationRateLimiter).recordAttempt(authorId);
+
+        assertThatThrownBy(() -> publicationService.createUpload(
+                new CreatePublicationUploadRequest("DISH", "PUBLIC", null, null, null),
+                authorId, content, "dish.png", "image/png"))
+                .isInstanceOf(RateLimitExceededException.class);
+
+        verify(publicationRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldRecordAttemptWithAuthorIdOnEachCreation() {
+        UUID authorId = UUID.randomUUID();
+        byte[] content = {1, 2, 3};
+        byte[] processedContent = {4, 5, 6, 7};
+        Publication saved = publication(UUID.randomUUID());
+        ImageValidatorClient.ValidationResult validation = new ImageValidatorClient.ValidationResult(
+                processedContent, "image/webp", 800, 600, 0.98, 0.75, null);
+
+        when(imageValidatorClient.validate(content, "dish.png", "image/png")).thenReturn(validation);
+        when(userRepository.findByIdAndStatus(authorId, UserStatus.ACTIVE))
+                .thenReturn(Optional.of(User.builder().id(authorId).status(UserStatus.ACTIVE).build()));
+        when(imageStorage.store(processedContent, "dish.png", "image/webp"))
+                .thenReturn(StoredImage.builder().bucket("bucket").objectName("dish.png").build());
+        when(publicationRepository.save(any(Publication.class))).thenReturn(saved);
+        when(clock.instant()).thenReturn(Instant.parse("2026-08-09T12:00:00Z"));
+        when(clock.getZone()).thenReturn(ZoneOffset.UTC);
+
+        publicationService.createUpload(
+                new CreatePublicationUploadRequest("DISH", "PUBLIC", null, null, null),
+                authorId, content, "dish.png", "image/png");
+
+        verify(publicationRateLimiter).recordAttempt(authorId);
     }
 
     @Test

@@ -66,7 +66,7 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(RateLimitExceededException.class)
     public ResponseEntity<ApiErrorResponse> handleRateLimit(RateLimitExceededException exception) {
-        return response(HttpStatus.TOO_MANY_REQUESTS, "RATE_LIMIT_EXCEEDED", exception.getMessage());
+        return response(HttpStatus.TOO_MANY_REQUESTS, "RATE_LIMIT_EXCEEDED", exception.getMessage(), null, exception.nextAvailableAt());
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
@@ -100,10 +100,14 @@ public class ApiExceptionHandler {
     }
 
     private ResponseEntity<ApiErrorResponse> response(HttpStatus status, String code, String message) {
-        return response(status, code, message, null);
+        return response(status, code, message, null, null);
     }
 
     private ResponseEntity<ApiErrorResponse> response(HttpStatus status, String code, String message, Map<String, String> fieldErrors) {
+        return response(status, code, message, fieldErrors, null);
+    }
+
+    private ResponseEntity<ApiErrorResponse> response(HttpStatus status, String code, String message, Map<String, String> fieldErrors, OffsetDateTime nextAvailableAt) {
         return ResponseEntity.status(status).body(ApiErrorResponse.builder()
                 .timestamp(OffsetDateTime.now())
                 .status(status.value())
@@ -111,6 +115,7 @@ public class ApiExceptionHandler {
                 .code(code)
                 .message(message)
                 .fieldErrors(fieldErrors)
+                .nextAvailableAt(nextAvailableAt)
                 .build());
     }
 }

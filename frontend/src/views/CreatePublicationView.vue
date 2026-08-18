@@ -16,6 +16,7 @@ import BaseFieldError from '@/components/base/BaseFieldError.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import BaseSelect from '@/components/base/BaseSelect.vue'
 import BaseTextarea from '@/components/base/BaseTextarea.vue'
+import BaseToast from '@/components/base/BaseToast.vue'
 import IngredientEditor, {
   type IngredientDraft,
 } from '@/components/publication/IngredientEditor.vue'
@@ -59,6 +60,32 @@ const ingredientError = ref('')
 const fieldErrors = reactive<Record<string, string>>({})
 const published = ref(false)
 const ingredients = ref<IngredientDraft[]>([{ name: '', quantity: '', unit: '', note: '' }])
+
+const rateLimitedUntil = ref<number | null>(null)
+const cooldownNow = ref(Date.now())
+let cooldownTicker: ReturnType<typeof setInterval> | undefined
+const cooldownSecondsRemaining = computed(() =>
+  rateLimitedUntil.value === null
+    ? 0
+    : Math.max(0, Math.ceil((rateLimitedUntil.value - cooldownNow.value) / 1000)),
+)
+const isRateLimited = computed(() => cooldownSecondsRemaining.value > 0)
+
+function startRateLimitCooldown(nextAvailableAt: string): void {
+  const target = new Date(nextAvailableAt).getTime()
+  if (Number.isNaN(target)) return
+  rateLimitedUntil.value = target
+  cooldownNow.value = Date.now()
+  if (cooldownTicker) clearInterval(cooldownTicker)
+  cooldownTicker = setInterval(() => {
+    cooldownNow.value = Date.now()
+    if (cooldownNow.value >= target) {
+      clearInterval(cooldownTicker)
+      cooldownTicker = undefined
+      rateLimitedUntil.value = null
+    }
+  }, 1_000)
+}
 
 const draftId = ref<string>(crypto.randomUUID())
 let draftCreatedAt = new Date().toISOString()
@@ -206,6 +233,9 @@ function handleMutationError(error: unknown, fallback: string): void {
     normalized.fieldErrors['recipe.ingredients'] ??
     ingredientError.value
   formError.value = `${normalized.message || fallback} Seus dados foram preservados.`
+  if (normalized.code === 'RATE_LIMIT_EXCEEDED' && normalized.nextAvailableAt) {
+    startRateLimitCooldown(normalized.nextAvailableAt)
+  }
 }
 
 function recipePayload(): CreateRecipeRequest | undefined {
@@ -235,7 +265,7 @@ function recipePayload(): CreateRecipeRequest | undefined {
 }
 
 function submit(): void {
-  if (isSubmitting.value) return
+  if (isSubmitting.value || isRateLimited.value) return
   clearErrors()
   if (!image.value) {
     imageError.value = 'Selecione uma imagem para publicar.'
@@ -310,6 +340,7 @@ const sourceLoadError = computed(() => {
 onBeforeUnmount(() => {
   clearImagePreview()
   if (autosaveTimer) clearInterval(autosaveTimer)
+  if (cooldownTicker) clearInterval(cooldownTicker)
   if (!published.value) void autosaveDraft()
 })
 </script>
@@ -420,8 +451,19 @@ onBeforeUnmount(() => {
         v-if="formError"
         :message="formError"
       />
+      <BaseToast
+        v-if="isRateLimited"
+        kind="warning"
+        title="Limite de publicações atingido"
+        :dismissible="false"
+      >
+        Tente novamente em {{ cooldownSecondsRemaining }}
+        {{ cooldownSecondsRemaining === 1 ? 'segundo' : 'segundos' }}.
+      </BaseToast>
       <div class="create-publication__actions">
-        <BaseButton type="submit" :loading="isSubmitting">Publicar</BaseButton
+        <BaseButton type="submit" :loading="isSubmitting" :disabled="isRateLimited">
+          {{ isRateLimited ? `Aguarde ${cooldownSecondsRemaining}s` : 'Publicar' }}
+        </BaseButton
         ><BaseButton
           type="button"
           variant="secondary"

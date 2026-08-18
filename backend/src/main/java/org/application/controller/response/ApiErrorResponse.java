@@ -20,6 +20,8 @@ public record ApiErrorResponse(
         @Schema(description = "Mensagem explicando o erro.", example = "Usuário não encontrado.")
         String message,
         @Schema(description = "Erros por campo para validações de formulários.", nullable = true)
-        Map<String, String> fieldErrors
+        Map<String, String> fieldErrors,
+        @Schema(description = "Quando informado, indica a partir de quando a ação poderá ser repetida (ex.: rate limit).", nullable = true, example = "2026-08-08T12:10:00Z")
+        OffsetDateTime nextAvailableAt
 ) {
 }

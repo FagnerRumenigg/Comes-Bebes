@@ -161,6 +161,8 @@ As imagens são baixadas para `COMESEBEBES_IMAGE_STORAGE_PATH`. No desenvolvimen
 
 O login limita tentativas por IP e username. O limite local padrão é de 5 tentativas em 300 segundos e retorna `429` com o código `RATE_LIMIT_EXCEEDED`.
 
+A criação de publicação (`POST /publications` e `POST /publications/{id}/my-versions`) também limita tentativas, por usuário autenticado. O limite local padrão é de 3 publicações em 600 segundos e retorna `429` com o código `RATE_LIMIT_EXCEEDED`; o corpo do erro inclui `nextAvailableAt` com o instante em que o limite libera.
+
 Erros possuem `status`, `code` e `message`. O frontend deve tratar o `code`, não o texto da mensagem.
 
 ## Deploy para produção

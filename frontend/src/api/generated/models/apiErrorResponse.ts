@@ -6,6 +6,7 @@
  * OpenAPI spec version: v1
  */
 import type { ApiErrorResponseFieldErrors } from './apiErrorResponseFieldErrors';
+import type { ApiErrorResponseNextAvailableAt } from './apiErrorResponseNextAvailableAt';
 
 /**
  * Formato padrão de erro da API.
@@ -23,4 +24,6 @@ export interface ApiErrorResponse {
   message: string;
   /** Erros por campo para validações de formulários. */
   fieldErrors?: ApiErrorResponseFieldErrors;
+  /** Quando informado, indica a partir de quando a ação poderá ser repetida (ex.: rate limit). */
+  nextAvailableAt?: ApiErrorResponseNextAvailableAt;
 }

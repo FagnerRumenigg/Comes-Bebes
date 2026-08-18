@@ -9,6 +9,7 @@
 export * from './apiErrorResponse';
 export * from './apiErrorResponseFieldErrors';
 export * from './apiErrorResponseFieldErrorsAnyOf';
+export * from './apiErrorResponseNextAvailableAt';
 export * from './biometricAuthenticationStartResponse';
 export * from './biometricRegistrationStartResponse';
 export * from './biometricResponse';
