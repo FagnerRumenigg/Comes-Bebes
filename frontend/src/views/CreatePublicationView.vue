@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQueryClient } from '@tanstack/vue-query'
 
@@ -20,11 +20,20 @@ import IngredientEditor, {
   type IngredientDraft,
 } from '@/components/publication/IngredientEditor.vue'
 import PreparationStepsEditor from '@/components/publication/PreparationStepsEditor.vue'
+import {
+  deleteDraft,
+  getDraft,
+  hasDraftContent,
+  listDrafts,
+  saveDraft,
+  type PublicationDraft,
+} from '@/features/publications/drafts'
 
 const route = useRoute()
 const router = useRouter()
 const queryClient = useQueryClient()
-const sourceId = computed(() => (route.params.sourceId as string | undefined) ?? '')
+const sourceId = ref((route.params.sourceId as string | undefined) ?? '')
+const routeDraftId = computed(() => (route.params.draftId as string | undefined) ?? '')
 const isMyVersion = computed(() => Boolean(sourceId.value))
 const sourceQuery = useGetPublicationById(sourceId, {
   query: { enabled: computed(() => isMyVersion.value) },
@@ -50,6 +59,80 @@ const ingredientError = ref('')
 const fieldErrors = reactive<Record<string, string>>({})
 const published = ref(false)
 const ingredients = ref<IngredientDraft[]>([{ name: '', quantity: '', unit: '', note: '' }])
+
+const draftId = ref<string>(crypto.randomUUID())
+let draftCreatedAt = new Date().toISOString()
+const lastDraftSavedAt = ref<string | null>(null)
+const existingDraftsCount = ref(0)
+let autosaveTimer: ReturnType<typeof setInterval> | undefined
+
+const savedAtFormatter = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' })
+function formatSavedTime(iso: string): string {
+  return savedAtFormatter.format(new Date(iso))
+}
+
+function currentDraftSnapshot(): PublicationDraft {
+  return {
+    id: draftId.value,
+    mode: isMyVersion.value ? 'MY_VERSION' : 'CREATE',
+    sourceId: isMyVersion.value ? sourceId.value : null,
+    createdAt: draftCreatedAt,
+    updatedAt: new Date().toISOString(),
+    type: type.value,
+    visibility: visibility.value,
+    title: title.value,
+    description: description.value,
+    titleSuffix: titleSuffix.value,
+    changeSummary: changeSummary.value,
+    instructions: instructions.value,
+    yieldQuantity: yieldQuantity.value,
+    yieldUnit: yieldUnit.value,
+    ingredients: ingredients.value.map((item) => ({ ...item })),
+    image: image.value,
+  }
+}
+
+async function autosaveDraft(): Promise<void> {
+  if (published.value) return
+  const snapshot = currentDraftSnapshot()
+  if (!hasDraftContent(snapshot)) return
+  await saveDraft(snapshot)
+  lastDraftSavedAt.value = snapshot.updatedAt
+}
+
+async function loadDraft(id: string): Promise<void> {
+  const draft = await getDraft(id)
+  if (!draft) return
+  draftId.value = draft.id
+  draftCreatedAt = draft.createdAt
+  sourceId.value = draft.sourceId ?? ''
+  type.value = draft.type
+  visibility.value = draft.visibility
+  title.value = draft.title
+  description.value = draft.description
+  titleSuffix.value = draft.titleSuffix
+  changeSummary.value = draft.changeSummary
+  instructions.value = draft.instructions
+  yieldQuantity.value = draft.yieldQuantity
+  yieldUnit.value = draft.yieldUnit
+  if (draft.ingredients.length) ingredients.value = draft.ingredients.map((item) => ({ ...item }))
+  // Se o rascunho já tem conteúdo próprio de receita, não deixa o watcher de
+  // recipeQuery sobrescrever com a receita original de novo.
+  if (draft.instructions.trim() || draft.ingredients.some((item) => item.name.trim())) {
+    prefilled.value = true
+  }
+  if (draft.image) {
+    image.value = draft.image
+    imagePreview.value = URL.createObjectURL(draft.image)
+  }
+  lastDraftSavedAt.value = draft.updatedAt
+}
+
+onMounted(async () => {
+  if (routeDraftId.value) await loadDraft(routeDraftId.value)
+  existingDraftsCount.value = (await listDrafts()).length
+  autosaveTimer = setInterval(() => void autosaveDraft(), 10_000)
+})
 
 const createMutation = useCreateUpload({
   mutation: {
@@ -196,6 +279,8 @@ function submit(): void {
 function finish(id: string): void {
   published.value = true
   clearImagePreview()
+  if (autosaveTimer) clearInterval(autosaveTimer)
+  void deleteDraft(draftId.value)
   queryClient.invalidateQueries({ queryKey: ['publications'] })
   void router.push(`/publicacoes/${id}`)
 }
@@ -222,7 +307,11 @@ const sourceLoadError = computed(() => {
   return isMyVersion.value && error ? normalizeHttpError(error).message : null
 })
 
-onBeforeUnmount(clearImagePreview)
+onBeforeUnmount(() => {
+  clearImagePreview()
+  if (autosaveTimer) clearInterval(autosaveTimer)
+  if (!published.value) void autosaveDraft()
+})
 </script>
 
 <template>
@@ -239,6 +328,12 @@ onBeforeUnmount(clearImagePreview)
       <BaseButton variant="secondary" @click="router.back()">Voltar</BaseButton>
     </div>
     <form v-else class="create-publication__form" novalidate @submit.prevent="submit">
+      <p v-if="lastDraftSavedAt || existingDraftsCount" class="create-publication__draft-status">
+        <span v-if="lastDraftSavedAt">Rascunho salvo às {{ formatSavedTime(lastDraftSavedAt) }}. </span>
+        <RouterLink to="/rascunhos"
+          >Ver rascunhos salvos<span v-if="existingDraftsCount"> ({{ existingDraftsCount }})</span></RouterLink
+        >
+      </p>
       <section v-if="isMyVersion" class="create-publication__source">
         <p v-if="recipeQuery.isPending.value">Carregando a receita original…</p>
         <p v-else>
@@ -373,6 +468,11 @@ onBeforeUnmount(clearImagePreview)
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
+}
+.create-publication__draft-status {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
 }
 .create-publication__source {
   padding: var(--space-4);

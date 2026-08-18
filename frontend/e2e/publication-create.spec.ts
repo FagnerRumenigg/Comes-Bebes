@@ -58,7 +58,7 @@ test('criação de receita exige ingrediente e preparo', async ({ page }) => {
   await page.getByLabel('Ingrediente 1').fill('Farinha')
   await page.getByRole('button', { name: 'Publicar' }).click()
   await expect(page.getByText('Informe o modo de preparo.', { exact: true })).toBeVisible()
-  await page.getByLabel('Modo de preparo').fill('Misture tudo.')
+  await page.getByLabel('Passo 1', { exact: true }).fill('Misture tudo.')
   await page.getByRole('button', { name: 'Publicar' }).click()
   await expect(page).toHaveURL(/\/publicacoes\//)
 })
@@ -70,7 +70,7 @@ test('minha versão preserva a origem e pré-carrega a receita original', async 
   await expect(page.getByLabel('Ingrediente 1')).toHaveValue('cenoura')
   await page.getByLabel('Sufixo do título').fill('com cobertura cítrica')
   await page.locator('input[type="file"]').setInputFiles(image)
-  await page.getByLabel('Modo de preparo').fill('Adapte a receita.')
+  await page.getByLabel('Passo 1', { exact: true }).fill('Adapte a receita.')
   await page.getByRole('button', { name: 'Publicar' }).click()
   await expect(page).toHaveURL(/\/publicacoes\//)
 })
@@ -83,4 +83,34 @@ test('minha versão interrompe o formulário quando a origem não existe', async
     'Não foi possível carregar a receita original.',
   )
   await expect(page.getByRole('button', { name: 'Publicar' })).toHaveCount(0)
+})
+
+test('rascunho é salvo ao sair, listado em Rascunhos e retomado para publicar', async ({
+  page,
+}) => {
+  await login(page)
+  await page.goto('/publicar')
+
+  await page.getByLabel('Título').fill('Rascunho de bolo')
+  await page.locator('input[type="file"]').setInputFiles(image)
+  await expect(page.getByAltText('Prévia da imagem selecionada')).toBeVisible()
+
+  // Navegação in-app (não page.goto, que recarrega a página inteira e nunca chega a
+  // rodar onBeforeUnmount) — o autosave dispara ao desmontar o componente Vue.
+  await page.getByRole('link', { name: 'Comes&Bebes — início' }).click()
+  await expect(page).toHaveURL('/')
+
+  await page.goto('/rascunhos')
+  await expect(page.getByText('Rascunho de bolo')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Continuar editando' }).click()
+  await expect(page).toHaveURL(/\/publicar\/rascunho\//)
+  await expect(page.getByLabel('Título')).toHaveValue('Rascunho de bolo')
+  await expect(page.getByAltText('Prévia da imagem selecionada')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Publicar' }).click()
+  await expect(page).toHaveURL(/\/publicacoes\//)
+
+  await page.goto('/rascunhos')
+  await expect(page.getByText('Nenhum rascunho salvo.')).toBeVisible()
 })

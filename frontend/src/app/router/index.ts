@@ -9,6 +9,7 @@ import PublicationDetailsView from '@/views/PublicationDetailsView.vue'
 import LoginView from '@/views/LoginView.vue'
 import RegisterView from '@/views/RegisterView.vue'
 import CreatePublicationView from '@/views/CreatePublicationView.vue'
+import DraftsView from '@/views/DraftsView.vue'
 import EditPublicationView from '@/views/EditPublicationView.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import SearchView from '@/views/SearchView.vue'
@@ -68,6 +69,18 @@ export const routes: RouteRecordRaw[] = [
         name: 'create-my-version',
         component: CreatePublicationView,
         meta: { access: 'authenticated', pageTitle: 'Publicar minha versão' },
+      },
+      {
+        path: 'publicar/rascunho/:draftId',
+        name: 'resume-draft',
+        component: CreatePublicationView,
+        meta: { access: 'authenticated', pageTitle: 'Continuar rascunho' },
+      },
+      {
+        path: 'rascunhos',
+        name: 'drafts',
+        component: DraftsView,
+        meta: { access: 'authenticated', pageTitle: 'Rascunhos' },
       },
       {
         path: 'salvos',
