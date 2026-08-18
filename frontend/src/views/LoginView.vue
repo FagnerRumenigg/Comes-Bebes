@@ -41,16 +41,34 @@ function goToDestination(onboardingCompleted: boolean): void {
   void router.replace(target)
 }
 
+/**
+ * isUserVerifyingPlatformAuthenticatorAvailable() pode nunca resolver em alguns
+ * navegadores/ambientes sem autenticador (ex.: Chromium headless sem virtual
+ * authenticator) — sem um limite, isso travaria o redirecionamento pós-login
+ * indefinidamente. checkStatus() já tem seu próprio .catch(), mas não protege
+ * contra uma promise que nunca resolve nem rejeita.
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ])
+}
+
 async function maybeOfferBiometricEnrollment(response: LoginResponse): Promise<void> {
   if (!isWebAuthnSupported()) {
     goToDestination(response.onboardingCompleted)
     return
   }
-  const [platformReady, alreadyRegistered] = await Promise.all([
-    isPlatformAuthenticatorAvailable(),
-    checkStatus(response.deviceId).catch(() => true),
-  ])
-  if (!platformReady || alreadyRegistered) {
+  const eligible = await withTimeout(
+    Promise.all([
+      isPlatformAuthenticatorAvailable(),
+      checkStatus(response.deviceId).catch(() => true),
+    ]).then(([platformReady, alreadyRegistered]) => platformReady && !alreadyRegistered),
+    3_000,
+    false,
+  )
+  if (!eligible) {
     goToDestination(response.onboardingCompleted)
     return
   }
