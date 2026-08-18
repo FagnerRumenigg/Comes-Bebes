@@ -3,18 +3,22 @@ package org.application.service;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import org.application.model.Follow;
 import org.application.model.Publication;
 import org.application.model.PublicationStatus;
 import org.application.model.PublicationType;
 import org.application.model.PublicationVisibility;
 import org.application.model.Recipe;
 import org.application.model.User;
+import org.application.model.UserNotification;
 import org.application.model.UserRole;
 import org.application.model.UserStatus;
+import org.application.repository.FollowRepository;
 import org.application.repository.PublicationRepository;
 import org.application.repository.PublicationImageCheckRepository;
 import org.application.repository.RecipeRepository;
 import org.application.repository.RecipeIngredientRepository;
+import org.application.repository.UserNotificationRepository;
 import org.application.repository.UserRepository;
 import org.application.repository.PublicationOriginRepository;
 import org.application.service.storage.ImageStorage;
@@ -49,6 +53,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.math.BigDecimal;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,6 +63,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
@@ -75,6 +81,8 @@ class PublicationServiceTest {
     @Mock private PublicationOriginRepository publicationOriginRepository;
     @Mock private ImageValidatorClient imageValidatorClient;
     @Mock private PublicationImageCheckRepository publicationImageCheckRepository;
+    @Mock private FollowRepository followRepository;
+    @Mock private UserNotificationRepository notificationRepository;
 
     private ch.qos.logback.classic.Logger serviceLogger;
     private ListAppender<ILoggingEvent> appender;
@@ -98,6 +106,12 @@ class PublicationServiceTest {
     @BeforeEach
     void setUpZone() {
         ReflectionTestUtils.setField(publicationService, "applicationZoneId", ZoneOffset.UTC);
+    }
+
+    @BeforeEach
+    void setUpFollowDefaults() {
+        lenient().when(followRepository.findByFollowedIdAndDeletedAtIsNullOrderByCreatedAtDesc(any(), any()))
+                .thenReturn(new PageImpl<>(List.of()));
     }
 
     @Test
@@ -373,6 +387,84 @@ class PublicationServiceTest {
         verify(publicationImageCheckRepository).save(any());
         // Sem EXIF, não deve haver um segundo save só para gravar photoTakenAt.
         verify(publicationRepository, times(1)).save(any(Publication.class));
+    }
+
+    @Test
+    void shouldSkipNotificationSaveWhenAuthorHasNoFollowers() {
+        UUID authorId = UUID.randomUUID();
+        byte[] content = {1, 2, 3};
+        byte[] processedContent = {4, 5, 6, 7};
+        Publication saved = publication(UUID.randomUUID());
+        ImageValidatorClient.ValidationResult validation = new ImageValidatorClient.ValidationResult(
+                processedContent, "image/webp", 800, 600, 0.98, 0.75, null);
+
+        when(imageValidatorClient.validate(content, "dish.png", "image/png")).thenReturn(validation);
+        when(userRepository.findByIdAndStatus(authorId, UserStatus.ACTIVE))
+                .thenReturn(Optional.of(User.builder().id(authorId).status(UserStatus.ACTIVE).build()));
+        when(imageStorage.store(processedContent, "dish.png", "image/webp"))
+                .thenReturn(StoredImage.builder().bucket("bucket").objectName("dish.png").build());
+        when(publicationRepository.save(any(Publication.class))).thenReturn(saved);
+        when(clock.instant()).thenReturn(Instant.parse("2026-08-09T12:00:00Z"));
+        when(clock.getZone()).thenReturn(ZoneOffset.UTC);
+
+        publicationService.createUpload(
+                new CreatePublicationUploadRequest("DISH", "PUBLIC", null, null, null),
+                authorId, content, "dish.png", "image/png");
+
+        verify(notificationRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void shouldNotifyOnlyActiveFollowersWithPreferenceEnabledWhenPublishing() {
+        UUID authorId = UUID.randomUUID();
+        byte[] content = {1, 2, 3};
+        byte[] processedContent = {4, 5, 6, 7};
+        Publication saved = Publication.builder()
+                .id(UUID.randomUUID())
+                .authorId(authorId)
+                .type(PublicationType.DISH)
+                .visibility(PublicationVisibility.PUBLIC)
+                .status(PublicationStatus.ACTIVE)
+                .build();
+        ImageValidatorClient.ValidationResult validation = new ImageValidatorClient.ValidationResult(
+                processedContent, "image/webp", 800, 600, 0.98, 0.75, null);
+
+        UUID eligibleFollowerId = UUID.randomUUID();
+        UUID optedOutFollowerId = UUID.randomUUID();
+        UUID inactiveFollowerId = UUID.randomUUID();
+
+        when(imageValidatorClient.validate(content, "dish.png", "image/png")).thenReturn(validation);
+        when(userRepository.findByIdAndStatus(authorId, UserStatus.ACTIVE))
+                .thenReturn(Optional.of(User.builder().id(authorId).status(UserStatus.ACTIVE).build()));
+        when(imageStorage.store(processedContent, "dish.png", "image/webp"))
+                .thenReturn(StoredImage.builder().bucket("bucket").objectName("dish.png").build());
+        when(publicationRepository.save(any(Publication.class))).thenReturn(saved);
+        when(clock.instant()).thenReturn(Instant.parse("2026-08-09T12:00:00Z"));
+        when(clock.getZone()).thenReturn(ZoneOffset.UTC);
+        when(followRepository.findByFollowedIdAndDeletedAtIsNullOrderByCreatedAtDesc(eq(authorId), any()))
+                .thenReturn(new PageImpl<>(List.of(
+                        Follow.builder().followerId(eligibleFollowerId).followedId(authorId).build(),
+                        Follow.builder().followerId(optedOutFollowerId).followedId(authorId).build(),
+                        Follow.builder().followerId(inactiveFollowerId).followedId(authorId).build())));
+        when(userRepository.findAllById(List.of(eligibleFollowerId, optedOutFollowerId, inactiveFollowerId)))
+                .thenReturn(List.of(
+                        User.builder().id(eligibleFollowerId).status(UserStatus.ACTIVE).notifyOnFollowedPublish(true).build(),
+                        User.builder().id(optedOutFollowerId).status(UserStatus.ACTIVE).notifyOnFollowedPublish(false).build(),
+                        User.builder().id(inactiveFollowerId).status(UserStatus.DELETED).notifyOnFollowedPublish(true).build()));
+
+        publicationService.createUpload(
+                new CreatePublicationUploadRequest("DISH", "PUBLIC", null, null, null),
+                authorId, content, "dish.png", "image/png");
+
+        @SuppressWarnings("unchecked")
+        org.mockito.ArgumentCaptor<List<UserNotification>> captor = org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(notificationRepository).saveAll(captor.capture());
+        List<UserNotification> notifications = captor.getValue();
+        assertThat(notifications).hasSize(1);
+        assertThat(notifications.get(0).getUserId()).isEqualTo(eligibleFollowerId);
+        assertThat(notifications.get(0).getType()).isEqualTo("FOLLOWED_USER_PUBLISHED");
+        assertThat(notifications.get(0).getActorId()).isEqualTo(authorId);
+        assertThat(notifications.get(0).getPublicationId()).isEqualTo(saved.getId());
     }
 
     @Test

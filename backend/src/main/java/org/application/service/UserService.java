@@ -112,6 +112,13 @@ public class UserService {
     }
 
     @Transactional
+    public void updateNotifyOnFollowedPublish(UUID id, boolean value) {
+        User user = findActive(id);
+        user.updateNotifyOnFollowedPublish(value);
+        userRepository.save(user);
+    }
+
+    @Transactional
     public void changePassword(UUID id, ChangePasswordRequest request) {
         User user = findActive(id);
         if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {

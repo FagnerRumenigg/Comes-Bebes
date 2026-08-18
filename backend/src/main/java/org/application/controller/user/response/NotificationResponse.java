@@ -14,11 +14,13 @@ public record NotificationResponse(
         String type,
         UUID moderationCaseId,
         UUID publicationId,
+        @Schema(description = "Usuário que originou a notificação (ex.: quem passou a seguir). Nulo quando não se aplica.", nullable = true)
+        UUID actorId,
         @Schema(description = "Momento da leitura; nulo enquanto não lida.", nullable = true)
         OffsetDateTime readAt
 ) {
     public static NotificationResponse of(UserNotification item) {
         return builder().id(item.getId()).type(item.getType()).moderationCaseId(item.getModerationCaseId())
-                .publicationId(item.getPublicationId()).readAt(item.getReadAt()).build();
+                .publicationId(item.getPublicationId()).actorId(item.getActorId()).readAt(item.getReadAt()).build();
     }
 }

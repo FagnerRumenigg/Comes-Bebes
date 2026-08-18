@@ -8,16 +8,21 @@ import org.application.controller.publication.request.UpdatePublicationRequest;
 import org.application.controller.publication.request.CreateMyVersionRequest;
 import org.application.controller.publication.request.CreatePublicationUploadRequest;
 import org.application.dto.StoredImage;
+import org.application.model.Follow;
 import org.application.model.Publication;
 import org.application.model.PublicationStatus;
 import org.application.model.PublicationType;
 import org.application.model.Recipe;
 import org.application.model.RecipeIngredient;
 import org.application.model.PublicationOrigin;
+import org.application.model.UserNotification;
+import org.application.model.UserStatus;
+import org.application.repository.FollowRepository;
 import org.application.repository.PublicationOriginRepository;
 import org.application.repository.PublicationRepository;
 import org.application.repository.RecipeIngredientRepository;
 import org.application.repository.RecipeRepository;
+import org.application.repository.UserNotificationRepository;
 import org.application.repository.UserRepository;
 import org.application.service.exception.ResourceNotFoundException;
 import org.application.service.exception.InvalidOperationException;
@@ -51,6 +56,7 @@ import org.application.model.PublicationVisibility;
 @RequiredArgsConstructor
 public class PublicationService {
     private static final Logger log = LoggerFactory.getLogger(PublicationService.class);
+    private static final String FOLLOWED_USER_PUBLISHED = "FOLLOWED_USER_PUBLISHED";
 
     private final PublicationRepository publicationRepository;
     private final RecipeRepository recipeRepository;
@@ -62,6 +68,8 @@ public class PublicationService {
     private final ImageValidatorClient imageValidatorClient;
     private final PublicationImageCheckRepository publicationImageCheckRepository;
     private final ZoneId applicationZoneId;
+    private final FollowRepository followRepository;
+    private final UserNotificationRepository notificationRepository;
 
     private final PublicationOriginRepository publicationOriginRepository;
 
@@ -115,6 +123,7 @@ public class PublicationService {
                 .titleSuffix(request.titleSuffix())
                 .changeSummary(request.changeSummary())
                 .build());
+        notifyFollowers(saved);
         return saved;
     }
 
@@ -166,7 +175,35 @@ public class PublicationService {
         if (type == PublicationType.RECIPE) {
             saveRecipe(savedPublication.getId(), request.recipe());
         }
+        notifyFollowers(savedPublication);
         return savedPublication;
+    }
+
+    /**
+     * Dispara ao publicar (não ao editar) — quem segue o autor recebe uma notificação,
+     * exceto quem desativou essa preferência. Busca segue-por-segue por não termos join
+     * ad hoc entre Follow e User configurado; aceitável no volume atual de seguidores.
+     */
+    private void notifyFollowers(Publication publication) {
+        List<Follow> followerRows = followRepository
+                .findByFollowedIdAndDeletedAtIsNullOrderByCreatedAtDesc(publication.getAuthorId(), org.springframework.data.domain.Pageable.unpaged())
+                .getContent();
+        if (followerRows.isEmpty()) return;
+
+        List<UUID> followerIds = followerRows.stream().map(Follow::getFollowerId).toList();
+        List<UserNotification> notifications = userRepository.findAllById(followerIds).stream()
+                .filter(follower -> follower.getStatus() == UserStatus.ACTIVE && follower.isNotifyOnFollowedPublish())
+                .map(follower -> UserNotification.builder()
+                        .id(UUID.randomUUID())
+                        .userId(follower.getId())
+                        .type(FOLLOWED_USER_PUBLISHED)
+                        .actorId(publication.getAuthorId())
+                        .publicationId(publication.getId())
+                        .build())
+                .toList();
+        if (!notifications.isEmpty()) {
+            notificationRepository.saveAll(notifications);
+        }
     }
 
     @Transactional

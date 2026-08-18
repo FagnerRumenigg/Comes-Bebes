@@ -5,6 +5,7 @@
  * API RESTful da rede social de comida ComeSebebes.
  * OpenAPI spec version: v1
  */
+import type { NotificationResponseActorId } from './notificationResponseActorId';
 import type { NotificationResponseReadAt } from './notificationResponseReadAt';
 
 /**
@@ -15,6 +16,8 @@ export interface NotificationResponse {
   type: string;
   moderationCaseId: string;
   publicationId: string;
+  /** Usuário que originou a notificação (ex.: quem passou a seguir). Nulo quando não se aplica. */
+  actorId: NotificationResponseActorId;
   /** Momento da leitura; nulo enquanto não lida. */
   readAt: NotificationResponseReadAt;
 }

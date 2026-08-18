@@ -14,6 +14,8 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.application.controller.user.request.UpdateUserRequest;
 import org.application.controller.user.request.BlockUserRequest;
 import org.application.controller.user.request.ChangePasswordRequest;
+import org.application.controller.user.request.UpdateNotificationPreferencesRequest;
+import org.application.controller.user.response.NotificationPreferencesResponse;
 import org.application.controller.user.response.UserResponse;
 import org.application.controller.publication.response.PublicationResponse;
 import org.application.controller.user.response.NotificationResponse;
@@ -22,6 +24,7 @@ import org.application.service.PublicationService;
 import org.application.service.PublicationResponseFactory;
 import org.application.service.UserService;
 import org.application.service.AccountSecurityService;
+import org.application.service.FollowService;
 import org.application.config.CurrentUser;
 import org.springframework.security.core.Authentication;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +33,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -50,6 +54,7 @@ public class UserController {
     private final PublicationService publicationService;
     private final ZoneId applicationZoneId;
     private final AccountSecurityService accountSecurityService;
+    private final FollowService followService;
     private final CurrentUser currentUser;
     private final PublicationResponseFactory responseFactory;
 
@@ -87,9 +92,90 @@ public class UserController {
     })
     public UserResponse find(
             @Parameter(description = "UUID do usuário.", example = "71131447-a2a0-4996-a336-a8c3555bb327")
-            @PathVariable UUID id
+            @PathVariable UUID id,
+            Authentication authentication
     ) {
-        return UserResponse.of(userService.findActive(id), applicationZoneId);
+        var user = userService.findActive(id);
+        return UserResponse.of(user, applicationZoneId, followService.countFollowers(id), followService.countFollowing(id),
+                followedByCurrentUser(id, authentication));
+    }
+
+    @PutMapping("/{id}/follow")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Seguir usuário", description = "Passa a seguir o usuário informado.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Usuário seguido."),
+            @ApiResponse(responseCode = "400", description = "Não é possível seguir a si mesmo.", content = @Content(schema = @Schema(implementation = org.application.controller.response.ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado.", content = @Content(schema = @Schema(implementation = org.application.controller.response.ApiErrorResponse.class)))
+    })
+    public ResponseEntity<Void> follow(
+            @Parameter(description = "UUID do usuário a seguir.", example = "71131447-a2a0-4996-a336-a8c3555bb327")
+            @PathVariable UUID id,
+            Authentication authentication
+    ) {
+        followService.follow(currentUser.id(authentication), id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/follow")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Deixar de seguir usuário", description = "Remove logicamente o vínculo de seguir o usuário informado.")
+    @ApiResponse(responseCode = "204", description = "Deixou de seguir.")
+    public ResponseEntity<Void> unfollow(
+            @Parameter(description = "UUID do usuário a deixar de seguir.", example = "71131447-a2a0-4996-a336-a8c3555bb327")
+            @PathVariable UUID id,
+            Authentication authentication
+    ) {
+        followService.unfollow(currentUser.id(authentication), id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/followers")
+    @Operation(summary = "Listar seguidores", description = "Retorna os seguidores ativos do usuário, paginados.")
+    @Parameters({
+            @Parameter(name = "page", description = "Número da página, iniciando em 1.", schema = @Schema(type = "integer", minimum = "1", example = "1")),
+            @Parameter(name = "size", description = "Quantidade de itens por página.", schema = @Schema(type = "integer", minimum = "1", maximum = "50", example = "20")),
+            @Parameter(name = "sort", description = "Direção da ordenação.", schema = @Schema(type = "string", example = "ASC"))
+    })
+    @ApiResponse(responseCode = "200", description = "Seguidores retornados.")
+    public PageResponse<UserResponse> followers(
+            @PathVariable UUID id,
+            @Parameter(hidden = true) Pageable pageable,
+            Authentication authentication
+    ) {
+        return PageResponse.of(followService.listFollowers(id, pageable), item -> summaryOf(item, authentication));
+    }
+
+    @GetMapping("/{id}/following")
+    @Operation(summary = "Listar quem o usuário segue", description = "Retorna os perfis seguidos pelo usuário, paginados.")
+    @Parameters({
+            @Parameter(name = "page", description = "Número da página, iniciando em 1.", schema = @Schema(type = "integer", minimum = "1", example = "1")),
+            @Parameter(name = "size", description = "Quantidade de itens por página.", schema = @Schema(type = "integer", minimum = "1", maximum = "50", example = "20")),
+            @Parameter(name = "sort", description = "Direção da ordenação.", schema = @Schema(type = "string", example = "ASC"))
+    })
+    @ApiResponse(responseCode = "200", description = "Perfis seguidos retornados.")
+    public PageResponse<UserResponse> following(
+            @PathVariable UUID id,
+            @Parameter(hidden = true) Pageable pageable,
+            Authentication authentication
+    ) {
+        return PageResponse.of(followService.listFollowing(id, pageable), item -> summaryOf(item, authentication));
+    }
+
+    private UserResponse summaryOf(org.application.model.User item, Authentication authentication) {
+        return UserResponse.of(item, applicationZoneId, followService.countFollowers(item.getId()),
+                followService.countFollowing(item.getId()), followedByCurrentUser(item.getId(), authentication));
+    }
+
+    private Boolean followedByCurrentUser(UUID profileId, Authentication authentication) {
+        UUID viewerId = authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())
+                ? null : currentUser.id(authentication);
+        if (viewerId == null || viewerId.equals(profileId)) {
+            return null;
+        }
+        return followService.isFollowing(viewerId, profileId);
     }
 
     @GetMapping("/{id}/publications")
@@ -129,6 +215,34 @@ public class UserController {
         return PageResponse.of(userService.notifications(id, pageable), NotificationResponse::of);
     }
 
+    @GetMapping("/{id}/notification-preferences")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Consultar preferências de notificação", description = "Retorna as preferências de notificação da conta autenticada.")
+    @ApiResponse(responseCode = "200", description = "Preferências retornadas.")
+    public NotificationPreferencesResponse notificationPreferences(
+            @PathVariable UUID id,
+            Authentication authentication
+    ) {
+        ensureCurrentUser(id, authentication);
+        return NotificationPreferencesResponse.of(userService.findActive(id));
+    }
+
+    @PatchMapping("/{id}/notification-preferences")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Atualizar preferências de notificação", description = "Atualiza as preferências de notificação da conta autenticada.")
+    @ApiResponse(responseCode = "204", description = "Preferências atualizadas.")
+    public ResponseEntity<Void> updateNotificationPreferences(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateNotificationPreferencesRequest request,
+            Authentication authentication
+    ) {
+        ensureCurrentUser(id, authentication);
+        userService.updateNotifyOnFollowedPublish(id, request.notifyOnFollowedPublish());
+        return ResponseEntity.noContent().build();
+    }
+
     @PatchMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     @SecurityRequirement(name = "bearerAuth")
@@ -146,7 +260,8 @@ public class UserController {
             Authentication authentication
     ) {
         ensureCurrentUser(id, authentication);
-        return UserResponse.of(userService.update(id, request), applicationZoneId);
+        var user = userService.update(id, request);
+        return UserResponse.of(user, applicationZoneId, followService.countFollowers(id), followService.countFollowing(id), null);
     }
 
     @PatchMapping("/{id}/onboarding")

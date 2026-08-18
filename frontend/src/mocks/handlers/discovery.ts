@@ -9,6 +9,7 @@ import { mockAuthenticatedUsername } from '@/mocks/authentication'
 import { mockAccounts } from '@/mocks/fixtures/auth'
 import { mockPublications } from '@/mocks/fixtures/publications'
 import { personalizePublication, savedPublications } from '@/mocks/state/publications'
+import { followersCountMock, followingCountMock, isFollowingMock } from '@/mocks/state/follows'
 
 const account = mockAccounts[0]
 const page = <T>(content: T[], requestedPage = 1, size = 20) => ({
@@ -22,10 +23,11 @@ const page = <T>(content: T[], requestedPage = 1, size = 20) => ({
 })
 
 export const discoveryMockHandlers = [
-  http.get('*/u/:username', async ({ params }) => {
+  http.get('*/u/:username', async ({ params, request }) => {
     await delay(180)
     const found = mockAccounts.find((item) => item.username === params.username)
     if (!found) return HttpResponse.json({ message: 'Perfil não encontrado.' }, { status: 404 })
+    const viewerUsername = mockAuthenticatedUsername(request)
     const response: UserResponse = {
       id: found.userId,
       username: found.username,
@@ -34,6 +36,12 @@ export const discoveryMockHandlers = [
       status: 'ACTIVE',
       showReactionCounts: true,
       onboardingCompleted: true,
+      followersCount: followersCountMock(found.userId),
+      followingCount: followingCountMock(found.username),
+      followedByCurrentUser:
+        !viewerUsername || viewerUsername === found.username
+          ? null
+          : isFollowingMock(viewerUsername, found.userId),
     }
     return HttpResponse.json(response)
   }),
@@ -96,6 +104,7 @@ export const discoveryMockHandlers = [
         type: 'PUBLICATION_APPROVED',
         moderationCaseId: 'case-1',
         publicationId: mockPublications[1].id,
+        actorId: null,
         readAt: null,
       },
       {
@@ -103,6 +112,7 @@ export const discoveryMockHandlers = [
         type: 'PUBLICATION_REPORTED',
         moderationCaseId: 'case-2',
         publicationId: mockPublications[0].id,
+        actorId: null,
         readAt: '2026-08-07T12:00:00Z',
       },
     ])

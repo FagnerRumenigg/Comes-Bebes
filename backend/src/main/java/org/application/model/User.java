@@ -68,6 +68,10 @@ public class User {
     @Builder.Default
     private boolean onboardingCompleted = false;
 
+    @Column(name = "notify_on_followed_publish", nullable = false)
+    @Builder.Default
+    private boolean notifyOnFollowedPublish = true;
+
     @Column(name = "last_seen_patch_note_at")
     private OffsetDateTime lastSeenPatchNoteAt;
 
@@ -108,6 +112,10 @@ public class User {
 
     public void markPatchNotesSeen(OffsetDateTime seenAt) {
         this.lastSeenPatchNoteAt = seenAt;
+    }
+
+    public void updateNotifyOnFollowedPublish(boolean value) {
+        this.notifyOnFollowedPublish = value;
     }
 
     public void delete(OffsetDateTime deletedAt) {
