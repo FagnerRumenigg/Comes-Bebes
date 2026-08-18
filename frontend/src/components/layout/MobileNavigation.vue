@@ -27,6 +27,8 @@ async function logout(): Promise<void> {
     </button>
     <RouterLink v-if="authStore.authenticated" to="/salvos">Salvos</RouterLink>
     <button v-else type="button" @click="showAuthNotice">Salvos</button>
+    <RouterLink v-if="authStore.authenticated" to="/notificacoes">Notificações</RouterLink>
+    <button v-else type="button" @click="showAuthNotice">Notificações</button>
     <RouterLink v-if="authStore.authenticated" :to="profileDestination">Perfil</RouterLink>
     <RouterLink v-else to="/login">Entrar</RouterLink>
     <button

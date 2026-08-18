@@ -139,12 +139,13 @@ describe('layouts e navegação', () => {
         .get('nav')
         .findAll('a, button')
         .map((item) => item.text()),
-    ).toEqual(['Buscar', 'Publicar', 'Salvos'])
+    ).toEqual(['Buscar', 'Publicar', 'Salvos', 'Notificações'])
     expect(mobile.findAll('a, button').map((item) => item.text())).toEqual([
       'Início',
       'Buscar',
       'Publicar',
       'Salvos',
+      'Notificações',
       'Entrar',
     ])
 
@@ -175,6 +176,7 @@ describe('layouts e navegação', () => {
       'Buscar',
       'Publicar',
       'Salvos',
+      'Notificações',
       'Perfil',
       'Sair',
     ])
