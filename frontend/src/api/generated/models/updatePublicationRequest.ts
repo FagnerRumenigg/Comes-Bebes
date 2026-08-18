@@ -10,6 +10,7 @@ import type { UpdatePublicationRequestTitle } from './updatePublicationRequestTi
 import type { UpdatePublicationRequestDescription } from './updatePublicationRequestDescription';
 import type { UpdatePublicationRequestVisibility } from './updatePublicationRequestVisibility';
 import type { UpdatePublicationRequestRecipe } from './updatePublicationRequestRecipe';
+import type { UpdatePublicationRequestTags } from './updatePublicationRequestTags';
 
 /**
  * Dados para editar uma publicação ou converter seu tipo.
@@ -39,4 +40,10 @@ export interface UpdatePublicationRequest {
   visibility?: UpdatePublicationRequestVisibility;
   /** Receita obrigatória ao converter para RECIPE. */
   recipe?: UpdatePublicationRequestRecipe;
+  /**
+   * Nova lista de tags (no máximo 5), substituindo a anterior por completo. Omitido/nulo mantém as tags atuais; lista vazia remove todas.
+   * @minItems 0
+   * @maxItems 5
+   */
+  tags?: UpdatePublicationRequestTags;
 }

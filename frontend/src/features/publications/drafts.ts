@@ -17,6 +17,7 @@ export interface PublicationDraft {
   yieldUnit: string
   ingredients: IngredientDraft[]
   image: File | null
+  tags: string[]
 }
 
 const DB_NAME = 'comes-e-bebes-drafts'

@@ -15,6 +15,7 @@ import type { PublicationResponseSelectedReactionsItem } from './publicationResp
 import type { PublicationResponseOriginalPublicationId } from './publicationResponseOriginalPublicationId';
 import type { PublicationResponseRecipePreview } from './publicationResponseRecipePreview';
 import type { PublicationResponsePhotoTakenAt } from './publicationResponsePhotoTakenAt';
+import type { TagResponse } from './tagResponse';
 
 /**
  * Dados públicos de uma publicação ativa.
@@ -52,4 +53,6 @@ export interface PublicationResponse {
   editedByAdmin: boolean;
   /** Data/hora em que a foto foi tirada, lida do EXIF automaticamente. Nula quando a imagem não carrega essa informação (prints, PNGs, fotos reenviadas por apps que removem metadados). */
   photoTakenAt: PublicationResponsePhotoTakenAt;
+  /** Tags de alimento associadas à publicação, no máximo 5. */
+  tags: TagResponse[];
 }

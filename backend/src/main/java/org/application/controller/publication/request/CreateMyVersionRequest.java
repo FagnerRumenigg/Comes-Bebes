@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
 import java.util.UUID;
 
 @Schema(name = "CreateMyVersionRequest", description = "Dados para criar uma versão própria de uma receita existente.")
@@ -22,6 +23,11 @@ public record CreateMyVersionRequest(
         @Schema(description = "URL fictícia usada pelo storage local.", example = "https://local.test/images/versao.jpg")
         @NotBlank @Pattern(regexp = "https?://.+") String imageUrl,
         @Schema(description = "Receita completa da versão.")
-        @NotNull @Valid CreateRecipeRequest recipe
+        @NotNull @Valid CreateRecipeRequest recipe,
+        @Schema(description = "Tags de alimento, no máximo 5.", nullable = true)
+        @Size(max = 5) List<@NotBlank @Size(max = 40) String> tags
 ) {
+    public CreateMyVersionRequest(UUID authorId, String visibility, String titleSuffix, String changeSummary, String imageUrl, CreateRecipeRequest recipe) {
+        this(authorId, visibility, titleSuffix, changeSummary, imageUrl, recipe, null);
+    }
 }

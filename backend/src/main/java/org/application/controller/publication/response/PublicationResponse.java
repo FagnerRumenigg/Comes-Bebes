@@ -2,6 +2,7 @@ package org.application.controller.publication.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
+import org.application.controller.tag.response.TagResponse;
 import org.application.model.Publication;
 import org.application.model.PublicationType;
 import org.application.model.PublicationVisibility;
@@ -51,7 +52,9 @@ public record PublicationResponse(
         @Schema(description = "Data/hora em que a foto foi tirada, lida do EXIF automaticamente. "
                 + "Nula quando a imagem não carrega essa informação (prints, PNGs, fotos reenviadas por apps que removem metadados).",
                 example = "2026-08-15T14:32:07-03:00", nullable = true)
-        OffsetDateTime photoTakenAt
+        OffsetDateTime photoTakenAt,
+        @Schema(description = "Tags de alimento associadas à publicação, no máximo 5.")
+        List<TagResponse> tags
 ) {
 
     public static PublicationResponse of(Publication publication, ZoneId zoneId) {

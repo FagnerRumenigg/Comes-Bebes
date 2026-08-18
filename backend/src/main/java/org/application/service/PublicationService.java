@@ -71,6 +71,7 @@ public class PublicationService {
     private final FollowRepository followRepository;
     private final UserNotificationRepository notificationRepository;
     private final PublicationRateLimiter publicationRateLimiter;
+    private final TagService tagService;
 
     private final PublicationOriginRepository publicationOriginRepository;
 
@@ -125,6 +126,7 @@ public class PublicationService {
                 .titleSuffix(request.titleSuffix())
                 .changeSummary(request.changeSummary())
                 .build());
+        tagService.attachToPublication(saved.getId(), tagService.resolveOrCreate(request.tags(), authorId));
         notifyFollowers(saved);
         return saved;
     }
@@ -178,6 +180,7 @@ public class PublicationService {
         if (type == PublicationType.RECIPE) {
             saveRecipe(savedPublication.getId(), request.recipe());
         }
+        tagService.attachToPublication(savedPublication.getId(), tagService.resolveOrCreate(request.tags(), authorId));
         notifyFollowers(savedPublication);
         return savedPublication;
     }
@@ -214,7 +217,7 @@ public class PublicationService {
         var validation = imageValidatorClient.validate(content, filename, contentType);
         CreatePublicationRequest publicationRequest = new CreatePublicationRequest(
                 authorId, request.type(), request.visibility(), request.title(), request.description(),
-                "file://local/upload", request.recipe());
+                "file://local/upload", request.recipe(), request.tags());
         Publication publication = create(publicationRequest, authorId,
                 imageStorage.store(validation.imageBytes(), filename, validation.contentType()));
         saveApprovedImageCheck(publication, validation);
@@ -405,6 +408,10 @@ public class PublicationService {
             publication.markEditedByAdmin(actingUser.getId(), OffsetDateTime.now(clock).withOffsetSameInstant(ZoneOffset.UTC));
             log.info("event=publication_edited_by_admin publicationId={} adminId={} authorId={}",
                     id, actingUser.getId(), publication.getAuthorId());
+        }
+
+        if (request.tags() != null) {
+            tagService.attachToPublication(publication.getId(), tagService.resolveOrCreate(request.tags(), actingUserId));
         }
 
         return publicationRepository.save(publication);

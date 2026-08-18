@@ -6,6 +6,7 @@
  * OpenAPI spec version: v1
  */
 import type { CreateRecipeRequest } from './createRecipeRequest';
+import type { CreatePublicationUploadRequestTags } from './createPublicationUploadRequestTags';
 
 /**
  * Dados textuais de uma publicação com imagem multipart.
@@ -32,4 +33,10 @@ export interface CreatePublicationUploadRequest {
    */
   description?: string;
   recipe?: CreateRecipeRequest;
+  /**
+   * Tags de alimento, no máximo 5.
+   * @minItems 0
+   * @maxItems 5
+   */
+  tags?: CreatePublicationUploadRequestTags;
 }

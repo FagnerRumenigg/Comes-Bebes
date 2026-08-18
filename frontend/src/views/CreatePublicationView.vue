@@ -21,6 +21,7 @@ import IngredientEditor, {
   type IngredientDraft,
 } from '@/components/publication/IngredientEditor.vue'
 import PreparationStepsEditor from '@/components/publication/PreparationStepsEditor.vue'
+import TagEditor from '@/components/publication/TagEditor.vue'
 import {
   deleteDraft,
   getDraft,
@@ -60,6 +61,7 @@ const ingredientError = ref('')
 const fieldErrors = reactive<Record<string, string>>({})
 const published = ref(false)
 const ingredients = ref<IngredientDraft[]>([{ name: '', quantity: '', unit: '', note: '' }])
+const tags = ref<string[]>([])
 
 const rateLimitedUntil = ref<number | null>(null)
 const cooldownNow = ref(Date.now())
@@ -116,6 +118,7 @@ function currentDraftSnapshot(): PublicationDraft {
     yieldUnit: yieldUnit.value,
     ingredients: ingredients.value.map((item) => ({ ...item })),
     image: image.value,
+    tags: [...tags.value],
   }
 }
 
@@ -143,6 +146,7 @@ async function loadDraft(id: string): Promise<void> {
   yieldQuantity.value = draft.yieldQuantity
   yieldUnit.value = draft.yieldUnit
   if (draft.ingredients.length) ingredients.value = draft.ingredients.map((item) => ({ ...item }))
+  tags.value = [...(draft.tags ?? [])]
   // Se o rascunho já tem conteúdo próprio de receita, não deixa o watcher de
   // recipeQuery sobrescrever com a receita original de novo.
   if (draft.instructions.trim() || draft.ingredients.some((item) => item.name.trim())) {
@@ -286,6 +290,7 @@ function submit(): void {
           titleSuffix: titleSuffix.value,
           ...(changeSummary.value.trim() ? { changeSummary: changeSummary.value } : {}),
           recipe: recipe!,
+          ...(tags.value.length ? { tags: tags.value } : {}),
         },
         image: image.value,
       },
@@ -299,6 +304,7 @@ function submit(): void {
           ...(title.value.trim() ? { title: title.value } : {}),
           ...(description.value.trim() ? { description: description.value } : {}),
           ...(recipe ? { recipe } : {}),
+          ...(tags.value.length ? { tags: tags.value } : {}),
         },
         image: image.value,
       },
@@ -435,6 +441,7 @@ onBeforeUnmount(() => {
           />
         </div>
       </div>
+      <TagEditor v-model="tags" :error="fieldErrors.tags" />
       <BaseSelect
         v-model="visibility"
         label="Visibilidade"

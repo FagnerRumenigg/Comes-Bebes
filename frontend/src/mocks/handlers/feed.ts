@@ -17,6 +17,7 @@ import {
   setPublicationReaction,
   setPublicationSaved,
 } from '@/mocks/state/publications'
+import { resolveMockTags } from '@/mocks/state/tags'
 
 const mockAuthor = mockAccounts[0]!
 
@@ -202,6 +203,7 @@ export const feedMockHandlers = [
       reportedByCurrentUser: false,
       recipePreview: recipePreview(id, data.recipe),
       editedByAdmin: false,
+      tags: resolveMockTags(data.tags),
     }
     source.versionsCount += 1
     addMockPublication(publication)
@@ -235,6 +237,7 @@ export const feedMockHandlers = [
       reportedByCurrentUser: false,
       recipePreview: data.recipe ? recipePreview(id, data.recipe) : null,
       editedByAdmin: false,
+      tags: resolveMockTags(data.tags),
     }
     addMockPublication(publication)
     return HttpResponse.json(publication, { status: 201 })

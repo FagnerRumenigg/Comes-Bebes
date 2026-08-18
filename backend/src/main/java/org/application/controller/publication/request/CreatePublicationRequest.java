@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
 import java.util.UUID;
 
 @Schema(name = "CreatePublicationRequest", description = "Dados para criar uma publicação usando armazenamento local de imagem.")
@@ -24,6 +25,8 @@ public record CreatePublicationRequest(
         @Schema(description = "URL da imagem que será baixada para o armazenamento local.", example = "https://example.com/images/lasanha.jpg")
         @NotBlank @Pattern(regexp = "(https?|file)://.+") String imageUrl,
         @Schema(description = "Dados da receita. Obrigatório quando type=RECIPE.", nullable = true)
-        @Valid CreateRecipeRequest recipe
+        @Valid CreateRecipeRequest recipe,
+        @Schema(description = "Tags de alimento, no máximo 5.", nullable = true)
+        @Size(max = 5) List<@NotBlank @Size(max = 40) String> tags
 ) {
 }

@@ -20,6 +20,7 @@ import IngredientEditor, {
 } from '@/components/publication/IngredientEditor.vue'
 import PreparationStepsEditor from '@/components/publication/PreparationStepsEditor.vue'
 import PublicationImage from '@/components/publication/PublicationImage.vue'
+import TagEditor from '@/components/publication/TagEditor.vue'
 import { useAuthStore } from '@/stores/auth.store'
 
 const route = useRoute()
@@ -43,6 +44,7 @@ const instructions = ref('')
 const yieldQuantity = ref('')
 const yieldUnit = ref('')
 const ingredients = ref<IngredientDraft[]>([{ name: '', quantity: '', unit: '', note: '' }])
+const tags = ref<string[]>([])
 const initialized = ref(false)
 const formError = ref('')
 const ingredientError = ref('')
@@ -72,6 +74,7 @@ watch(
     title.value = publication.title ?? ''
     description.value = publication.description ?? ''
     visibility.value = publication.visibility
+    tags.value = publication.tags.map((tag) => tag.name)
     if (recipe) {
       instructions.value = recipe.instructions
       yieldQuantity.value = recipe.yieldQuantity == null ? '' : String(recipe.yieldQuantity)
@@ -151,6 +154,7 @@ function submit(): void {
     title: title.value,
     description: description.value,
     visibility: visibility.value,
+    tags: tags.value,
     ...(recipe ? { recipe } : {}),
   }
   updateMutation.mutate({ id: publicationId.value, data })
@@ -216,6 +220,8 @@ function submit(): void {
           />
         </div>
       </div>
+
+      <TagEditor v-model="tags" :error="fieldErrors.tags" />
 
       <BaseSelect
         v-model="visibility"

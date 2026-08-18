@@ -85,6 +85,7 @@ class PublicationServiceTest {
     @Mock private FollowRepository followRepository;
     @Mock private UserNotificationRepository notificationRepository;
     @Mock private PublicationRateLimiter publicationRateLimiter;
+    @Mock private TagService tagService;
 
     private ch.qos.logback.classic.Logger serviceLogger;
     private ListAppender<ILoggingEvent> appender;
@@ -186,7 +187,7 @@ class PublicationServiceTest {
     void shouldRejectInvalidCreationAndMissingUpdateOrRemoval() {
         UUID id = UUID.randomUUID();
         CreatePublicationRequest invalid = new CreatePublicationRequest(
-                UUID.randomUUID(), "RECIPE", "PUBLIC", null, null, "https://example.com/image.png", null);
+                UUID.randomUUID(), "RECIPE", "PUBLIC", null, null, "https://example.com/image.png", null, null);
         assertThatThrownBy(() -> publicationService.create(invalid))
                 .isInstanceOf(org.application.service.exception.InvalidOperationException.class);
 
@@ -463,6 +464,80 @@ class PublicationServiceTest {
                 authorId, content, "dish.png", "image/png");
 
         verify(publicationRateLimiter).recordAttempt(authorId);
+    }
+
+    @Test
+    void shouldResolveAndAttachTagsWhenCreatingPublication() {
+        UUID authorId = UUID.randomUUID();
+        byte[] content = {1, 2, 3};
+        byte[] processedContent = {4, 5, 6, 7};
+        Publication saved = publication(UUID.randomUUID());
+        ImageValidatorClient.ValidationResult validation = new ImageValidatorClient.ValidationResult(
+                processedContent, "image/webp", 800, 600, 0.98, 0.75, null);
+        org.application.model.Tag tag = org.application.model.Tag.builder()
+                .id(UUID.randomUUID()).name("Vegano").slug("vegano").build();
+
+        when(imageValidatorClient.validate(content, "dish.png", "image/png")).thenReturn(validation);
+        when(userRepository.findByIdAndStatus(authorId, UserStatus.ACTIVE))
+                .thenReturn(Optional.of(User.builder().id(authorId).status(UserStatus.ACTIVE).build()));
+        when(imageStorage.store(processedContent, "dish.png", "image/webp"))
+                .thenReturn(StoredImage.builder().bucket("bucket").objectName("dish.png").build());
+        when(publicationRepository.save(any(Publication.class))).thenReturn(saved);
+        when(clock.instant()).thenReturn(Instant.parse("2026-08-09T12:00:00Z"));
+        when(clock.getZone()).thenReturn(ZoneOffset.UTC);
+        when(tagService.resolveOrCreate(List.of("vegano"), authorId)).thenReturn(List.of(tag));
+
+        publicationService.createUpload(
+                new CreatePublicationUploadRequest("DISH", "PUBLIC", null, null, null, List.of("vegano")),
+                authorId, content, "dish.png", "image/png");
+
+        verify(tagService).attachToPublication(saved.getId(), List.of(tag));
+    }
+
+    @Test
+    void shouldReplaceTagsOnUpdateWhenTagsAreProvided() {
+        UUID id = UUID.randomUUID();
+        UUID authorId = UUID.randomUUID();
+        Publication publication = Publication.builder()
+                .id(id).authorId(authorId).type(PublicationType.DISH)
+                .visibility(PublicationVisibility.PUBLIC).status(PublicationStatus.ACTIVE)
+                .build();
+        org.application.model.Tag tag = org.application.model.Tag.builder()
+                .id(UUID.randomUUID()).name("Doce").slug("doce").build();
+
+        when(publicationRepository.findByIdAndStatus(id, PublicationStatus.ACTIVE))
+                .thenReturn(Optional.of(publication));
+        when(userRepository.findByIdAndStatus(authorId, UserStatus.ACTIVE))
+                .thenReturn(Optional.of(User.builder().id(authorId).status(UserStatus.ACTIVE).build()));
+        when(tagService.resolveOrCreate(List.of("doce"), authorId)).thenReturn(List.of(tag));
+
+        publicationService.update(id, new UpdatePublicationRequest(
+                null, null, null, null, null, null, List.of("doce")
+        ), authorId);
+
+        verify(tagService).attachToPublication(id, List.of(tag));
+    }
+
+    @Test
+    void shouldNotTouchTagsOnUpdateWhenTagsAreOmitted() {
+        UUID id = UUID.randomUUID();
+        UUID authorId = UUID.randomUUID();
+        Publication publication = Publication.builder()
+                .id(id).authorId(authorId).type(PublicationType.DISH)
+                .visibility(PublicationVisibility.PUBLIC).status(PublicationStatus.ACTIVE)
+                .build();
+
+        when(publicationRepository.findByIdAndStatus(id, PublicationStatus.ACTIVE))
+                .thenReturn(Optional.of(publication));
+        when(userRepository.findByIdAndStatus(authorId, UserStatus.ACTIVE))
+                .thenReturn(Optional.of(User.builder().id(authorId).status(UserStatus.ACTIVE).build()));
+
+        publicationService.update(id, new UpdatePublicationRequest(
+                null, null, "Só o título", null, null, null
+        ), authorId);
+
+        verify(tagService, never()).attachToPublication(any(), any());
+        verify(tagService, never()).resolveOrCreate(any(), any());
     }
 
     @Test
