@@ -32,6 +32,25 @@ const biometricPromptOpen = ref(false)
 const enrollingBiometricAfterLogin = ref(false)
 let pendingLoginResponse: LoginResponse | null = null
 
+const BIOMETRIC_PROMPT_DISMISSED_KEY = 'comes-e-bebes:hide-biometric-enrollment-prompt'
+
+function isBiometricPromptDismissedForever(): boolean {
+  try {
+    return window.localStorage.getItem(BIOMETRIC_PROMPT_DISMISSED_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+
+function dismissBiometricPromptForever(): void {
+  try {
+    window.localStorage.setItem(BIOMETRIC_PROMPT_DISMISSED_KEY, 'true')
+  } catch {
+    // Sem storage disponível, só fecha o modal desta vez.
+  }
+  biometricPromptOpen.value = false
+}
+
 if (typeof route.query.username === 'string') form.username = route.query.username
 
 function goToDestination(onboardingCompleted: boolean): void {
@@ -56,7 +75,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T
 }
 
 async function maybeOfferBiometricEnrollment(response: LoginResponse): Promise<void> {
-  if (!isWebAuthnSupported()) {
+  if (!isWebAuthnSupported() || isBiometricPromptDismissedForever()) {
     goToDestination(response.onboardingCompleted)
     return
   }
@@ -248,13 +267,16 @@ function submit(): void {
       description="Use Face ID, digital ou Windows Hello para entrar mais rápido neste dispositivo da próxima vez."
     >
       <template #actions>
-        <BaseButton variant="ghost" @click="biometricPromptOpen = false">Agora não</BaseButton>
+        <BaseButton variant="ghost" @click="dismissBiometricPromptForever">
+          Não mostrar mais ao login
+        </BaseButton>
+        <BaseButton variant="ghost" @click="biometricPromptOpen = false">Não</BaseButton>
         <BaseButton
           variant="primary"
           :loading="enrollingBiometricAfterLogin"
           @click="confirmBiometricEnrollment"
         >
-          Ativar
+          Sim
         </BaseButton>
       </template>
     </BaseDialog>
