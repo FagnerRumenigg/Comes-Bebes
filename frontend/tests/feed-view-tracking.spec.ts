@@ -2,7 +2,7 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { flushPromises, mount } from '@vue/test-utils'
 import { http, HttpResponse } from 'msw'
 import { createPinia } from 'pinia'
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, nextTick, ref, type Ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { setAccessTokenProvider } from '@/api/client'
@@ -41,13 +41,21 @@ function publication(
 function mountTrackingHost(
   publicationProp: Pick<PublicationResponse, 'id' | 'viewedByCurrentUser'>,
   pinia: ReturnType<typeof createPinia> = createPinia(),
+  rerenderTrigger?: Ref<number>,
 ) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
 
   const TestHost = defineComponent({
     setup() {
-      const { observeCard } = useFeedViewTracking()
-      return () => h('div', { ref: (el) => observeCard(el as Element | null, publicationProp) })
+      const { cardRef } = useFeedViewTracking()
+      return () => {
+        // Lido só pra criar dependência reativa e forçar re-render nos
+        // testes que simulam reatividade não relacionada no componente pai
+        // (o cenário real do bug: qualquer re-render recriava a função de
+        // :ref inline e o Vue religava o elemento à toa).
+        void rerenderTrigger?.value
+        return h('div', { ref: cardRef(publicationProp) })
+      }
     },
   })
 
@@ -89,6 +97,31 @@ afterEach(() => {
 })
 
 describe('useFeedViewTracking', () => {
+  it('mantém a mesma função de :ref entre re-renders, sem religar o elemento (bug real: resetava a visibilidade no meio do 1s)', async () => {
+    const pinia = createPinia()
+    authenticate(pinia)
+    const rerenderTrigger = ref(0)
+    const { wrapper } = mountTrackingHost(publication({ id: 'pub-stable' }), pinia, rerenderTrigger)
+
+    expect(instances).toHaveLength(1)
+    const observer = instances[0]!
+    expect(observer.observe).toHaveBeenCalledTimes(1)
+
+    // Simula uma re-renderização do componente pai por um motivo qualquer
+    // não relacionado (era exatamente isso que acontecia em produção) - a
+    // função de :ref inline antiga era recriada e o Vue desligava e
+    // religava o elemento, chamando observe() de novo.
+    rerenderTrigger.value += 1
+    await nextTick()
+    rerenderTrigger.value += 1
+    await nextTick()
+
+    expect(observer.observe).toHaveBeenCalledTimes(1)
+    expect(observer.unobserve).not.toHaveBeenCalled()
+
+    wrapper.unmount()
+  })
+
   it('nunca cria o observer nem envia para visitante confirmado (sessão já resolvida como anônima)', async () => {
     let requestCount = 0
     mockServer.use(

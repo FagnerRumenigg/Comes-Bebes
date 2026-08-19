@@ -1,4 +1,4 @@
-import { onBeforeUnmount, watch } from 'vue'
+import { onBeforeUnmount, watch, type ComponentPublicInstance } from 'vue'
 
 import type { PublicationResponse } from '@/api/generated/models'
 import { useMarkViewed } from '@/api/generated/publications/publications'
@@ -18,17 +18,8 @@ type TrackedPublication = Pick<PublicationResponse, 'id' | 'viewedByCurrentUser'
  */
 export function useFeedViewTracking() {
   const authStore = useAuthStore()
-  console.log(
-    '[view-tracking] composable inicializado, initialized=',
-    authStore.initialized,
-    'authenticated=',
-    authStore.authenticated,
-  )
   const markViewedMutation = useMarkViewed({
     mutation: {
-      onSuccess: (_data, variables) => {
-        console.log('[view-tracking] enviado com sucesso', variables.data.publicationIds)
-      },
       onError: (error, variables) => {
         console.error('[view-tracking] falhou ao enviar', variables.data.publicationIds, error)
       },
@@ -45,19 +36,26 @@ export function useFeedViewTracking() {
   // observação à toa para quem acaba sendo visitante.
   const deferredUntilSessionResolved: Array<{ element: Element; publication: TrackedPublication }> =
     []
+  // Uma função de :ref inline no template (`:ref="(el) => ..."`) é recriada
+  // a cada render - o Vue enxerga isso como "a ref mudou" e desliga+religa o
+  // elemento a cada vez, disparando um novo IntersectionObserver.observe()
+  // (que sempre reemite um evento inicial) e resetando a contagem de
+  // visibilidade bem no meio da janela de 1s. Cacheado por publicationId
+  // pra manter a mesma função entre renders e o Vue nunca religar à toa.
+  const cardRefCallbacks = new Map<
+    string,
+    (element: Element | ComponentPublicInstance | null) => void
+  >()
+  const latestPublicationById = new Map<string, TrackedPublication>()
 
   let observer: IntersectionObserver | null = null
   let flushTimer: ReturnType<typeof setInterval> | undefined
 
   function flush(): void {
-    if (pendingIds.size === 0) {
-      console.log('[view-tracking] flush chamado, nada pendente')
-      return
-    }
+    if (pendingIds.size === 0) return
     const ids = Array.from(pendingIds)
     pendingIds.clear()
     ids.forEach((id) => sentIds.add(id))
-    console.log('[view-tracking] enviando lote', ids)
     markViewedMutation.mutate({ data: { publicationIds: ids } })
   }
 
@@ -93,14 +91,6 @@ export function useFeedViewTracking() {
           const id = elementToId.get(entry.target)
           if (!id) continue
 
-          console.log(
-            '[view-tracking] intersection',
-            id,
-            'isIntersecting=',
-            entry.isIntersecting,
-            'ratio=',
-            entry.intersectionRatio,
-          )
           if (entry.isIntersecting && entry.intersectionRatio >= VISIBILITY_THRESHOLD) {
             if (visibilityTimers.has(id)) continue
             visibilityTimers.set(
@@ -110,7 +100,6 @@ export function useFeedViewTracking() {
                 pendingIds.add(id)
                 ensureFlushTimer()
                 stopObservingElement(entry.target)
-                console.log('[view-tracking] marcado como visto (pendente)', id)
               }, VISIBLE_DURATION_MS),
             )
           } else {
@@ -136,36 +125,47 @@ export function useFeedViewTracking() {
   }
 
   function observeCard(element: Element | null, publication: TrackedPublication): void {
-    if (!element) {
-      console.log('[view-tracking] observeCard sem elemento', publication.id)
-      return
-    }
-    if (publication.viewedByCurrentUser || sentIds.has(publication.id)) {
-      console.log(
-        '[view-tracking] observeCard ja visto, pulando',
-        publication.id,
-        'viewedByCurrentUser=',
-        publication.viewedByCurrentUser,
-      )
-      return
-    }
+    if (!element) return
+    if (publication.viewedByCurrentUser || sentIds.has(publication.id)) return
 
     if (!authStore.initialized) {
       // Sessão ainda resolvendo (ex.: /auth/refresh em voo) - adia em vez de
       // descartar ou de criar o observer sem saber se vale a pena.
-      console.log('[view-tracking] sessao nao resolvida ainda, adiando', publication.id)
       deferredUntilSessionResolved.push({ element, publication })
       return
     }
     // Visitante confirmado: nunca observa - visualização não se aplica e
     // seria trabalho à toa (IntersectionObserver + timers por nada).
-    if (!authStore.authenticated) {
-      console.log('[view-tracking] visitante confirmado, nunca observa', publication.id)
-      return
-    }
+    if (!authStore.authenticated) return
 
-    console.log('[view-tracking] observando card', publication.id)
+    // Elemento já sendo observado (Vue chamou o :ref de novo pro mesmo card,
+    // ex.: reatividade não relacionada em algum ancestral) - chamar observe()
+    // de novo reemitiria um evento inicial e reiniciaria a contagem de 1s.
+    if (elementToId.has(element)) return
+
     startObserving(element, publication)
+  }
+
+  /**
+   * Função de :ref estável por publicação — sempre a mesma referência entre
+   * renders, pra o Vue nunca desligar/religar o card à toa (ver comentário
+   * de cardRefCallbacks acima).
+   */
+  function cardRef(
+    publication: TrackedPublication,
+  ): (element: Element | ComponentPublicInstance | null) => void {
+    latestPublicationById.set(publication.id, publication)
+    const cached = cardRefCallbacks.get(publication.id)
+    if (cached) return cached
+
+    const callback = (element: Element | ComponentPublicInstance | null): void => {
+      observeCard(
+        element as Element | null,
+        latestPublicationById.get(publication.id) ?? publication,
+      )
+    }
+    cardRefCallbacks.set(publication.id, callback)
+    return callback
   }
 
   const stopWatchingSession = watch(
@@ -192,5 +192,5 @@ export function useFeedViewTracking() {
     flush()
   })
 
-  return { observeCard }
+  return { cardRef }
 }
