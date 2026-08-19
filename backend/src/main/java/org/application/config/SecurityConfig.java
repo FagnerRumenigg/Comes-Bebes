@@ -127,6 +127,11 @@ public class SecurityConfig {
                         // abaixo capturava essa rota autenticada também (mesma classe de bug).
                         .requestMatchers(HttpMethod.GET, "/publications/saved").authenticated()
                         .requestMatchers(HttpMethod.GET, "/publications/feed", "/publications/search", "/publications/*", "/publications/*/recipe", "/users/*", "/users/*/publications").permitAll()
+                        // Mesma classe de bug: "/collections/followed" precisa vir antes do
+                        // wildcard "/collections/*" abaixo, senão o AntPathMatcher trata
+                        // "followed" como se fosse um {id} e libera a rota autenticada.
+                        .requestMatchers(HttpMethod.GET, "/collections/followed").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/collections/*", "/collections/*/publications", "/users/*/collections").permitAll()
                         .requestMatchers("/u/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/images/**").permitAll()
                         .requestMatchers("/actuator/health/**").permitAll()

@@ -35,9 +35,11 @@ import type {
   ChangePasswordRequest,
   FollowersParams,
   FollowingParams,
+  GetUserCollectionsParams,
   GetUserPublicationsParams,
   NotificationPreferencesResponse,
   NotificationsParams,
+  PageResponseCollectionResponse,
   PageResponseNotificationResponse,
   PageResponsePublicationResponse,
   PageResponseUserResponse,
@@ -1054,6 +1056,81 @@ export function useFollowers<TData = Awaited<ReturnType<typeof followers>>, TErr
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getFollowersQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+/**
+ * Retorna as coleções do perfil, paginadas. Visitantes e outros usuários recebem apenas coleções públicas; o próprio autor recebe todas.
+ * @summary Listar coleções do perfil
+ */
+export const getUserCollections = (
+    id: MaybeRef<string>,
+    params?: MaybeRef<GetUserCollectionsParams>,
+ options?: SecondParameter<typeof apiRequest>,signal?: AbortSignal
+) => {
+      id = unref(id);
+params = unref(params);
+      
+      return apiRequest<PageResponseCollectionResponse>(
+      {url: `/users/${id}/collections`, method: 'GET',
+        params: unref(params), signal
+    },
+      options);
+    }
+  
+
+
+
+export const getGetUserCollectionsQueryKey = (id?: MaybeRef<string>,
+    params?: MaybeRef<GetUserCollectionsParams>,) => {
+    return [
+    'users',id,'collections', ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetUserCollectionsQueryOptions = <TData = Awaited<ReturnType<typeof getUserCollections>>, TError = unknown>(id: MaybeRef<string>,
+    params?: MaybeRef<GetUserCollectionsParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getUserCollections>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  getGetUserCollectionsQueryKey(id,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getUserCollections>>> = ({ signal }) => getUserCollections(id,params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: computed(() => !!(unref(id))), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getUserCollections>>, TError, TData> 
+}
+
+export type GetUserCollectionsQueryResult = NonNullable<Awaited<ReturnType<typeof getUserCollections>>>
+export type GetUserCollectionsQueryError = unknown
+
+
+/**
+ * @summary Listar coleções do perfil
+ */
+
+export function useGetUserCollections<TData = Awaited<ReturnType<typeof getUserCollections>>, TError = unknown>(
+ id: MaybeRef<string>,
+    params?: MaybeRef<GetUserCollectionsParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getUserCollections>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient 
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetUserCollectionsQueryOptions(id,params,options)
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

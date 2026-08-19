@@ -14,6 +14,8 @@ import EditPublicationView from '@/views/EditPublicationView.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import SearchView from '@/views/SearchView.vue'
 import SavedView from '@/views/SavedView.vue'
+import CollectionDetailsView from '@/views/CollectionDetailsView.vue'
+import FollowedCollectionsView from '@/views/FollowedCollectionsView.vue'
 import OnboardingView from '@/views/OnboardingView.vue'
 import NotificationsView from '@/views/NotificationsView.vue'
 import DevicesView from '@/views/DevicesView.vue'
@@ -87,6 +89,18 @@ export const routes: RouteRecordRaw[] = [
         name: 'saved',
         component: SavedView,
         meta: { access: 'authenticated', pageTitle: 'Publicações salvas' },
+      },
+      {
+        path: 'colecoes/seguidas',
+        name: 'followed-collections',
+        component: FollowedCollectionsView,
+        meta: { access: 'authenticated', pageTitle: 'Coleções que você segue' },
+      },
+      {
+        path: 'colecoes/:id',
+        name: 'collection-details',
+        component: CollectionDetailsView,
+        meta: { access: 'public', pageTitle: 'Coleção' },
       },
       {
         path: 'notificacoes',

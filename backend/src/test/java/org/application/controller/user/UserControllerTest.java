@@ -6,6 +6,7 @@ import org.application.model.User;
 import org.application.model.UserRole;
 import org.application.model.UserStatus;
 import org.application.service.AccountSecurityService;
+import org.application.service.CollectionService;
 import org.application.service.FollowService;
 import org.application.service.PublicationResponseFactory;
 import org.application.service.PublicationService;
@@ -46,6 +47,7 @@ class UserControllerTest {
     @Mock private PublicationService publicationService;
     @Mock private AccountSecurityService accountSecurityService;
     @Mock private FollowService followService;
+    @Mock private CollectionService collectionService;
     @Mock private CurrentUser currentUser;
     @Mock private PublicationResponseFactory responseFactory;
     private MockMvc mockMvc;
@@ -53,7 +55,7 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         UserController controller = new UserController(userService, publicationService, ZoneId.of("UTC"),
-                accountSecurityService, followService, currentUser, responseFactory);
+                accountSecurityService, followService, collectionService, currentUser, responseFactory);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new ApiExceptionHandler())
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())

@@ -224,6 +224,13 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
       >
         {{ FILTER_LABELS[option] }}
       </button>
+      <RouterLink
+        v-if="authStore.authenticated"
+        class="feed-view__filter feed-view__filter--collections"
+        to="/colecoes/seguidas"
+      >
+        Coleções que você segue
+      </RouterLink>
     </div>
 
     <div v-if="feedQuery.isPending.value" class="feed-view__skeletons" aria-label="Carregando feed">
@@ -334,6 +341,11 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
 .feed-view__filter:hover:not(.feed-view__filter--active) {
   color: var(--color-primary);
   border-color: var(--color-primary);
+}
+
+.feed-view__filter--collections {
+  margin-inline-start: auto;
+  text-decoration: none;
 }
 
 .feed-view__filter--active {

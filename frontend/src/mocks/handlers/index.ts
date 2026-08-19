@@ -1,5 +1,6 @@
 import { authMockHandlers } from './auth'
 import { biometricMockHandlers } from './biometric'
+import { collectionsMockHandlers } from './collections'
 import { feedMockHandlers } from './feed'
 import { discoveryMockHandlers } from './discovery'
 import { followMockHandlers } from './follow'
@@ -13,6 +14,7 @@ import { getPublicationsMock } from '@/api/generated/publications/publications.m
 export const mockHandlers = [
   ...authMockHandlers,
   ...biometricMockHandlers,
+  ...collectionsMockHandlers,
   ...discoveryMockHandlers,
   ...followMockHandlers,
   ...moderationMockHandlers,
