@@ -69,6 +69,8 @@ describe('detecção de backend indisponível', () => {
     await router.push('/')
     await router.isReady()
 
+    mockServer.use(http.get('*/actuator/health/liveness', () => HttpResponse.error()))
+
     backendStatus.offline = true
     const wrapper = mount(App, {
       global: {
@@ -79,10 +81,36 @@ describe('detecção de backend indisponível', () => {
     expect(wrapper.text()).toContain('O Comes&Bebes está dormindo')
     expect(wrapper.text()).not.toContain('Feed')
 
-    const reload = vi.fn()
-    vi.stubGlobal('location', { ...window.location, reload })
     await wrapper.get('button').trigger('click')
-    expect(reload).toHaveBeenCalled()
-    vi.unstubAllGlobals()
+    expect(backendStatus.offline).toBe(true)
+
+    wrapper.unmount()
+  })
+
+  it('a tela de fallback some sozinha quando o health check volta a responder', async () => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/', component: { template: '<div>Feed</div>' } }],
+    })
+    await router.push('/')
+    await router.isReady()
+
+    mockServer.use(http.get('*/actuator/health/liveness', () => HttpResponse.json({ status: 'UP' })))
+
+    backendStatus.offline = true
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia(), router, [VueQueryPlugin, { queryClient: new QueryClient() }]],
+      },
+    })
+
+    await wrapper.get('button').trigger('click')
+    await vi.waitUntil(() => !backendStatus.offline)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.text()).not.toContain('O Comes&Bebes está dormindo')
+    expect(wrapper.text()).toContain('Feed')
+
+    wrapper.unmount()
   })
 })
