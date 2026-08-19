@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BackendOfflineScreen from '@/components/layout/BackendOfflineScreen.vue'
+import SlowRequestNotice from '@/components/layout/SlowRequestNotice.vue'
 import BaseToast from '@/components/base/BaseToast.vue'
 import PatchNotesModal from '@/components/patchnotes/PatchNotesModal.vue'
 import { dismissNavigationError, navigationState } from '@/app/router'
@@ -37,6 +38,7 @@ import { backendStatus } from '@/composables/useBackendStatus'
     </div>
     <RouterView />
     <PatchNotesModal />
+    <SlowRequestNotice />
   </template>
 </template>
 

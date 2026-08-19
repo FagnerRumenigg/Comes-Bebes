@@ -1,6 +1,11 @@
 import axios, { type AxiosRequestConfig } from 'axios'
 
-import { markBackendOffline, markBackendOnline } from '@/composables/useBackendStatus'
+import {
+  markBackendOffline,
+  markBackendOnline,
+  markRequestFinished,
+  markRequestStarted,
+} from '@/composables/useBackendStatus'
 
 const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8082'
 const unreachableStatuses = new Set([502, 503, 504])
@@ -78,15 +83,18 @@ httpClient.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${accessToken}`
   }
 
+  markRequestStarted()
   return config
 })
 
 httpClient.interceptors.response.use(
   (response) => {
+    markRequestFinished()
     markBackendOnline()
     return response
   },
   (error: unknown) => {
+    markRequestFinished()
     if (isBackendUnreachable(error)) {
       markBackendOffline()
     } else if (axios.isAxiosError(error) && error.response) {
