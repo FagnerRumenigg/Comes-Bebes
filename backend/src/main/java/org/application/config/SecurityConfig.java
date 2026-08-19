@@ -18,6 +18,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -114,7 +115,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/register", "/auth/login", "/auth/refresh") .permitAll()
                         .requestMatchers("/auth/biometric/authenticate/start", "/auth/biometric/authenticate/complete", "/auth/biometric/status").permitAll()
-                        .requestMatchers("/publications/feed", "/publications/search", "/publications/*", "/publications/*/recipe", "/users/*", "/users/*/publications", "/u/**").permitAll()
+                        // Restrito a GET: "/publications/*" e "/users/*" são wildcards de um
+                        // segmento (ex.: /publications/{id}) que, sem o método, também batiam
+                        // em rotas de escrita de mesmo formato — ex. POST /publications/views,
+                        // PATCH/DELETE /publications/{id}, PATCH/DELETE /users/{id} — deixando
+                        // passar visitante anônimo até o @PreAuthorize do controller, que então
+                        // falhava ao traduzir a negação para 403 (virava 500 cru).
+                        .requestMatchers(HttpMethod.GET, "/publications/feed", "/publications/search", "/publications/*", "/publications/*/recipe", "/users/*", "/users/*/publications").permitAll()
+                        .requestMatchers("/u/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/images/**").permitAll()
                         .requestMatchers("/actuator/health/**").permitAll()
                         .anyRequest().authenticated())
