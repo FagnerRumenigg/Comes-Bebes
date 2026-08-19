@@ -137,7 +137,7 @@ const publications = computed(
 const firstViewedIndex = computed(() =>
   publications.value.findIndex((publication) => publication.viewedByCurrentUser),
 )
-const { observeCard } = useFeedViewTracking()
+const { cardRef } = useFeedViewTracking()
 const errorMessage = computed(() =>
   feedQuery.error.value
     ? normalizeHttpError(feedQuery.error.value).message
@@ -246,7 +246,7 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
       <div class="feed-view__list">
         <template v-for="(publication, index) in publications" :key="publication.id">
           <FeedDivider v-if="index === firstViewedIndex" />
-          <div :ref="(el) => observeCard(el as Element | null, publication)">
+          <div :ref="cardRef(publication)">
             <PublicationCard :publication="publication" />
           </div>
         </template>
