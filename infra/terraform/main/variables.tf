@@ -20,6 +20,23 @@ variable "github_repository" {
   default     = "FagnerRumenigg/Comes-Bebes"
 }
 
+# A partir de 23/04/2026 o GitHub passou a emitir o subject claim do OIDC no
+# formato imutável "owner@owner_id/repo@repo_id" (em vez de só "owner/repo"),
+# pra evitar que renomear/transferir um repo reaproveite a identidade antiga.
+# Sem isso a Azure rejeita o token com AADSTS700213 mesmo com owner/repo
+# corretos. IDs obtidos via `gh api repos/{owner}/{repo}`.
+variable "github_owner_id" {
+  description = "ID numérico imutável do owner no GitHub (gh api repos/{owner}/{repo} --jq .owner.id)."
+  type        = string
+  default     = "60927543"
+}
+
+variable "github_repo_id" {
+  description = "ID numérico imutável do repositório no GitHub (gh api repos/{owner}/{repo} --jq .id)."
+  type        = string
+  default     = "1329739989"
+}
+
 variable "github_environment_name" {
   description = "GitHub Environment que os workflows de release/deploy declaram — o subject da credencial federada é escopado a ele (não a uma tag específica, já que tags mudam a cada versão)."
   type        = string

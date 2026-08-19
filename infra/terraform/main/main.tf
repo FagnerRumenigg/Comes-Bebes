@@ -143,7 +143,9 @@ resource "azurerm_federated_identity_credential" "cicd_github" {
   # cada release (api-v1.9.1, api-v1.9.2, ...) e a Azure não aceita subject
   # com wildcard. Os workflows de release/deploy precisam declarar
   # `environment: ${var.github_environment_name}` pra esse subject bater.
-  subject = "repo:${var.github_repository}:environment:${var.github_environment_name}"
+  # Formato imutável "owner@owner_id/repo@repo_id" desde 2026-04-23 (ver
+  # variables.tf) — sem os IDs a Azure rejeita com AADSTS700213.
+  subject = "repo:${split("/", var.github_repository)[0]}@${var.github_owner_id}/${split("/", var.github_repository)[1]}@${var.github_repo_id}:environment:${var.github_environment_name}"
 }
 
 resource "azurerm_role_assignment" "cicd_acr_push" {
