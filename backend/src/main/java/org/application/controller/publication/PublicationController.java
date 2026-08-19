@@ -21,9 +21,11 @@ import org.application.controller.publication.request.CreateMyVersionUploadReque
 import org.application.controller.publication.request.CreateReportRequest;
 import org.application.controller.publication.request.CreatePublicationUploadRequest;
 import org.application.controller.publication.request.DeletePublicationRequest;
+import org.application.controller.publication.request.MarkPublicationsViewedRequest;
 import org.application.service.ReportService;
 import org.application.service.ReactionService;
 import org.application.service.SavedPublicationService;
+import org.application.service.PublicationViewService;
 import org.application.controller.publication.response.PublicationResponse;
 import org.application.controller.publication.response.RecipeResponse;
 import org.application.controller.publication.response.SavedPublicationResponse;
@@ -67,6 +69,7 @@ public class PublicationController {
     private final RecipeService recipeService;
     private final ReactionService reactionService;
     private final SavedPublicationService savedPublicationService;
+    private final PublicationViewService publicationViewService;
     private final ReportService reportService;
     private final PublicationResponseFactory responseFactory;
     private final ImageStorage imageStorage;
@@ -105,6 +108,19 @@ public class PublicationController {
             Authentication authentication
     ) {
         return PageResponse.of(publicationService.search(title, ingredient, pageable, viewerId(authentication)), item -> responseFactory.of(item, applicationZoneId, viewerId(authentication)));
+    }
+
+    @PostMapping("/views")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Marcar publicações como vistas", description = "Registra em lote que o usuário autenticado visualizou as publicações informadas. Idempotente: IDs já vistos ou inexistentes são ignorados silenciosamente.")
+    @ApiResponse(responseCode = "204", description = "Visualizações registradas.")
+    public org.springframework.http.ResponseEntity<Void> markViewed(
+            @Valid @org.springframework.web.bind.annotation.RequestBody MarkPublicationsViewedRequest request,
+            Authentication authentication
+    ) {
+        publicationViewService.markViewed(currentUser.id(authentication), request.publicationIds());
+        return org.springframework.http.ResponseEntity.noContent().build();
     }
     private final ZoneId applicationZoneId;
     private final CurrentUser currentUser;

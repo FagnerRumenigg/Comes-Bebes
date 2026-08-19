@@ -17,6 +17,7 @@ import org.application.service.ReactionService;
 import org.application.service.RecipeService;
 import org.application.service.ReportService;
 import org.application.service.SavedPublicationService;
+import org.application.service.PublicationViewService;
 import org.application.service.storage.ImageStorage;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,6 +49,7 @@ class ApiExceptionHandlerTest {
     @Mock private RecipeService recipeService;
     @Mock private ReactionService reactionService;
     @Mock private SavedPublicationService savedPublicationService;
+    @Mock private PublicationViewService publicationViewService;
     @Mock private ReportService reportService;
     @Mock private PublicationResponseFactory responseFactory;
     @Mock private ImageStorage imageStorage;
@@ -64,6 +66,7 @@ class ApiExceptionHandlerTest {
                         recipeService,
                         reactionService,
                         savedPublicationService,
+                        publicationViewService,
                         reportService,
                         responseFactory,
                         imageStorage,

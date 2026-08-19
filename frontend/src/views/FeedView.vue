@@ -3,10 +3,17 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import BaseButton from '@/components/base/BaseButton.vue'
+import FeedDivider from '@/components/feed/FeedDivider.vue'
 import PublicationCard from '@/components/publication/PublicationCard.vue'
 import { normalizeHttpError } from '@/api/errors'
-import { FEED_FILTERS, isFeedFilter, useInfiniteFeed, type FeedFilter } from '@/features/feed/feed.queries'
+import {
+  FEED_FILTERS,
+  isFeedFilter,
+  useInfiniteFeed,
+  type FeedFilter,
+} from '@/features/feed/feed.queries'
 import { useFeedRefresh } from '@/features/feed/useFeedRefresh'
+import { useFeedViewTracking } from '@/features/feed/useFeedViewTracking'
 import { useAuthStore } from '@/stores/auth.store'
 
 const PULL_TRIGGER_DISTANCE = 70
@@ -127,6 +134,10 @@ async function onTouchEnd(): Promise<void> {
 const publications = computed(
   () => feedQuery.data.value?.pages.flatMap((page) => page.content) ?? [],
 )
+const firstViewedIndex = computed(() =>
+  publications.value.findIndex((publication) => publication.viewedByCurrentUser),
+)
+const { observeCard } = useFeedViewTracking()
 const errorMessage = computed(() =>
   feedQuery.error.value
     ? normalizeHttpError(feedQuery.error.value).message
@@ -233,11 +244,12 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
 
     <template v-else>
       <div class="feed-view__list">
-        <PublicationCard
-          v-for="publication in publications"
-          :key="publication.id"
-          :publication="publication"
-        />
+        <template v-for="(publication, index) in publications" :key="publication.id">
+          <FeedDivider v-if="index === firstViewedIndex" />
+          <div :ref="(el) => observeCard(el as Element | null, publication)">
+            <PublicationCard :publication="publication" />
+          </div>
+        </template>
       </div>
 
       <div ref="loadMoreTrigger" class="feed-view__pagination">
