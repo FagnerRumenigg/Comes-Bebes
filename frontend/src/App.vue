@@ -6,6 +6,9 @@ import PatchNotesModal from '@/components/patchnotes/PatchNotesModal.vue'
 import { dismissNavigationError, navigationState } from '@/app/router'
 import { authNotice, dismissAuthNotice } from '@/composables/useAuthNotice'
 import { backendStatus } from '@/composables/useBackendStatus'
+import { useKeepAlivePing } from '@/composables/useKeepAlivePing'
+
+useKeepAlivePing()
 </script>
 
 <template>
