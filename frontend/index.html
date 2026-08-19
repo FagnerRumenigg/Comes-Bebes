@@ -17,9 +17,82 @@
         }
       })()
     </script>
+    <style>
+      /*
+        A Vue app só monta depois de authStore.initialize() resolver
+        (main.ts), que pode bater em /auth/refresh — se o backend estiver
+        acordando de um scale-to-zero, isso pode levar até uns 2 minutos
+        SEM NENHUM elemento Vue existir no DOM ainda (nem a modal de aviso).
+        Esse aviso estático (HTML/CSS puro, sem depender de JS/Vue ter
+        carregado) cobre esse intervalo. app.mount('#app') substitui todo o
+        conteúdo de #app, então ele some sozinho assim que a Vue montar.
+      */
+      #boot-notice {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        place-items: center;
+        padding: 2rem;
+        font-family:
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+        text-align: center;
+        background: #fdfaf6;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        #boot-notice {
+          color: #f2ede4;
+          background: #1c1a17;
+        }
+      }
+
+      #boot-notice.visible {
+        display: grid;
+      }
+
+      #boot-notice__card {
+        display: grid;
+        gap: 0.75rem;
+        max-width: 28rem;
+      }
+
+      #boot-notice__card h1 {
+        margin: 0;
+        font-size: 1.375rem;
+      }
+
+      #boot-notice__card p {
+        margin: 0;
+        line-height: 1.6;
+        opacity: 0.8;
+      }
+    </style>
   </head>
   <body>
     <div id="app"></div>
+    <div id="boot-notice">
+      <div id="boot-notice__card">
+        <h1>😴 O Comes&amp;Bebes está acordando</h1>
+        <p>
+          Pra economizar enquanto estamos testando, o servidor desliga sozinho depois de alguns
+          minutos sem uso. Isso costuma levar até 2 minutos na primeira tentativa - só um
+          instante.
+        </p>
+      </div>
+    </div>
+    <script>
+      // Só mostra se a Vue ainda não montou depois de um tempo - evita
+      // flash em toda carga normal (rápida) da página.
+      setTimeout(() => {
+        if (!document.getElementById('app').hasChildNodes()) {
+          document.getElementById('boot-notice').classList.add('visible')
+        }
+      }, 3000)
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
