@@ -6,6 +6,7 @@
  * OpenAPI spec version: v1
  */
 import type { CreateRecipeRequest } from './createRecipeRequest';
+import type { CreateMyVersionUploadRequestTags } from './createMyVersionUploadRequestTags';
 
 /**
  * Dados textuais da versão própria; a imagem é enviada em multipart.
@@ -27,4 +28,10 @@ export interface CreateMyVersionUploadRequest {
    */
   changeSummary?: string;
   recipe: CreateRecipeRequest;
+  /**
+   * Tags de alimento, no máximo 5.
+   * @minItems 0
+   * @maxItems 5
+   */
+  tags?: CreateMyVersionUploadRequestTags;
 }

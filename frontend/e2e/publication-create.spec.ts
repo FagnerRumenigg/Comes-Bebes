@@ -47,6 +47,26 @@ test('criação de prato valida imagem e envia multipart', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Denunciar' })).toHaveCount(0)
 })
 
+test('adiciona tags na publicação e elas aparecem na página de detalhe', async ({ page }) => {
+  await login(page)
+  await page.goto('/publicar')
+
+  await page.getByLabel('Título').fill('Prato com tags')
+  await page.locator('input[type="file"]').setInputFiles(image)
+  const tagInput = page.getByLabel('Adicionar tag')
+  await tagInput.fill('Vegano')
+  await tagInput.press('Enter')
+  await tagInput.fill('Sem Açúcar')
+  await tagInput.press('Enter')
+  await expect(page.getByRole('button', { name: 'Remover tag Vegano' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Remover tag Sem Açúcar' })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Publicar' }).click()
+  await expect(page).toHaveURL(/\/publicacoes\//)
+  await expect(page.getByText('Vegano', { exact: true })).toBeVisible()
+  await expect(page.getByText('Sem Açúcar', { exact: true })).toBeVisible()
+})
+
 test('criação de receita exige ingrediente e preparo', async ({ page }) => {
   await login(page)
   await page.goto('/publicar')

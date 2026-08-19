@@ -29,6 +29,7 @@ function makeDraft(overrides: Partial<PublicationDraft> = {}): PublicationDraft 
     yieldUnit: '',
     ingredients: [],
     image: null,
+    tags: [],
     ...overrides,
   }
 }

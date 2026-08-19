@@ -156,6 +156,10 @@ function confirmDelete(): void {
         {{ publicationQuery.data.value.description }}
       </p>
 
+      <ul v-if="publicationQuery.data.value.tags.length" class="publication-details__tags">
+        <li v-for="tag in publicationQuery.data.value.tags" :key="tag.slug">{{ tag.name }}</li>
+      </ul>
+
       <template v-if="recipe">
         <div class="publication-details__yield">
           <span>Rendimento</span>
@@ -308,6 +312,24 @@ function confirmDelete(): void {
   padding-block: var(--space-8);
   font-size: var(--font-size-lg);
   line-height: var(--line-height-body);
+}
+
+.publication-details__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-6);
+  padding: 0;
+  list-style: none;
+}
+
+.publication-details__tags li {
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
 }
 
 .publication-details__yield {

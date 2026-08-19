@@ -29,6 +29,10 @@ export const mockPublications: PublicationResponse[] = [
     reportedByCurrentUser: false,
     recipePreview: null,
     editedByAdmin: false,
+    tags: [
+      { name: 'Vegetariano', slug: 'vegetariano', official: true },
+      { name: 'Sem Glúten', slug: 'sem-gluten', official: true },
+    ],
   },
   {
     id: '7b0200b5-66e3-47b1-a80c-a2369379e1d3',
@@ -63,6 +67,7 @@ export const mockPublications: PublicationResponse[] = [
       ],
     },
     editedByAdmin: false,
+    tags: [],
   },
   {
     id: 'd0d9201c-4781-4204-a304-2c2bc7ea7330',
@@ -97,6 +102,7 @@ export const mockPublications: PublicationResponse[] = [
       ],
     },
     editedByAdmin: false,
+    tags: [],
   },
   {
     id: '8d74a06e-dfd8-4263-b4ed-f0e662680c27',
@@ -130,5 +136,6 @@ export const mockPublications: PublicationResponse[] = [
       ],
     },
     editedByAdmin: false,
+    tags: [],
   },
 ]

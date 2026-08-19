@@ -2,6 +2,7 @@ package org.application.service;
 
 import lombok.RequiredArgsConstructor;
 import org.application.controller.publication.response.PublicationResponse;
+import org.application.controller.tag.response.TagResponse;
 import org.application.model.Publication;
 import org.application.repository.PublicationOriginRepository;
 import org.application.repository.PublicationReactionRepository;
@@ -38,6 +39,7 @@ public class PublicationResponseFactory {
     private final PublicationOriginRepository publicationOriginRepository;
     private final ReportRepository reportRepository;
     private final RecipeService recipeService;
+    private final TagService tagService;
 
     public PublicationResponse of(Publication publication, ZoneId zoneId, UUID viewerId) {
         var author = userRepository.findById(publication.getAuthorId());
@@ -94,6 +96,7 @@ public class PublicationResponseFactory {
                 .reportedByCurrentUser(viewerId != null && reportRepository.existsByPublicationIdAndReporterIdAndResolution(publication.getId(), viewerId, "PENDING"))
                 .recipePreview(preview)
                 .editedByAdmin(publication.getEditedByAdminId() != null)
+                .tags(tagService.findByPublicationId(publication.getId()).stream().map(TagResponse::of).toList())
                 .build();
     }
 }
