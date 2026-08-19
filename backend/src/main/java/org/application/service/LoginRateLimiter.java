@@ -6,20 +6,23 @@ import org.springframework.stereotype.Component;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class LoginRateLimiter {
-    private final ConcurrentHashMap<String, Window> windows = new ConcurrentHashMap<>();
+    private static final String SCOPE = "LOGIN";
+
+    private final RateLimitStore store;
     private final Clock clock;
     private final int maxAttempts;
     private final long windowSeconds;
 
     public LoginRateLimiter(
+            RateLimitStore store,
             Clock clock,
             @Value("${app.rate-limit.login.max-attempts}") int maxAttempts,
             @Value("${app.rate-limit.login.window-seconds}") long windowSeconds
     ) {
+        this.store = store;
         this.clock = clock;
         this.maxAttempts = maxAttempts;
         this.windowSeconds = windowSeconds;
@@ -27,28 +30,17 @@ public class LoginRateLimiter {
 
     public void check(String key) {
         Instant now = clock.instant();
-        Window window = windows.compute(key, (ignored, current) -> current == null || expired(current, now)
-                ? new Window(now, 0)
-                : current);
+        RateLimitStore.Window window = store.currentWindow(SCOPE, key, now, windowSeconds);
         if (window.attempts() >= maxAttempts) {
             throw new RateLimitExceededException("Limite de tentativas excedido. Tente novamente mais tarde.");
         }
     }
 
     public void registerFailure(String key) {
-        Instant now = clock.instant();
-        windows.compute(key, (ignored, current) -> current == null || expired(current, now)
-                ? new Window(now, 1)
-                : new Window(current.startedAt(), current.attempts() + 1));
+        store.increment(SCOPE, key, clock.instant(), windowSeconds);
     }
 
     public void reset(String key) {
-        windows.remove(key);
+        store.clear(SCOPE, key);
     }
-
-    private boolean expired(Window window, Instant now) {
-        return now.isAfter(window.startedAt().plusSeconds(windowSeconds));
-    }
-
-    private record Window(Instant startedAt, int attempts) {}
 }
