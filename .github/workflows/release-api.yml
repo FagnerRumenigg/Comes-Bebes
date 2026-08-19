@@ -8,12 +8,10 @@ on:
 
 permissions:
   contents: read
-  id-token: write # necessário pro login OIDC na Azure (sem client secret)
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    environment: production # precisa bater com o subject da federated identity credential
     defaults:
       run:
         working-directory: backend
@@ -40,15 +38,11 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
 
-      - name: Login na Azure (OIDC)
-        uses: azure/login@f5d393ae46f8fde4be8b75f32e3fc50e654ad0ca # v3.0.1
+      - name: Log in to Docker Hub
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
-          client-id: ${{ vars.AZURE_CICD_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Login no Azure Container Registry
-        run: az acr login --name ${{ vars.ACR_NAME }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
@@ -57,6 +51,6 @@ jobs:
           file: backend/Dockerfile
           push: true
           tags: |
-            ${{ vars.ACR_LOGIN_SERVER }}/comesebebes-api:${{ steps.version.outputs.version }}
-            ${{ vars.ACR_LOGIN_SERVER }}/comesebebes-api:sha-${{ steps.version.outputs.short_sha }}
-            ${{ vars.ACR_LOGIN_SERVER }}/comesebebes-api:latest
+            fagnerrumenigg/comesebebes-api:${{ steps.version.outputs.version }}
+            fagnerrumenigg/comesebebes-api:sha-${{ steps.version.outputs.short_sha }}
+            fagnerrumenigg/comesebebes-api:latest

@@ -10,7 +10,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write # necessário pro login OIDC na Azure (sem client secret)
 
 concurrency:
   group: deploy-production
@@ -19,54 +18,30 @@ concurrency:
 jobs:
   deploy:
     if: github.event.workflow_run.conclusion == 'success'
-    runs-on: ubuntu-latest
-    environment: production # precisa bater com o subject da federated identity credential
+    runs-on: [self-hosted, comes-bebes]
     steps:
-      - name: Resolve service, versão e Container App
+      - name: Resolve service and version
         id: release
+        shell: powershell
         run: |
-          TAG="${{ github.event.workflow_run.head_branch }}"
-          if [[ "$TAG" == api-v* ]]; then
-            echo "version=${TAG#api-v}" >> "$GITHUB_OUTPUT"
-            echo "container_app=${{ vars.API_CONTAINER_APP_NAME }}" >> "$GITHUB_OUTPUT"
-            echo "image=comesebebes-api" >> "$GITHUB_OUTPUT"
-          else
-            echo "version=${TAG#validator-v}" >> "$GITHUB_OUTPUT"
-            echo "container_app=${{ vars.VALIDATOR_CONTAINER_APP_NAME }}" >> "$GITHUB_OUTPUT"
-            echo "image=comesebebes-validator" >> "$GITHUB_OUTPUT"
-          fi
+          $tag = "${{ github.event.workflow_run.head_branch }}"
+          if ($tag -like "api-v*") {
+            $service = "api"
+            $version = $tag -replace "^api-v", ""
+          } else {
+            $service = "validator"
+            $version = $tag -replace "^validator-v", ""
+          }
+          "service=$service" >> $env:GITHUB_OUTPUT
+          "version=$version" >> $env:GITHUB_OUTPUT
 
-      - name: Login na Azure (OIDC)
-        uses: azure/login@f5d393ae46f8fde4be8b75f32e3fc50e654ad0ca # v3.0.1
-        with:
-          client-id: ${{ vars.AZURE_CICD_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Atualizar Container App
+      - name: Atualizar checkout de produção
+        shell: powershell
         run: |
-          az containerapp update \
-            --name "${{ steps.release.outputs.container_app }}" \
-            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
-            --image "${{ vars.ACR_LOGIN_SERVER }}/${{ steps.release.outputs.image }}:${{ steps.release.outputs.version }}"
+          git config --global --add safe.directory "C:/Users/fagne/Documents/Eu/Programação/Comes-Bebes"
+          git -C "C:\Users\fagne\Documents\Eu\Programação\Comes-Bebes" pull origin main
 
-      - name: Smoke test
+      - name: Deploy
+        shell: powershell
         run: |
-          FQDN=$(az containerapp show \
-            --name "${{ steps.release.outputs.container_app }}" \
-            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
-            --query "properties.configuration.ingress.fqdn" -o tsv)
-          if [ -z "$FQDN" ]; then
-            echo "Container App sem ingress externo (validador) - pulando smoke test HTTP."
-            exit 0
-          fi
-          for i in $(seq 1 30); do
-            CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://$FQDN/actuator/health/readiness" || true)
-            if [ "$CODE" = "200" ]; then
-              echo "Smoke test OK ($CODE) após $((i * 10))s"
-              exit 0
-            fi
-            sleep 10
-          done
-          echo "Smoke test falhou - /actuator/health/readiness não respondeu 200 em 5 minutos."
-          exit 1
+          & "C:\Users\fagne\Documents\Eu\Programação\Comes-Bebes\infra\Deploy-Release.ps1" -Service ${{ steps.release.outputs.service }} -Version ${{ steps.release.outputs.version }}

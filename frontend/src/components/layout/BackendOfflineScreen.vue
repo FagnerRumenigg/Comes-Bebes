@@ -1,36 +1,9 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
-
-import { httpClient } from '@/api/client'
 import BaseButton from '@/components/base/BaseButton.vue'
 
-const POLL_INTERVAL_MS = 5_000
-const POLL_TIMEOUT_MS = 4_000
-
-const checking = ref(false)
-let pollHandle: ReturnType<typeof setInterval> | undefined
-
-async function checkNow(): Promise<void> {
-  if (checking.value) return
-  checking.value = true
-  try {
-    // Sucesso aqui já marca o backend como online via interceptor do
-    // httpClient (markBackendOnline) - a tela some sozinha, sem reload.
-    await httpClient.get('/actuator/health/liveness', { timeout: POLL_TIMEOUT_MS })
-  } catch {
-    // Ainda fora do ar - só segue tentando no próximo intervalo.
-  } finally {
-    checking.value = false
-  }
+function retry(): void {
+  window.location.reload()
 }
-
-onMounted(() => {
-  pollHandle = setInterval(checkNow, POLL_INTERVAL_MS)
-})
-
-onUnmounted(() => {
-  if (pollHandle) clearInterval(pollHandle)
-})
 </script>
 
 <template>
@@ -39,17 +12,12 @@ onUnmounted(() => {
       <p class="backend-offline__eyebrow">Fase de testes</p>
       <h1 id="backend-offline-title">😴 O Comes&amp;Bebes está dormindo</h1>
       <p>
-        Pra economizar enquanto estamos testando, o servidor desliga sozinho depois de alguns
-        minutos sem uso e acorda de novo assim que alguém tenta acessar. Isso costuma levar
-        <strong>até 2 minutos</strong> na primeira tentativa.
+        Não conseguimos falar com o servidor agora. Se for entre <strong>23h e 8h</strong>, é o
+        horário de sono normal desta fase de testes; fora desse horário, pode ser só um problema
+        passageiro.
       </p>
-      <p aria-live="polite">
-        {{ checking ? 'Verificando…' : 'Verificando automaticamente a cada poucos segundos.' }}
-        Essa tela some sozinha assim que o servidor acordar.
-      </p>
-      <BaseButton class="backend-offline__retry" :disabled="checking" @click="checkNow">
-        Verificar agora
-      </BaseButton>
+      <p>Tenta de novo daqui a pouco.</p>
+      <BaseButton class="backend-offline__retry" @click="retry">Tentar novamente</BaseButton>
     </div>
   </section>
 </template>
