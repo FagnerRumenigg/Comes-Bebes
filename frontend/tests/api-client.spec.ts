@@ -1,12 +1,7 @@
 import { http, HttpResponse } from 'msw'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import {
-  apiRequest,
-  requiresNgrokBrowserWarningBypass,
-  setAccessTokenProvider,
-  setUnauthorizedHandler,
-} from '@/api/client'
+import { apiRequest, setAccessTokenProvider, setUnauthorizedHandler } from '@/api/client'
 import { mockServer } from './setup'
 
 afterEach(() => {
@@ -15,31 +10,6 @@ afterEach(() => {
 })
 
 describe('cliente HTTP autenticado', () => {
-  it('ativa o bypass somente para endpoints gratuitos do Ngrok', () => {
-    expect(
-      requiresNgrokBrowserWarningBypass(
-        'https://ungraded-audition-ending.ngrok-free.dev/comesebebes',
-      ),
-    ).toBe(true)
-    expect(requiresNgrokBrowserWarningBypass('https://api.example.com/comesebebes')).toBe(false)
-    expect(requiresNgrokBrowserWarningBypass('/comesebebes')).toBe(false)
-  })
-
-  it('envia o bypass também em uma URL absoluta de imagem do Ngrok', async () => {
-    mockServer.use(
-      http.get('https://images.ngrok-free.dev/comesebebes/images/prato.webp', ({ request }) =>
-        HttpResponse.json({ bypass: request.headers.get('ngrok-skip-browser-warning') }),
-      ),
-    )
-
-    const response = await apiRequest<{ bypass: string }>({
-      url: 'https://images.ngrok-free.dev/comesebebes/images/prato.webp',
-      method: 'GET',
-    })
-
-    expect(response.bypass).toBe('true')
-  })
-
   it('renova a sessão uma vez e repete uma requisição que recebeu 401', async () => {
     let accessToken = 'expired-token'
     let renewals = 0

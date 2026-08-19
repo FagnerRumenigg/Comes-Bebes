@@ -28,7 +28,7 @@ describe('detecção de backend indisponível', () => {
     expect(backendStatus.offline).toBe(true)
   })
 
-  it('marca offline em 502/503/504 (ex.: ngrok respondendo no lugar do backend)', async () => {
+  it('marca offline em 502/503/504 (ex.: gateway respondendo no lugar do backend)', async () => {
     mockServer.use(http.get('*/ping', () => HttpResponse.json({}, { status: 503 })))
 
     await expect(httpClient.get('/ping')).rejects.toBeTruthy()
@@ -95,7 +95,9 @@ describe('detecção de backend indisponível', () => {
     await router.push('/')
     await router.isReady()
 
-    mockServer.use(http.get('*/actuator/health/liveness', () => HttpResponse.json({ status: 'UP' })))
+    mockServer.use(
+      http.get('*/actuator/health/liveness', () => HttpResponse.json({ status: 'UP' })),
+    )
 
     backendStatus.offline = true
     const wrapper = mount(App, {

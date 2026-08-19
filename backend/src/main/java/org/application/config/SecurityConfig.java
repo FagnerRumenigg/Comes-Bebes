@@ -79,8 +79,7 @@ public class SecurityConfig {
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of(
                 "Authorization",
-                "Content-Type",
-                "ngrok-skip-browser-warning"
+                "Content-Type"
         ));
         configuration.setExposedHeaders(List.of("Location"));
         configuration.setAllowCredentials(false);
