@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.application.service.exception.InvalidOperationException;
+import org.application.service.exception.ResourceNotFoundException;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -59,6 +60,29 @@ class LocalImageStorageTest {
         assertThatThrownBy(() -> storage.store("file:///etc/passwd"))
                 .isInstanceOf(InvalidOperationException.class)
                 .hasMessageContaining("HTTP ou HTTPS");
+    }
+
+    @Test
+    void shouldReadBackStoredImage() throws Exception {
+        Path storageDirectory = temporaryDirectory.resolve("uploads");
+        LocalImageStorage storage = new LocalImageStorage();
+        ReflectionTestUtils.setField(storage, "storagePath", storageDirectory);
+
+        Path source = temporaryDirectory.resolve("read-back.webp");
+        ImageIO.write(new BufferedImage(4, 3, BufferedImage.TYPE_INT_RGB), "webp", source.toFile());
+        byte[] processedBytes = Files.readAllBytes(source);
+        var stored = storage.store(processedBytes, "dish.png", "image/webp");
+
+        assertThat(storage.read(stored.objectName())).isEqualTo(processedBytes);
+    }
+
+    @Test
+    void shouldRejectReadOutsideStorageRoot() {
+        LocalImageStorage storage = new LocalImageStorage();
+        ReflectionTestUtils.setField(storage, "storagePath", temporaryDirectory.resolve("uploads"));
+
+        assertThatThrownBy(() -> storage.read("../../etc/passwd"))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test

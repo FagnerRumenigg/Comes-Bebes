@@ -3,7 +3,9 @@ package org.application.service.storage;
 import lombok.RequiredArgsConstructor;
 import org.application.dto.StoredImage;
 import org.application.service.exception.InvalidOperationException;
+import org.application.service.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
@@ -16,28 +18,23 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Iterator;
 import org.w3c.dom.Node;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 @Primary
 @Component
 @RequiredArgsConstructor
+@ConditionalOnProperty(prefix = "app.storage", name = "type", havingValue = "local", matchIfMissing = true)
 public class LocalImageStorage implements ImageStorage {
 
     private static final long MAX_IMAGE_BYTES = 20L * 1024 * 1024;
     private static final int MAX_IMAGE_WIDTH = 3840;
     private static final int MAX_IMAGE_HEIGHT = 2160;
     private static final long MAX_IMAGE_PIXELS = (long) MAX_IMAGE_WIDTH * MAX_IMAGE_HEIGHT;
-    private static final int COPY_BUFFER_SIZE = 1024 * 1024;
 
     @Value("${app.storage.local.path}")
     private Path storagePath;
@@ -47,8 +44,9 @@ public class LocalImageStorage implements ImageStorage {
         Path temporaryFile = null;
         try {
             Files.createDirectories(storagePath);
+            byte[] content = RemoteImageDownloader.download(sourceUrl, MAX_IMAGE_BYTES, 5000, 15000);
             temporaryFile = Files.createTempFile(storagePath, "upload-", ".tmp");
-            copySource(sourceUrl, temporaryFile);
+            Files.write(temporaryFile, content);
             String filename = URI.create(sourceUrl).getPath();
             return storeValidatedFile(temporaryFile, filename == null ? "upload.img" : filename);
         } catch (InvalidOperationException exception) {
@@ -62,6 +60,20 @@ public class LocalImageStorage implements ImageStorage {
                 } catch (IOException ignored) {
                 }
             }
+        }
+    }
+
+    @Override
+    public byte[] read(String objectName) {
+        Path storageRoot = storagePath.toAbsolutePath().normalize();
+        Path target = storageRoot.resolve(objectName).normalize();
+        if (!target.startsWith(storageRoot)) {
+            throw new ResourceNotFoundException("IMAGE_NOT_FOUND", "Imagem não encontrada.");
+        }
+        try {
+            return Files.readAllBytes(target);
+        } catch (IOException exception) {
+            throw new ResourceNotFoundException("IMAGE_NOT_FOUND", "Imagem não encontrada.");
         }
     }
 
@@ -116,28 +128,6 @@ public class LocalImageStorage implements ImageStorage {
             throw exception;
         } catch (IOException exception) {
             throw new InvalidOperationException("Não foi possível armazenar a imagem localmente.");
-        }
-    }
-
-    private void copySource(String sourceUrl, Path target) throws IOException {
-        URI source = URI.create(sourceUrl);
-        if (!"http".equalsIgnoreCase(source.getScheme()) && !"https".equalsIgnoreCase(source.getScheme())) {
-            throw new InvalidOperationException("A imagem deve usar uma URL HTTP ou HTTPS.");
-        }
-        if (source.getHost() == null || isPrivateAddress(source.getHost())) {
-            throw new InvalidOperationException("A URL da imagem não pode apontar para uma rede interna.");
-        }
-        HttpURLConnection connection = (HttpURLConnection) source.toURL().openConnection();
-        connection.setConnectTimeout(5000);
-        connection.setReadTimeout(15000);
-        connection.setInstanceFollowRedirects(false);
-        if (connection.getResponseCode() < 200 || connection.getResponseCode() >= 300) {
-            throw new InvalidOperationException("A URL da imagem não está disponível.");
-        }
-        try (InputStream inputStream = connection.getInputStream()) {
-            copyWithLimit(inputStream, target);
-        } finally {
-            connection.disconnect();
         }
     }
 
@@ -308,33 +298,4 @@ public class LocalImageStorage implements ImageStorage {
         return resized;
     }
 
-    private void copyWithLimit(InputStream inputStream, Path target) throws IOException {
-        try (var outputStream = Files.newOutputStream(target)) {
-            byte[] buffer = new byte[COPY_BUFFER_SIZE];
-            long total = 0;
-            int read;
-            while ((read = inputStream.read(buffer)) != -1) {
-                total += read;
-                if (total > MAX_IMAGE_BYTES) {
-                    throw new InvalidOperationException("A imagem excede o limite de 20 MB.");
-                }
-                outputStream.write(buffer, 0, read);
-            }
-        }
-    }
-
-    private boolean isPrivateAddress(String host) {
-        try {
-            for (InetAddress address : InetAddress.getAllByName(host)) {
-                if (address.isAnyLocalAddress() || address.isLoopbackAddress()
-                        || address.isLinkLocalAddress() || address.isSiteLocalAddress()
-                        || address.isMulticastAddress()) {
-                    return true;
-                }
-            }
-            return false;
-        } catch (IOException exception) {
-            return true;
-        }
-    }
 }
