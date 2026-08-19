@@ -18,8 +18,17 @@ type TrackedPublication = Pick<PublicationResponse, 'id' | 'viewedByCurrentUser'
  */
 export function useFeedViewTracking() {
   const authStore = useAuthStore()
+  console.log(
+    '[view-tracking] composable inicializado, initialized=',
+    authStore.initialized,
+    'authenticated=',
+    authStore.authenticated,
+  )
   const markViewedMutation = useMarkViewed({
     mutation: {
+      onSuccess: (_data, variables) => {
+        console.log('[view-tracking] enviado com sucesso', variables.data.publicationIds)
+      },
       onError: (error, variables) => {
         console.error('[view-tracking] falhou ao enviar', variables.data.publicationIds, error)
       },
@@ -41,10 +50,14 @@ export function useFeedViewTracking() {
   let flushTimer: ReturnType<typeof setInterval> | undefined
 
   function flush(): void {
-    if (pendingIds.size === 0) return
+    if (pendingIds.size === 0) {
+      console.log('[view-tracking] flush chamado, nada pendente')
+      return
+    }
     const ids = Array.from(pendingIds)
     pendingIds.clear()
     ids.forEach((id) => sentIds.add(id))
+    console.log('[view-tracking] enviando lote', ids)
     markViewedMutation.mutate({ data: { publicationIds: ids } })
   }
 
@@ -80,6 +93,14 @@ export function useFeedViewTracking() {
           const id = elementToId.get(entry.target)
           if (!id) continue
 
+          console.log(
+            '[view-tracking] intersection',
+            id,
+            'isIntersecting=',
+            entry.isIntersecting,
+            'ratio=',
+            entry.intersectionRatio,
+          )
           if (entry.isIntersecting && entry.intersectionRatio >= VISIBILITY_THRESHOLD) {
             if (visibilityTimers.has(id)) continue
             visibilityTimers.set(
@@ -89,6 +110,7 @@ export function useFeedViewTracking() {
                 pendingIds.add(id)
                 ensureFlushTimer()
                 stopObservingElement(entry.target)
+                console.log('[view-tracking] marcado como visto (pendente)', id)
               }, VISIBLE_DURATION_MS),
             )
           } else {
@@ -114,19 +136,35 @@ export function useFeedViewTracking() {
   }
 
   function observeCard(element: Element | null, publication: TrackedPublication): void {
-    if (!element) return
-    if (publication.viewedByCurrentUser || sentIds.has(publication.id)) return
+    if (!element) {
+      console.log('[view-tracking] observeCard sem elemento', publication.id)
+      return
+    }
+    if (publication.viewedByCurrentUser || sentIds.has(publication.id)) {
+      console.log(
+        '[view-tracking] observeCard ja visto, pulando',
+        publication.id,
+        'viewedByCurrentUser=',
+        publication.viewedByCurrentUser,
+      )
+      return
+    }
 
     if (!authStore.initialized) {
       // Sessão ainda resolvendo (ex.: /auth/refresh em voo) - adia em vez de
       // descartar ou de criar o observer sem saber se vale a pena.
+      console.log('[view-tracking] sessao nao resolvida ainda, adiando', publication.id)
       deferredUntilSessionResolved.push({ element, publication })
       return
     }
     // Visitante confirmado: nunca observa - visualização não se aplica e
     // seria trabalho à toa (IntersectionObserver + timers por nada).
-    if (!authStore.authenticated) return
+    if (!authStore.authenticated) {
+      console.log('[view-tracking] visitante confirmado, nunca observa', publication.id)
+      return
+    }
 
+    console.log('[view-tracking] observando card', publication.id)
     startObserving(element, publication)
   }
 
