@@ -283,6 +283,10 @@ resource "azurerm_container_app" "api" {
       memory = var.api_memory
 
       env {
+        name  = "COMESEBEBES_SERVER_PORT"
+        value = tostring(var.api_target_port)
+      }
+      env {
         name  = "DB_HOST"
         value = azurerm_postgresql_flexible_server.main.fqdn
       }
@@ -325,6 +329,10 @@ resource "azurerm_container_app" "api" {
       env {
         name  = "COMESEBEBES_STORAGE_BLOB_CONTAINER"
         value = var.storage_container_images_name
+      }
+      env {
+        name  = "COMESEBEBES_STORAGE_BLOB_IDENTITY_CLIENT_ID"
+        value = azurerm_user_assigned_identity.app.client_id
       }
       env {
         name  = "COMESEBEBES_IMAGE_VALIDATOR_URL"

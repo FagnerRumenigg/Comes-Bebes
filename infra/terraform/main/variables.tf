@@ -60,9 +60,9 @@ variable "postgres_database_name" {
 }
 
 variable "postgres_version" {
-  description = "Versão major do PostgreSQL."
+  description = "Versão major do PostgreSQL. Confirmada igual à do Postgres local (platform-postgres-1, 17.10) antes da migração de dados."
   type        = string
-  default     = "16"
+  default     = "17"
 }
 
 variable "postgres_sku_name" {

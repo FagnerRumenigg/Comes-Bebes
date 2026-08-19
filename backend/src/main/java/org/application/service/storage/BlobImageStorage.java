@@ -49,13 +49,25 @@ public class BlobImageStorage implements ImageStorage {
     @Value("${app.storage.blob.container}")
     private String containerName;
 
+    // DefaultAzureCredential precisa saber qual identidade usar quando o
+    // Container App tem uma User Assigned Identity (não System Assigned) —
+    // sem isso, a resolução da Managed Identity falha ("Unable to load the
+    // proper Managed Identity"). Vazio (dev local com outra forma de auth,
+    // ou System Assigned) é um valor válido.
+    @Value("${app.storage.blob.identity-client-id:}")
+    private String identityClientId;
+
     private BlobContainerClient containerClient;
 
     @PostConstruct
     void init() {
+        DefaultAzureCredentialBuilder credentialBuilder = new DefaultAzureCredentialBuilder();
+        if (identityClientId != null && !identityClientId.isBlank()) {
+            credentialBuilder.managedIdentityClientId(identityClientId);
+        }
         BlobServiceClient serviceClient = new BlobServiceClientBuilder()
                 .endpoint(accountUrl)
-                .credential(new DefaultAzureCredentialBuilder().build())
+                .credential(credentialBuilder.build())
                 .buildClient();
         containerClient = serviceClient.getBlobContainerClient(containerName);
     }

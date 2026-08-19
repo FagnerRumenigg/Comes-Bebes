@@ -22,6 +22,7 @@ app:
     blob:
       account-url: ${COMESEBEBES_STORAGE_BLOB_ACCOUNT_URL:}
       container: ${COMESEBEBES_STORAGE_BLOB_CONTAINER:comesebebes-images}
+      identity-client-id: ${COMESEBEBES_STORAGE_BLOB_IDENTITY_CLIENT_ID:}
   image-validator:
     url: ${COMESEBEBES_IMAGE_VALIDATOR_URL:http://localhost:8001}
     connect-timeout-ms: ${COMESEBEBES_IMAGE_VALIDATOR_CONNECT_TIMEOUT_MS:5000}
