@@ -77,6 +77,10 @@ function authenticate(pinia: ReturnType<typeof createPinia>): void {
   setAccessTokenProvider(() => authStore.accessToken)
 }
 
+function markSessionResolvedAnonymous(pinia: ReturnType<typeof createPinia>): void {
+  useAuthStore(pinia).status = 'anonymous'
+}
+
 beforeEach(() => stubIntersectionObserver())
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -85,9 +89,77 @@ afterEach(() => {
 })
 
 describe('useFeedViewTracking', () => {
-  it('não observa nada para visitantes não autenticados', () => {
-    const { wrapper } = mountTrackingHost(publication())
+  it('nunca cria o observer nem envia para visitante confirmado (sessão já resolvida como anônima)', async () => {
+    let requestCount = 0
+    mockServer.use(
+      http.post('*/publications/views', () => {
+        requestCount += 1
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+
+    const pinia = createPinia()
+    markSessionResolvedAnonymous(pinia)
+    const { wrapper } = mountTrackingHost(publication({ id: 'pub-anon' }), pinia)
+
+    // Visitante confirmado nunca deveria gastar trabalho de observação à toa.
     expect(instances).toHaveLength(0)
+    expect(requestCount).toBe(0)
+    wrapper.unmount()
+  })
+
+  it('adia a observação até a sessão resolver, e observa se resolver autenticada (race do /auth/refresh)', async () => {
+    let receivedBody: MarkPublicationsViewedRequest | undefined
+    mockServer.use(
+      http.post('*/publications/views', async ({ request }) => {
+        receivedBody = (await request.json()) as MarkPublicationsViewedRequest
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+
+    vi.useFakeTimers()
+    const pinia = createPinia()
+    // Sessão ainda não resolveu no mount (status fica 'idle', nem anonymous
+    // nem authenticated) - como um reload real enquanto /auth/refresh está
+    // em voo. Não deve criar o observer ainda.
+    const { wrapper } = mountTrackingHost(publication({ id: 'pub-race' }), pinia)
+    expect(instances).toHaveLength(0)
+
+    authenticate(pinia)
+    await flushPromises()
+
+    expect(instances).toHaveLength(1)
+    const observer = instances[0]!
+    const target = observer.observe.mock.calls[0]![0] as Element
+    observer.callback(
+      [{ target, isIntersecting: true, intersectionRatio: 1 } as IntersectionObserverEntry],
+      observer as unknown as IntersectionObserver,
+    )
+    await vi.advanceTimersByTimeAsync(1_000 + 5_000)
+    await flushPromises()
+
+    expect(receivedBody?.publicationIds).toEqual(['pub-race'])
+    wrapper.unmount()
+  })
+
+  it('não observa se a sessão resolver como anônima depois do mount', async () => {
+    let requestCount = 0
+    mockServer.use(
+      http.post('*/publications/views', () => {
+        requestCount += 1
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+
+    const pinia = createPinia()
+    const { wrapper } = mountTrackingHost(publication({ id: 'pub-late-anon' }), pinia)
+    expect(instances).toHaveLength(0)
+
+    markSessionResolvedAnonymous(pinia)
+    await flushPromises()
+
+    expect(instances).toHaveLength(0)
+    expect(requestCount).toBe(0)
     wrapper.unmount()
   })
 
@@ -136,6 +208,40 @@ describe('useFeedViewTracking', () => {
     await flushPromises()
 
     expect(receivedBody?.publicationIds).toEqual(['pub-1'])
+    wrapper.unmount()
+  })
+
+  it('envia visualizações pendentes ao esconder a aba, sem esperar o próximo lote (ex.: F5)', async () => {
+    let receivedBody: MarkPublicationsViewedRequest | undefined
+    mockServer.use(
+      http.post('*/publications/views', async ({ request }) => {
+        receivedBody = (await request.json()) as MarkPublicationsViewedRequest
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+
+    vi.useFakeTimers()
+    const pinia = createPinia()
+    authenticate(pinia)
+    const { wrapper } = mountTrackingHost(publication({ id: 'pub-4' }), pinia)
+
+    const observer = instances[0]!
+    const target = observer.observe.mock.calls[0]![0] as Element
+    observer.callback(
+      [{ target, isIntersecting: true, intersectionRatio: 1 } as IntersectionObserverEntry],
+      observer as unknown as IntersectionObserver,
+    )
+    await vi.advanceTimersByTimeAsync(1_000)
+    expect(receivedBody).toBeUndefined()
+
+    // Um F5 real nunca chama onBeforeUnmount do Vue - só visibilitychange/pagehide,
+    // muito antes do intervalo de 5s de lote.
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
+    document.dispatchEvent(new Event('visibilitychange'))
+    await flushPromises()
+
+    expect(receivedBody?.publicationIds).toEqual(['pub-4'])
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
     wrapper.unmount()
   })
 

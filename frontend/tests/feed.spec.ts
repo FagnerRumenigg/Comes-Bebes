@@ -101,6 +101,10 @@ describe('feed', () => {
   })
 
   it('carrega a próxima página automaticamente ao alcançar o fim da lista', async () => {
+    // FeedView usa dois IntersectionObserver independentes (infinite scroll +
+    // rastreamento de visualização de cada card) - distinguimos pelas opções
+    // (só o sentinel de infinite scroll usa rootMargin) para não confundir
+    // um pelo outro neste teste.
     let intersectionCallback: IntersectionObserverCallback | undefined
     const observe = vi.fn()
     const disconnect = vi.fn()
@@ -108,6 +112,10 @@ describe('feed', () => {
     vi.stubGlobal(
       'IntersectionObserver',
       class IntersectionObserverMock {
+        observe: typeof observe
+        unobserve = vi.fn()
+        disconnect: typeof disconnect
+
         constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
           // A API real só aceita rootMargin em px/%; reproduzimos essa validação
           // aqui para que um valor inválido (ex.: rem) quebre o teste, como
@@ -117,12 +125,15 @@ describe('feed', () => {
               "Failed to construct 'IntersectionObserver': rootMargin must be specified in pixels or percent.",
             )
           }
-          intersectionCallback = callback
+          if (options?.rootMargin) {
+            intersectionCallback = callback
+            this.observe = observe
+            this.disconnect = disconnect
+          } else {
+            this.observe = vi.fn()
+            this.disconnect = vi.fn()
+          }
         }
-
-        observe = observe
-        unobserve = vi.fn()
-        disconnect = disconnect
       },
     )
 

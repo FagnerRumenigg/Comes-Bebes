@@ -1,4 +1,4 @@
-import { onBeforeUnmount } from 'vue'
+import { onBeforeUnmount, watch } from 'vue'
 
 import type { PublicationResponse } from '@/api/generated/models'
 import { useMarkViewed } from '@/api/generated/publications/publications'
@@ -8,6 +8,8 @@ const VISIBILITY_THRESHOLD = 0.5
 const VISIBLE_DURATION_MS = 1_000
 const FLUSH_INTERVAL_MS = 5_000
 
+type TrackedPublication = Pick<PublicationResponse, 'id' | 'viewedByCurrentUser'>
+
 /**
  * Detecta quando uma publicação fica >=50% visível por ~1s e registra a
  * visualização em lote (nunca uma requisição por card). Reaproveita o mesmo
@@ -16,12 +18,24 @@ const FLUSH_INTERVAL_MS = 5_000
  */
 export function useFeedViewTracking() {
   const authStore = useAuthStore()
-  const markViewedMutation = useMarkViewed()
+  const markViewedMutation = useMarkViewed({
+    mutation: {
+      onError: (error, variables) => {
+        console.error('[view-tracking] falhou ao enviar', variables.data.publicationIds, error)
+      },
+    },
+  })
 
   const pendingIds = new Set<string>()
   const sentIds = new Set<string>()
   const visibilityTimers = new Map<string, ReturnType<typeof setTimeout>>()
   const elementToId = new Map<Element, string>()
+  // Cards vistos antes da sessão terminar de resolver (authStore.initialized)
+  // - nem visitante confirmado, nem autenticado confirmado ainda. Retomados
+  // pelo watch abaixo assim que resolver, em vez de gastar trabalho de
+  // observação à toa para quem acaba sendo visitante.
+  const deferredUntilSessionResolved: Array<{ element: Element; publication: TrackedPublication }> =
+    []
 
   let observer: IntersectionObserver | null = null
   let flushTimer: ReturnType<typeof setInterval> | undefined
@@ -37,6 +51,18 @@ export function useFeedViewTracking() {
   function ensureFlushTimer(): void {
     if (flushTimer) return
     flushTimer = setInterval(flush, FLUSH_INTERVAL_MS)
+  }
+
+  function handleVisibilityChange(): void {
+    if (document.visibilityState === 'hidden') flush()
+  }
+
+  if (typeof window !== 'undefined') {
+    // Um reload de página (F5) ou fechar a aba não dispara onBeforeUnmount do
+    // Vue - sem isso, visualizações pendentes que ainda não bateram o
+    // intervalo de lote (ou o unmount por navegação in-app) se perdem.
+    window.addEventListener('pagehide', flush)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
   }
 
   function stopObservingElement(element: Element): void {
@@ -79,13 +105,7 @@ export function useFeedViewTracking() {
     return observer
   }
 
-  function observeCard(
-    element: Element | null,
-    publication: Pick<PublicationResponse, 'id' | 'viewedByCurrentUser'>,
-  ): void {
-    if (!element || !authStore.authenticated) return
-    if (publication.viewedByCurrentUser || sentIds.has(publication.id)) return
-
+  function startObserving(element: Element, publication: TrackedPublication): void {
     const activeObserver = ensureObserver()
     if (!activeObserver) return
 
@@ -93,11 +113,44 @@ export function useFeedViewTracking() {
     activeObserver.observe(element)
   }
 
+  function observeCard(element: Element | null, publication: TrackedPublication): void {
+    if (!element) return
+    if (publication.viewedByCurrentUser || sentIds.has(publication.id)) return
+
+    if (!authStore.initialized) {
+      // Sessão ainda resolvendo (ex.: /auth/refresh em voo) - adia em vez de
+      // descartar ou de criar o observer sem saber se vale a pena.
+      deferredUntilSessionResolved.push({ element, publication })
+      return
+    }
+    // Visitante confirmado: nunca observa - visualização não se aplica e
+    // seria trabalho à toa (IntersectionObserver + timers por nada).
+    if (!authStore.authenticated) return
+
+    startObserving(element, publication)
+  }
+
+  const stopWatchingSession = watch(
+    () => authStore.initialized,
+    (isInitialized) => {
+      if (!isInitialized) return
+      stopWatchingSession()
+      const deferred = deferredUntilSessionResolved.splice(0)
+      if (!authStore.authenticated) return
+      deferred.forEach(({ element, publication }) => startObserving(element, publication))
+    },
+  )
+
   onBeforeUnmount(() => {
+    stopWatchingSession()
     observer?.disconnect()
     visibilityTimers.forEach((timer) => clearTimeout(timer))
     visibilityTimers.clear()
     if (flushTimer) clearInterval(flushTimer)
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('pagehide', flush)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
     flush()
   })
 
