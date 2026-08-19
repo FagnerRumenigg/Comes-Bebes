@@ -164,9 +164,9 @@ variable "api_memory" {
 }
 
 variable "api_min_replicas" {
-  description = "Fixo em 1 — rate limiters (login/publicação) guardam contador em memória do processo, réplica múltipla quebraria o limite real."
+  description = "0 — decisão pra fase de testes (custo baixo, cold start ~1-2min aceitável enquanto só há uso esporádico). Rate limiters agora persistem em Postgres (RateLimitStore), não é mais um bloqueio técnico pra escalar a zero — só max_replicas=1 continua obrigatório, pra nunca ter 2 réplicas simultâneas."
   type        = number
-  default     = 1
+  default     = 0
 }
 
 variable "api_max_replicas" {
@@ -282,8 +282,8 @@ variable "user_blocked_username_hmac_secret" {
 
 # --- Orçamento / alerta de custo ----------------------------------------
 
-variable "monthly_budget_usd" {
-  description = "Teto mensal de referência pro alerta de custo. Ajustável — não é um limite técnico, só dispara notificação."
+variable "monthly_budget_amount" {
+  description = "Teto mensal de referência pro alerta de custo, na moeda de faturamento real da conta (BRL nesta assinatura — o recurso azurerm_consumption_budget_resource_group não aceita moeda explícita, usa a do billing account). Ajustável — não é um limite técnico, só dispara notificação. R$25 é abaixo do teto estimado com min=1 na API (~R$178-190/mês), mas com min=0 na API + validador o gasto real esperado é bem menor — o alerta serve pra avisar cedo se passar disso."
   type        = number
   default     = 25
 }

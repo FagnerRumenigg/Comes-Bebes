@@ -78,6 +78,13 @@ resource "azurerm_postgresql_flexible_server" "main" {
   geo_redundant_backup_enabled = false
 
   public_network_access_enabled = true
+
+  # Azure atribui a zona automaticamente na criação; não deixamos o Terraform
+  # gerenciar esse campo (tentar zerá-lo depois falha: "zone can only be
+  # changed when exchanged with high_availability.standby_availability_zone").
+  lifecycle {
+    ignore_changes = [zone]
+  }
 }
 
 resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_azure_services" {
@@ -169,6 +176,12 @@ resource "azurerm_container_app_environment" "main" {
   location                   = azurerm_resource_group.app.location
   logs_destination           = "log-analytics"
   log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
+
+  # Azure cria um workload_profile "Consumption" padrão sozinho; não deixamos
+  # o Terraform tentar removê-lo (drift cosmético, sem efeito real).
+  lifecycle {
+    ignore_changes = [workload_profile]
+  }
 }
 
 # --- Container App: validador -------------------------------------------
@@ -220,7 +233,7 @@ resource "azurerm_container_app" "validator" {
   # primeiro apply, não pelo Terraform — evita o Terraform reverter o
   # deploy mais recente a cada `plan`/`apply` de infraestrutura.
   lifecycle {
-    ignore_changes = [template[0].container[0].image]
+    ignore_changes = [template[0].container[0].image, workload_profile_name]
   }
 
   depends_on = [azurerm_role_assignment.app_acr_pull]
@@ -398,7 +411,7 @@ resource "azurerm_container_app" "api" {
   }
 
   lifecycle {
-    ignore_changes = [template[0].container[0].image]
+    ignore_changes = [template[0].container[0].image, workload_profile_name]
   }
 
   depends_on = [
@@ -414,7 +427,7 @@ resource "azurerm_consumption_budget_resource_group" "app" {
   name              = "budget-comesebebes"
   resource_group_id = azurerm_resource_group.app.id
 
-  amount     = var.monthly_budget_usd
+  amount     = var.monthly_budget_amount
   time_grain = "Monthly"
 
   time_period {
