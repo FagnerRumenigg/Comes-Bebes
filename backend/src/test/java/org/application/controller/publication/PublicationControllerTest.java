@@ -11,6 +11,7 @@ import org.application.service.PublicationService;
 import org.application.service.RecipeService;
 import org.application.service.ReactionService;
 import org.application.service.SavedPublicationService;
+import org.application.service.PublicationViewService;
 import org.application.service.ReportService;
 import org.application.service.PublicationResponseFactory;
 import org.application.service.storage.ImageStorage;
@@ -48,6 +49,7 @@ class PublicationControllerTest {
     @Mock private RecipeService recipeService;
     @Mock private ReactionService reactionService;
     @Mock private SavedPublicationService savedPublicationService;
+    @Mock private PublicationViewService publicationViewService;
     @Mock private ReportService reportService;
     @Mock private PublicationResponseFactory responseFactory;
     @Mock private ImageStorage imageStorage;
@@ -64,6 +66,7 @@ class PublicationControllerTest {
                         recipeService,
                         reactionService,
                         savedPublicationService,
+                        publicationViewService,
                         reportService,
                         responseFactory,
                         imageStorage,
@@ -126,6 +129,28 @@ class PublicationControllerTest {
                 .thenReturn(new PageImpl<>(List.of()));
 
         mockMvc.perform(get("/publications/feed?types=DISH")).andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldMarkPublicationsViewed() throws Exception {
+        UUID publicationId = UUID.randomUUID();
+        UUID viewerId = UUID.randomUUID();
+        org.mockito.Mockito.when(currentUser.id(any())).thenReturn(viewerId);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/publications/views")
+                        .contentType("application/json")
+                        .content("{\"publicationIds\":[\"" + publicationId + "\"]}"))
+                .andExpect(status().isNoContent());
+
+        org.mockito.Mockito.verify(publicationViewService).markViewed(viewerId, List.of(publicationId));
+    }
+
+    @Test
+    void shouldRejectMarkViewedWithoutIds() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/publications/views")
+                        .contentType("application/json")
+                        .content("{\"publicationIds\":[]}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

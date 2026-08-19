@@ -22,6 +22,21 @@ public interface PublicationRepository extends JpaRepository<Publication, UUID> 
     Page<Publication> findByStatusAndVisibilityOrderByPublishedAtDescIdDesc(PublicationStatus status, PublicationVisibility visibility, Pageable pageable);
     Page<Publication> findByStatusAndTypeInOrderByPublishedAtDescIdDesc(PublicationStatus status, Collection<PublicationType> types, Pageable pageable);
     Page<Publication> findByStatusAndVisibilityAndTypeInOrderByPublishedAtDescIdDesc(PublicationStatus status, PublicationVisibility visibility, Collection<PublicationType> types, Pageable pageable);
+    @Query(value = """
+            select p from Publication p
+            left join PublicationView v on v.publicationId = p.id and v.userId = :viewerId
+            where p.status = :status and p.type in :types
+            order by case when v.publicationId is null then 0 else 1 end, p.publishedAt desc, p.id desc
+            """,
+            countQuery = """
+            select count(p) from Publication p
+            where p.status = :status and p.type in :types
+            """)
+    Page<Publication> findFeedForAuthenticatedViewerOrderByUnseenFirst(
+            @Param("status") PublicationStatus status,
+            @Param("types") Collection<PublicationType> types,
+            @Param("viewerId") UUID viewerId,
+            Pageable pageable);
     Page<Publication> findByStatusAndVisibilityAndTitleContainingIgnoreCaseOrderByPublishedAtDescIdDesc(PublicationStatus status, PublicationVisibility visibility, String title, Pageable pageable);
     Page<Publication> findByStatusAndTitleContainingIgnoreCaseOrderByPublishedAtDescIdDesc(PublicationStatus status, String title, Pageable pageable);
     @Query("""

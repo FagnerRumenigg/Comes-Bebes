@@ -221,12 +221,51 @@ describe('feed', () => {
       expect(wrapper.text()).toContain('A cozinha está quieta por enquanto.')
     })
 
-    const receitasButton = wrapper.findAll('.feed-view__filter').find((b) => b.text() === 'Receitas')
+    const receitasButton = wrapper
+      .findAll('.feed-view__filter')
+      .find((b) => b.text() === 'Receitas')
     await receitasButton?.trigger('click')
     await flushPromises()
 
     expect(window.localStorage.getItem('comes-e-bebes:feed-filter')).toBeNull()
     window.localStorage.removeItem('comes-e-bebes:feed-filter')
+  })
+
+  it('não mostra o divisor "Você está em dia" quando nada foi visto ainda', async () => {
+    const { wrapper } = await mountFeed({ authenticated: true })
+    await vi.waitFor(() => {
+      expect(wrapper.findAllComponents(PublicationCard)).toHaveLength(3)
+    })
+    expect(wrapper.find('.feed-divider').exists()).toBe(false)
+  })
+
+  it('mostra o divisor "Você está em dia" entre publicações não vistas e já vistas', async () => {
+    mockServer.use(
+      http.get('*/publications/feed', () =>
+        HttpResponse.json<PageResponsePublicationResponse>({
+          content: [
+            { ...mockPublications[0]!, id: 'a', viewedByCurrentUser: false },
+            { ...mockPublications[1]!, id: 'b', viewedByCurrentUser: false },
+            { ...mockPublications[2]!, id: 'c', viewedByCurrentUser: true },
+          ],
+          page: 1,
+          size: 4,
+          totalElements: 3,
+          totalPages: 1,
+          first: true,
+          last: true,
+        }),
+      ),
+    )
+
+    const { wrapper } = await mountFeed({ authenticated: true })
+    await vi.waitFor(() => {
+      expect(wrapper.findAllComponents(PublicationCard)).toHaveLength(3)
+    })
+
+    const listChildren = wrapper.get('.feed-view__list').element.children
+    expect(listChildren).toHaveLength(4)
+    expect(listChildren[2]?.className).toContain('feed-divider')
   })
 
   it('restaura o filtro salvo ao montar sem tipo na URL para usuário autenticado', async () => {

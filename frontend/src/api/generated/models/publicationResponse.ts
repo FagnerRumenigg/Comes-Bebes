@@ -43,6 +43,8 @@ export interface PublicationResponse {
   reactionTotals: PublicationResponseReactionTotals;
   selectedReactions: PublicationResponseSelectedReactionsItem[];
   saved: boolean;
+  /** Indica se o usuário autenticado já visualizou esta publicação. Sempre falso para visitantes. */
+  viewedByCurrentUser: boolean;
   versionsCount: number;
   /** Publicação de origem; preenchido somente para MY_VERSION. */
   originalPublicationId: PublicationResponseOriginalPublicationId;

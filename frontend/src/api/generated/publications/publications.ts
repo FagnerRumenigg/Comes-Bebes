@@ -35,6 +35,7 @@ import type {
   CreateReportRequest,
   CreateUploadBody,
   FeedParams,
+  MarkPublicationsViewedRequest,
   PageResponsePublicationResponse,
   PageResponseSavedPublicationResponse,
   PublicationResponse,
@@ -519,6 +520,71 @@ export const useCreateMyVersion = <TError = ApiErrorResponse,
       > => {
 
       const mutationOptions = getCreateMyVersionMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
+ * Registra em lote que o usuário autenticado visualizou as publicações informadas. Idempotente: IDs já vistos ou inexistentes são ignorados silenciosamente.
+ * @summary Marcar publicações como vistas
+ */
+export const markViewed = (
+    markPublicationsViewedRequest: MaybeRef<MarkPublicationsViewedRequest>,
+ options?: SecondParameter<typeof apiRequest>,signal?: AbortSignal
+) => {
+      markPublicationsViewedRequest = unref(markPublicationsViewedRequest);
+      
+      return apiRequest<void>(
+      {url: `/publications/views`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: markPublicationsViewedRequest, signal
+    },
+      options);
+    }
+  
+
+
+export const getMarkViewedMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markViewed>>, TError,{data: MarkPublicationsViewedRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof markViewed>>, TError,{data: MarkPublicationsViewedRequest}, TContext> => {
+
+const mutationKey = ['markViewed'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markViewed>>, {data: MarkPublicationsViewedRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  markViewed(data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkViewedMutationResult = NonNullable<Awaited<ReturnType<typeof markViewed>>>
+    export type MarkViewedMutationBody = MarkPublicationsViewedRequest
+    export type MarkViewedMutationError = unknown
+
+    /**
+ * @summary Marcar publicações como vistas
+ */
+export const useMarkViewed = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markViewed>>, TError,{data: MarkPublicationsViewedRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof markViewed>>,
+        TError,
+        {data: MarkPublicationsViewedRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getMarkViewedMutationOptions(options);
 
       return useMutation(mutationOptions, queryClient);
     }

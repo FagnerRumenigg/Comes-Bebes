@@ -305,8 +305,8 @@ public class PublicationService {
         return viewerId == null
                 ? publicationRepository.findByStatusAndVisibilityAndTypeInOrderByPublishedAtDescIdDesc(
                         PublicationStatus.ACTIVE, PublicationVisibility.PUBLIC, effectiveTypes, pageable)
-                : publicationRepository.findByStatusAndTypeInOrderByPublishedAtDescIdDesc(
-                        PublicationStatus.ACTIVE, effectiveTypes, pageable);
+                : publicationRepository.findFeedForAuthenticatedViewerOrderByUnseenFirst(
+                        PublicationStatus.ACTIVE, effectiveTypes, viewerId, pageable);
     }
 
     @Transactional(readOnly = true)
