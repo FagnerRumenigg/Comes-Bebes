@@ -121,6 +121,11 @@ public class SecurityConfig {
                         // PATCH/DELETE /publications/{id}, PATCH/DELETE /users/{id} — deixando
                         // passar visitante anônimo até o @PreAuthorize do controller, que então
                         // falhava ao traduzir a negação para 403 (virava 500 cru).
+                        // "/publications/saved" precisa vir antes do wildcard: mesmo em GET,
+                        // "saved" tem 1 segmento igual um {id} e o AntPathMatcher não distingue
+                        // os dois - sem essa regra explícita primeiro, o wildcard permitAll
+                        // abaixo capturava essa rota autenticada também (mesma classe de bug).
+                        .requestMatchers(HttpMethod.GET, "/publications/saved").authenticated()
                         .requestMatchers(HttpMethod.GET, "/publications/feed", "/publications/search", "/publications/*", "/publications/*/recipe", "/users/*", "/users/*/publications").permitAll()
                         .requestMatchers("/u/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/images/**").permitAll()
