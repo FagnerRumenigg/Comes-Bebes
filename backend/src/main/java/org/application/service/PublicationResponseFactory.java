@@ -6,6 +6,7 @@ import org.application.controller.tag.response.TagResponse;
 import org.application.model.Publication;
 import org.application.repository.PublicationOriginRepository;
 import org.application.repository.PublicationReactionRepository;
+import org.application.repository.PublicationViewRepository;
 import org.application.repository.ReactionTypeRepository;
 import org.application.repository.SavedPublicationRepository;
 import org.application.repository.UserRepository;
@@ -34,6 +35,7 @@ public class PublicationResponseFactory {
     private final PublicationReactionRepository reactionRepository;
     private final ReactionTypeRepository reactionTypeRepository;
     private final SavedPublicationRepository savedPublicationRepository;
+    private final PublicationViewRepository publicationViewRepository;
     private final PublicationOriginRepository publicationOriginRepository;
     private final ReportRepository reportRepository;
     private final RecipeService recipeService;
@@ -88,6 +90,7 @@ public class PublicationResponseFactory {
                 .reactionTotals(totals)
                 .selectedReactions(selected)
                 .saved(viewerId != null && savedPublicationRepository.existsByUserIdAndPublicationIdAndDeletedAtIsNull(viewerId, publication.getId()))
+                .viewedByCurrentUser(viewerId != null && publicationViewRepository.existsByUserIdAndPublicationId(viewerId, publication.getId()))
                 .versionsCount(publicationOriginRepository.countBySourceRecipeId(publication.getId()))
                 .originalPublicationId(origin == null ? null : origin.getSourceRecipeId())
                 .reportedByCurrentUser(viewerId != null && reportRepository.existsByPublicationIdAndReporterIdAndResolution(publication.getId(), viewerId, "PENDING"))

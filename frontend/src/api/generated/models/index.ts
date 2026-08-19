@@ -57,6 +57,7 @@ export * from './list1Params';
 export * from './loginRequest';
 export * from './loginResponse';
 export * from './loginResponseRole';
+export * from './markPublicationsViewedRequest';
 export * from './moderationCaseResponse';
 export * from './moderationCaseResponseDecisionNote';
 export * from './moderationCaseResponseReviewedAt';

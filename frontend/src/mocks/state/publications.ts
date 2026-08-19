@@ -21,11 +21,13 @@ const reactionsByUser = new Map<string, Map<string, Set<ReactionRequestReactionC
 ])
 
 const reportsByUser = new Map<string, Set<string>>()
+const viewedByUser = new Map<string, Set<string>>()
 
 interface SerializedPublicationState {
   saved: Array<[string, Array<[string, string]>]>
   reactions: Array<[string, Array<[string, ReactionRequestReactionCode[]]>]>
   reports: Array<[string, string[]]>
+  viewed: Array<[string, string[]]>
   publications: PublicationResponse[]
 }
 
@@ -39,6 +41,7 @@ function restoreState(): void {
       !Array.isArray(state.saved) ||
       !Array.isArray(state.reactions) ||
       !Array.isArray(state.reports) ||
+      !Array.isArray(state.viewed) ||
       !Array.isArray(state.publications)
     ) {
       throw new Error('Estado mockado incompatível.')
@@ -59,6 +62,10 @@ function restoreState(): void {
     for (const [username, reports] of state.reports) {
       reportsByUser.set(username, new Set(reports))
     }
+    viewedByUser.clear()
+    for (const [username, viewed] of state.viewed) {
+      viewedByUser.set(username, new Set(viewed))
+    }
     mockPublications.splice(0, mockPublications.length, ...state.publications)
   } catch {
     window.localStorage.removeItem(MOCK_STATE_STORAGE_KEY)
@@ -74,6 +81,7 @@ function persistState(): void {
       [...reactions].map(([publicationId, codes]) => [publicationId, [...codes]]),
     ]),
     reports: [...reportsByUser].map(([username, reports]) => [username, [...reports]]),
+    viewed: [...viewedByUser].map(([username, viewed]) => [username, [...viewed]]),
     publications: mockPublications,
   }
   window.localStorage.setItem(MOCK_STATE_STORAGE_KEY, JSON.stringify(state))
@@ -97,6 +105,14 @@ function reactionsFor(username: string): Map<string, Set<ReactionRequestReaction
   return created
 }
 
+function viewedFor(username: string): Set<string> {
+  const existing = viewedByUser.get(username)
+  if (existing) return existing
+  const created = new Set<string>()
+  viewedByUser.set(username, created)
+  return created
+}
+
 export function personalizePublication(
   publication: PublicationResponse,
   username: string | null,
@@ -107,6 +123,7 @@ export function personalizePublication(
       saved: false,
       selectedReactions: [],
       reportedByCurrentUser: false,
+      viewedByCurrentUser: false,
     }
   }
 
@@ -115,6 +132,7 @@ export function personalizePublication(
     saved: savedFor(username).has(publication.id),
     selectedReactions: [...(reactionsFor(username).get(publication.id) ?? [])],
     reportedByCurrentUser: reportsByUser.get(username)?.has(publication.id) ?? false,
+    viewedByCurrentUser: viewedFor(username).has(publication.id),
   }
 }
 
@@ -131,6 +149,12 @@ export function setPublicationSaved(username: string, publicationId: string, sav
   } else {
     savedPublications.delete(publicationId)
   }
+  persistState()
+}
+
+export function setPublicationsViewed(username: string, publicationIds: string[]): void {
+  const viewed = viewedFor(username)
+  publicationIds.forEach((publicationId) => viewed.add(publicationId))
   persistState()
 }
 

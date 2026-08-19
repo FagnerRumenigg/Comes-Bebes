@@ -2,6 +2,7 @@ package org.application.service.validation;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import tools.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.application.service.exception.InvalidOperationException;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.client.MultipartBodyBuilder;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
@@ -33,6 +35,27 @@ public class ImageValidatorClient {
 
     @Value("${app.image-validator.url:http://localhost:8001}")
     private String validatorUrl;
+
+    // O validador pode rodar com minReplicas=0 no Azure Container Apps: um cold
+    // start (carregando o modelo) leva alguns segundos. connect-timeout cobre a
+    // demora pra réplica acordar; read-timeout cobre o cold start em si, com
+    // folga, sem travar a thread indefinidamente se o serviço estiver de fato
+    // fora do ar (o RestTemplate padrão não tem timeout nenhum).
+    @Value("${app.image-validator.connect-timeout-ms:5000}")
+    private int connectTimeoutMs;
+
+    @Value("${app.image-validator.read-timeout-ms:20000}")
+    private int readTimeoutMs;
+
+    private RestTemplate restTemplate;
+
+    @PostConstruct
+    void initRestTemplate() {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(connectTimeoutMs);
+        requestFactory.setReadTimeout(readTimeoutMs);
+        restTemplate = new RestTemplate(requestFactory);
+    }
 
     public ValidationResult validate(byte[] content, String filename, String contentType) {
         String safeFilename = filename == null || filename.isBlank() ? "upload.img" : filename.replaceAll("[\\r\\n\\\"]", "_");
@@ -51,7 +74,7 @@ public class ImageValidatorClient {
             HttpEntity<MultiValueMap<String, HttpEntity<?>>> request = new HttpEntity<>(body.build(), headers);
             ResponseEntity<byte[]> response;
             try {
-                response = new RestTemplate().exchange(validatorUrl + "/validate", HttpMethod.POST, request, byte[].class);
+                response = restTemplate.exchange(validatorUrl + "/validate", HttpMethod.POST, request, byte[].class);
             } catch (HttpStatusCodeException exception) {
                 String responseBody = exception.getResponseBodyAsString(StandardCharsets.UTF_8);
                 // A maioria dessas respostas é uma rejeição de validação esperada (ex.: imagem

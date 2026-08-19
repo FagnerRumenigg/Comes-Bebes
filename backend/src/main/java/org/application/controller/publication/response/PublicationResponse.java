@@ -42,6 +42,8 @@ public record PublicationResponse(
         Map<ReactionCode, Long> reactionTotals,
         List<ReactionCode> selectedReactions,
         boolean saved,
+        @Schema(description = "Indica se o usuário autenticado já visualizou esta publicação. Sempre falso para visitantes.")
+        boolean viewedByCurrentUser,
         long versionsCount,
         @Schema(description = "Publicação de origem; preenchido somente para MY_VERSION.", nullable = true)
         UUID originalPublicationId,

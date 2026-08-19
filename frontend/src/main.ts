@@ -51,6 +51,10 @@ async function bootstrap(): Promise<void> {
   useThemeStore(pinia).initialize()
   await authStore.initialize()
   app.mount('#app')
+  // Aviso estático de index.html (cobre o tempo de boot antes da Vue
+  // montar, ex.: /auth/refresh esperando o backend acordar) - some assim
+  // que a Vue realmente montar.
+  document.getElementById('boot-notice')?.remove()
 }
 
 void bootstrap()

@@ -6,10 +6,10 @@ Backend da rede social de comida ComeSebebes.
 
 - JDK 25.
 - Maven 3.9 ou superior.
-- Docker Desktop com a `Infra-Geral` em execução.
+- Docker Desktop com a `Infra-Geral` em execução (redes `platform-edge`/`platform-data` externas).
 - Database e usuário exclusivos provisionados para o Comes & Bebes.
 
-A aplicação não sobe o PostgreSQL. O Compose próprio em `../infra/compose.yml` sobe apenas a API e o validador de imagens.
+A aplicação não sobe o PostgreSQL. `../backend/docker-compose.yml` builda e sobe apenas a API e o validador de imagens (ver seção "Executar com Docker" abaixo).
 
 ## Configuração do banco
 
@@ -93,28 +93,29 @@ mvn spring-boot:run
 
 ## Executar com Docker
 
-Primeiro suba o repositório `Infra-Geral`. Depois, na raiz deste repositório, suba somente os serviços do Comes & Bebes:
+Primeiro suba o repositório `Infra-Geral`. Depois, na raiz deste repositório, builde e suba os serviços do Comes & Bebes (build local, não usa mais imagem publicada):
 
 ```powershell
-docker compose --env-file .\infra\.env -f .\infra\compose.yml up --build -d
+docker compose -f backend\docker-compose.yml build
+docker compose -f backend\docker-compose.yml up -d
 ```
 
 Verifique o estado e os logs:
 
 ```powershell
-docker compose --env-file .\infra\.env -f .\infra\compose.yml ps
-docker compose --env-file .\infra\.env -f .\infra\compose.yml logs -f api validator
+docker compose -f backend\docker-compose.yml ps
+docker compose -f backend\docker-compose.yml logs -f backend validator
 ```
 
-A API fica disponível diretamente em `http://localhost:8082` e pelo gateway em `http://localhost:8090/comesebebes/`. O validador fica acessível somente pela rede privada da aplicação.
+A API fica disponível em `http://localhost:8082`.
 
-Para parar somente o Comes & Bebes:
+Para parar:
 
 ```powershell
-docker compose --env-file .\infra\.env -f .\infra\compose.yml down
+docker compose -f backend\docker-compose.yml down
 ```
 
-Esse comando não derruba o PostgreSQL, o gateway nem as outras aplicações.
+Esse comando não derruba o PostgreSQL, o gateway nem as outras aplicações da `Infra-Geral`.
 
 ## Migrations
 
@@ -167,30 +168,16 @@ Erros possuem `status`, `code` e `message`. O frontend deve tratar o `code`, nã
 
 ## Deploy para produção
 
-### Frontend
+Produção roda na Azure (Container Apps). Deploy é automático de ponta a ponta a partir de uma tag Git — detalhes completos (arquitetura, CI/CD, rollback, variáveis, migrations) em [`../docs/DEPLOY.md`](../docs/DEPLOY.md).
 
-Automático: todo push na `main` que altere `frontend/**` dispara `.github/workflows/deploy-pages.yml`, que builda e publica no GitHub Pages. Não precisa de nenhum passo manual.
-
-### Backend (API e/ou validator)
-
-Também automático, de ponta a ponta. O único passo manual é criar e enviar a tag da versão, sempre com a `main` atualizada e sem alterações locais pendentes:
+Resumo: com a `main` atualizada e sem alterações locais pendentes,
 
 ```powershell
-git checkout main
-git pull origin main
 git tag -a api-v1.2.0 -m "API release 1.2.0"
 git push origin api-v1.2.0
 ```
 
-(troque `api-v` por `validator-v` para o validador; siga [SemVer](https://semver.org/lang/pt-BR/) — MAJOR pra quebra de compatibilidade, MINOR pra funcionalidade nova compatível, PATCH pra correção de bug). **Depois desse push não precisa fazer mais nada.**
-
-Se o runner de produção estiver offline, ou pra fazer rollback (uma tag publicada nunca deve ser reutilizada), rode manualmente:
-
-```powershell
-.\infra\Deploy-Release.ps1 -Service api -Version 1.2.0
-```
-
-(ou `-Service validator`). Detalhes completos (rollback, persistência, pré-requisitos) estão em `../infra/README.md`.
+(troque `api-v` por `validator-v` para o validador). Depois desse push não precisa fazer mais nada — os testes rodam, a imagem é publicada no ACR e o Container App é atualizado automaticamente.
 
 ## Problemas comuns
 

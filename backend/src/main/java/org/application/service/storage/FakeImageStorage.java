@@ -18,6 +18,11 @@ public class FakeImageStorage implements ImageStorage {
         return fakeImage();
     }
 
+    @Override
+    public byte[] read(String objectName) {
+        return new byte[0];
+    }
+
     private StoredImage fakeImage() {
         return StoredImage.builder()
                 .bucket("comesebebes-local-images")

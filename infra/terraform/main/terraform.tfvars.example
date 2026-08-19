@@ -1,0 +1,6 @@
+# Copie para terraform.tfvars (gitignored) e preencha com valores reais
+# antes do apply. Nunca commitar o arquivo preenchido.
+
+db_admin_password                 = "troque-por-uma-senha-forte-e-unica"
+jwt_secret                        = "troque-por-uma-chave-aleatoria-com-no-minimo-32-bytes"
+user_blocked_username_hmac_secret = "troque-por-outra-chave-aleatoria"

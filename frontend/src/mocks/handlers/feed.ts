@@ -3,6 +3,7 @@ import { delay, http, HttpResponse } from 'msw'
 import type {
   CreateMyVersionUploadRequest,
   CreatePublicationUploadRequest,
+  MarkPublicationsViewedRequest,
   PageResponsePublicationResponse,
   PublicationResponse,
   ReactionRequest,
@@ -16,6 +17,7 @@ import {
   reportPublication,
   setPublicationReaction,
   setPublicationSaved,
+  setPublicationsViewed,
 } from '@/mocks/state/publications'
 import { resolveMockTags } from '@/mocks/state/tags'
 
@@ -198,6 +200,7 @@ export const feedMockHandlers = [
       reactionTotals: {},
       selectedReactions: [],
       saved: false,
+      viewedByCurrentUser: false,
       versionsCount: 0,
       originalPublicationId: source.id,
       reportedByCurrentUser: false,
@@ -232,6 +235,7 @@ export const feedMockHandlers = [
       reactionTotals: {},
       selectedReactions: [],
       saved: false,
+      viewedByCurrentUser: false,
       versionsCount: 0,
       originalPublicationId: null,
       reportedByCurrentUser: false,
@@ -241,5 +245,13 @@ export const feedMockHandlers = [
     }
     addMockPublication(publication)
     return HttpResponse.json(publication, { status: 201 })
+  }),
+  http.post('*/publications/views', async ({ request }) => {
+    await delay(60)
+    const username = mockAuthenticatedUsername(request)
+    if (!username) return unauthorized()
+    const data = (await request.json()) as MarkPublicationsViewedRequest
+    setPublicationsViewed(username, data.publicationIds)
+    return new HttpResponse(null, { status: 204 })
   }),
 ]

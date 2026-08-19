@@ -3,7 +3,7 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { http, HttpResponse } from 'msw'
 import { createPinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { setAccessTokenProvider } from '@/api/client'
 import CreatePublicationView from '@/views/CreatePublicationView.vue'
@@ -54,8 +54,15 @@ async function selectImage(wrapper: VueWrapper): Promise<void> {
 }
 
 describe('limite de publicações (429)', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('desabilita o botão com contagem regressiva e reabilita após o limite expirar', async () => {
-    const nextAvailableAt = new Date(Date.now() + 700).toISOString()
+    vi.useFakeTimers()
+    // O componente só reavalia o cooldown a cada 1s (setInterval); com
+    // nextAvailableAt a +1.2s, o botão só reabilita no tick de +2s, não antes.
+    const nextAvailableAt = new Date(Date.now() + 1_200).toISOString()
     mockServer.use(
       http.post('*/publications', () =>
         HttpResponse.json(
@@ -74,20 +81,19 @@ describe('limite de publicações (429)', () => {
     await selectImage(wrapper)
 
     await wrapper.get('form').trigger('submit')
-    await vi.waitFor(() => expect(wrapper.text()).toContain('Limite de publicações atingido'))
-    const submitButton = wrapper.get('button[type="submit"]')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Limite de publicações atingido')
+    let submitButton = wrapper.get('button[type="submit"]')
     expect(submitButton.attributes('disabled')).toBeDefined()
     expect(submitButton.text()).toMatch(/Aguarde \d+s/)
 
-    // O cooldown na view reavalia a cada 1s (setInterval), então a checagem final precisa
-    // de um timeout generoso o bastante para cobrir pelo menos um tick após a expiração.
-    await vi.waitFor(
-      () => {
-        expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeUndefined()
-      },
-      { timeout: 3_000, interval: 100 },
-    )
-    expect(wrapper.get('button[type="submit"]').text()).toBe('Publicar')
+    await vi.advanceTimersByTimeAsync(2_000)
+    await flushPromises()
+
+    submitButton = wrapper.get('button[type="submit"]')
+    expect(submitButton.attributes('disabled')).toBeUndefined()
+    expect(submitButton.text()).toBe('Publicar')
     expect(wrapper.text()).not.toContain('Limite de publicações atingido')
-  }, 10_000)
+  })
 })

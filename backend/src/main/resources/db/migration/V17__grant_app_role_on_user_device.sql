@@ -5,5 +5,16 @@
 -- tentava consultar o dispositivo. Já foi corrigido manualmente em produção; esta migração
 -- só torna o conserto reproduzível (idempotente: se comesebebes_app já for dono da tabela,
 -- como acontece num ambiente novo, isto é um no-op inofensivo).
-GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
-    ON application.user_device TO comesebebes_app;
+--
+-- Condicional a "role existe": em ambientes gerenciados (ex.: Azure Database for
+-- PostgreSQL Flexible Server) a aplicação conecta com o próprio login administrador
+-- (não existe um role separado "comesebebes_app"), e nesses ambientes a tabela já
+-- nasce com o dono certo — GRANT pra um role inexistente falharia a migration inteira.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'comesebebes_app') THEN
+        GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
+            ON application.user_device TO comesebebes_app;
+    END IF;
+END
+$$;

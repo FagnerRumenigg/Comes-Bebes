@@ -34,9 +34,6 @@ export default defineConfig(({ mode }) => {
             '/comesebebes': {
               target: proxyTarget,
               changeOrigin: true,
-              headers: {
-                'ngrok-skip-browser-warning': 'true',
-              },
             },
           },
         }

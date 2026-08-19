@@ -5,7 +5,7 @@ import { feed } from '@/api/generated/publications/publications'
 import { FeedTypesItem } from '@/api/generated/models'
 import { useAuthStore } from '@/stores/auth.store'
 
-export const FEED_PAGE_SIZE = 50
+export const FEED_PAGE_SIZE = 10
 
 export type FeedFilter = 'mix' | 'pratos' | 'receitas'
 

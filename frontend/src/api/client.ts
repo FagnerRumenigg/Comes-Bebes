@@ -1,6 +1,11 @@
 import axios, { type AxiosRequestConfig } from 'axios'
 
-import { markBackendOffline, markBackendOnline } from '@/composables/useBackendStatus'
+import {
+  markBackendOffline,
+  markBackendOnline,
+  markRequestFinished,
+  markRequestStarted,
+} from '@/composables/useBackendStatus'
 
 const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8082'
 const unreachableStatuses = new Set([502, 503, 504])
@@ -13,30 +18,14 @@ function isBackendUnreachable(error: unknown): boolean {
   if (axios.isCancel(error) || error.code === 'ERR_CANCELED') return false
   const status = error.response?.status
   // Sem response = falha de rede/timeout (o caso mais comum quando o
-  // container está mesmo desligado). Um 502/503/504 cobre o caso em que o
-  // ngrok responde no lugar do backend indisponível.
+  // container está mesmo desligado). Um 502/503/504 cobre o caso em que um
+  // proxy/gateway intermediário responde no lugar do backend indisponível.
   return status === undefined || unreachableStatuses.has(status)
-}
-const defaultHeaders: Record<string, string> = {
-  Accept: 'application/json',
-}
-
-export function requiresNgrokBrowserWarningBypass(apiBaseUrl: string): boolean {
-  try {
-    const hostname = new URL(apiBaseUrl, window.location.origin).hostname
-    return hostname.endsWith('.ngrok-free.dev') || hostname.endsWith('.ngrok-free.app')
-  } catch {
-    return false
-  }
-}
-
-if (requiresNgrokBrowserWarningBypass(baseURL)) {
-  defaultHeaders['ngrok-skip-browser-warning'] = 'true'
 }
 
 export const httpClient = axios.create({
   baseURL,
-  headers: defaultHeaders,
+  headers: { Accept: 'application/json' },
 })
 
 type AccessTokenProvider = () => string | null
@@ -67,26 +56,23 @@ export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): voi
 
 httpClient.interceptors.request.use((config) => {
   const accessToken = accessTokenProvider()
-  const requestBaseUrl = new URL(config.baseURL ?? '/', window.location.origin)
-  const requestUrl = new URL(config.url ?? '', requestBaseUrl).toString()
-
-  if (requiresNgrokBrowserWarningBypass(requestUrl)) {
-    config.headers['ngrok-skip-browser-warning'] = 'true'
-  }
 
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`
   }
 
+  markRequestStarted()
   return config
 })
 
 httpClient.interceptors.response.use(
   (response) => {
+    markRequestFinished()
     markBackendOnline()
     return response
   },
   (error: unknown) => {
+    markRequestFinished()
     if (isBackendUnreachable(error)) {
       markBackendOffline()
     } else if (axios.isAxiosError(error) && error.response) {

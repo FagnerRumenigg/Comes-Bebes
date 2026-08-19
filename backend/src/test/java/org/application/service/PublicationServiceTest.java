@@ -159,15 +159,15 @@ class PublicationServiceTest {
                 .thenReturn(Page.empty());
 
         assertThat(publicationService.feed(Pageable.unpaged(), null, Set.of(PublicationType.DISH))).isEmpty();
-        verify(publicationRepository, never()).findByStatusAndTypeInOrderByPublishedAtDescIdDesc(any(), any(), any());
+        verify(publicationRepository, never()).findFeedForAuthenticatedViewerOrderByUnseenFirst(any(), any(), any(), any());
     }
 
     @Test
     void shouldFilterFeedByTypeForAuthenticatedUser() {
         UUID viewerId = UUID.randomUUID();
         Set<PublicationType> receitas = Set.of(PublicationType.RECIPE, PublicationType.MY_VERSION);
-        when(publicationRepository.findByStatusAndTypeInOrderByPublishedAtDescIdDesc(
-                eq(PublicationStatus.ACTIVE), eq(receitas), any()))
+        when(publicationRepository.findFeedForAuthenticatedViewerOrderByUnseenFirst(
+                eq(PublicationStatus.ACTIVE), eq(receitas), eq(viewerId), any()))
                 .thenReturn(Page.empty());
 
         assertThat(publicationService.feed(Pageable.unpaged(), viewerId, receitas)).isEmpty();

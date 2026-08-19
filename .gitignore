@@ -60,3 +60,20 @@ backend/uploads/
 infra/.env
 infra/.env.*
 !infra/.env.example
+
+# Terraform local state/cache — o state do bootstrap fica local de propósito
+# (é ele quem cria o backend remoto do módulo principal); nunca commitar
+# state, já que pode conter dados sensíveis (ex.: chaves de storage account).
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
