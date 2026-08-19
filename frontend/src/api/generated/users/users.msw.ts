@@ -20,6 +20,7 @@ import type {
 
 import type {
   NotificationPreferencesResponse,
+  PageResponseCollectionResponse,
   PageResponseNotificationResponse,
   PageResponsePublicationResponse,
   PageResponseUserResponse,
@@ -42,6 +43,8 @@ export const getNotificationsResponseMock = (overrideResponse: Partial< PageResp
 export const getFollowingResponseMock = (overrideResponse: Partial< PageResponseUserResponse > = {}): PageResponseUserResponse => ({content: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.uuid(), username: faker.string.alpha({length: {min: 10, max: 20}}), displayName: faker.string.alpha({length: {min: 10, max: 20}}), role: faker.helpers.arrayElement(['USER','ADMIN'] as const), status: faker.helpers.arrayElement(['ACTIVE','BLOCKED','DELETED'] as const), showReactionCounts: faker.datatype.boolean(), onboardingCompleted: faker.datatype.boolean(), followersCount: faker.number.int({min: undefined, max: undefined}), followingCount: faker.number.int({min: undefined, max: undefined}), followedByCurrentUser: faker.helpers.arrayElement([faker.datatype.boolean(),null,])})), page: faker.number.int({min: undefined, max: undefined}), size: faker.number.int({min: undefined, max: undefined}), totalElements: faker.number.int({min: undefined, max: undefined}), totalPages: faker.number.int({min: undefined, max: undefined}), first: faker.datatype.boolean(), last: faker.datatype.boolean(), ...overrideResponse})
 
 export const getFollowersResponseMock = (overrideResponse: Partial< PageResponseUserResponse > = {}): PageResponseUserResponse => ({content: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.uuid(), username: faker.string.alpha({length: {min: 10, max: 20}}), displayName: faker.string.alpha({length: {min: 10, max: 20}}), role: faker.helpers.arrayElement(['USER','ADMIN'] as const), status: faker.helpers.arrayElement(['ACTIVE','BLOCKED','DELETED'] as const), showReactionCounts: faker.datatype.boolean(), onboardingCompleted: faker.datatype.boolean(), followersCount: faker.number.int({min: undefined, max: undefined}), followingCount: faker.number.int({min: undefined, max: undefined}), followedByCurrentUser: faker.helpers.arrayElement([faker.datatype.boolean(),null,])})), page: faker.number.int({min: undefined, max: undefined}), size: faker.number.int({min: undefined, max: undefined}), totalElements: faker.number.int({min: undefined, max: undefined}), totalPages: faker.number.int({min: undefined, max: undefined}), first: faker.datatype.boolean(), last: faker.datatype.boolean(), ...overrideResponse})
+
+export const getGetUserCollectionsResponseMock = (overrideResponse: Partial< PageResponseCollectionResponse > = {}): PageResponseCollectionResponse => ({content: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.uuid(), authorId: faker.string.uuid(), authorUsername: faker.string.alpha({length: {min: 10, max: 20}}), authorDisplayName: faker.string.alpha({length: {min: 10, max: 20}}), name: faker.string.alpha({length: {min: 10, max: 20}}), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), visibility: faker.helpers.arrayElement(['PUBLIC','PRIVATE'] as const), publicationsCount: faker.number.int({min: undefined, max: undefined}), followersCount: faker.number.int({min: undefined, max: undefined}), followedByCurrentUser: faker.helpers.arrayElement([faker.datatype.boolean(),null,]), createdAt: `${faker.date.past().toISOString().split('.')[0]}Z`, updatedAt: `${faker.date.past().toISOString().split('.')[0]}Z`})), page: faker.number.int({min: undefined, max: undefined}), size: faker.number.int({min: undefined, max: undefined}), totalElements: faker.number.int({min: undefined, max: undefined}), totalPages: faker.number.int({min: undefined, max: undefined}), first: faker.datatype.boolean(), last: faker.datatype.boolean(), ...overrideResponse})
 
 
 export const getFollowMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
@@ -208,6 +211,18 @@ export const getFollowersMockHandler = (overrideResponse?: PageResponseUserRespo
   }, options)
 }
 
+export const getGetUserCollectionsMockHandler = (overrideResponse?: PageResponseCollectionResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<PageResponseCollectionResponse> | PageResponseCollectionResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/users/:id/collections', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getGetUserCollectionsResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
 export const getAnonymizeMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
   return http.delete('*/users/:id/account', async (info) => {await delay(1000);
   if (typeof overrideResponse === 'function') {await overrideResponse(info); }
@@ -233,5 +248,6 @@ export const getUsersMock = () => [
   getNotificationsMockHandler(),
   getFollowingMockHandler(),
   getFollowersMockHandler(),
+  getGetUserCollectionsMockHandler(),
   getAnonymizeMockHandler()
 ]

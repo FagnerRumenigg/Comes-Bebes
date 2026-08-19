@@ -15,6 +15,7 @@ import org.application.controller.user.request.UpdateUserRequest;
 import org.application.controller.user.request.BlockUserRequest;
 import org.application.controller.user.request.ChangePasswordRequest;
 import org.application.controller.user.request.UpdateNotificationPreferencesRequest;
+import org.application.controller.collection.response.CollectionResponse;
 import org.application.controller.user.response.NotificationPreferencesResponse;
 import org.application.controller.user.response.UserResponse;
 import org.application.controller.publication.response.PublicationResponse;
@@ -22,6 +23,7 @@ import org.application.controller.user.response.NotificationResponse;
 import org.application.dto.PageResponse;
 import org.application.service.PublicationService;
 import org.application.service.PublicationResponseFactory;
+import org.application.service.CollectionService;
 import org.application.service.UserService;
 import org.application.service.AccountSecurityService;
 import org.application.service.FollowService;
@@ -55,6 +57,7 @@ public class UserController {
     private final ZoneId applicationZoneId;
     private final AccountSecurityService accountSecurityService;
     private final FollowService followService;
+    private final CollectionService collectionService;
     private final CurrentUser currentUser;
     private final PublicationResponseFactory responseFactory;
 
@@ -194,6 +197,27 @@ public class UserController {
         UUID viewerId = authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())
                 ? null : currentUser.id(authentication);
         return PageResponse.of(publicationService.profile(id, pageable, viewerId), item -> responseFactory.of(item, applicationZoneId, viewerId));
+    }
+
+    @GetMapping("/{id}/collections")
+    @Operation(operationId = "getUserCollections", summary = "Listar coleções do perfil", description = "Retorna as coleções do perfil, paginadas. Visitantes e outros usuários recebem apenas coleções públicas; o próprio autor recebe todas.")
+    @Parameters({
+            @Parameter(name = "page", description = "Número da página, iniciando em 1.", schema = @Schema(type = "integer", minimum = "1", example = "1")),
+            @Parameter(name = "size", description = "Quantidade de itens por página.", schema = @Schema(type = "integer", minimum = "1", maximum = "50", example = "20"))
+    })
+    @ApiResponse(responseCode = "200", description = "Coleções retornadas.")
+    public PageResponse<CollectionResponse> collections(
+            @PathVariable UUID id,
+            @Parameter(hidden = true) Pageable pageable,
+            Authentication authentication
+    ) {
+        UUID viewerId = authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())
+                ? null : currentUser.id(authentication);
+        var author = userService.findActive(id);
+        return PageResponse.of(collectionService.listByAuthor(id, viewerId, pageable), item -> CollectionResponse.of(
+                item, applicationZoneId, author, collectionService.countPublications(item.getId()),
+                collectionService.countFollowers(item.getId()),
+                viewerId == null || viewerId.equals(item.getAuthorId()) ? null : collectionService.isFollowing(viewerId, item.getId())));
     }
 
     @GetMapping("/{id}/notifications")

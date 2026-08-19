@@ -4,11 +4,18 @@ import { useRoute } from 'vue-router'
 import { useQueryClient } from '@tanstack/vue-query'
 
 import { getFindByUsernameQueryKey, useFindByUsername } from '@/api/generated/profiles/profiles'
-import { useBlock, useGetUserPublications } from '@/api/generated/users/users'
+import {
+  getGetUserCollectionsQueryKey,
+  useBlock,
+  useGetUserCollections,
+  useGetUserPublications,
+} from '@/api/generated/users/users'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseDialog from '@/components/base/BaseDialog.vue'
 import BaseFieldError from '@/components/base/BaseFieldError.vue'
 import BaseTextarea from '@/components/base/BaseTextarea.vue'
+import CollectionCard from '@/components/collection/CollectionCard.vue'
+import CollectionFormDialog from '@/components/collection/CollectionFormDialog.vue'
 import FollowButton from '@/components/profile/FollowButton.vue'
 import PublicationCard from '@/components/publication/PublicationCard.vue'
 import { normalizeHttpError } from '@/api/errors'
@@ -21,6 +28,12 @@ const username = computed(() => String(route.params.username ?? ''))
 const profileQuery = useFindByUsername(username)
 const userId = computed(() => profileQuery.data.value?.id ?? '')
 const publicationsQuery = useGetUserPublications(userId, { page: 1, size: 20 })
+const collectionsQuery = useGetUserCollections(userId, { page: 1, size: 20 })
+const newCollectionOpen = ref(false)
+
+function handleCollectionCreated(): void {
+  void queryClient.invalidateQueries({ queryKey: getGetUserCollectionsQueryKey(userId) })
+}
 
 const blockDialogOpen = ref(false)
 const blockReason = ref('')
@@ -125,6 +138,36 @@ function confirmBlock(): void {
           </BaseButton>
         </div>
       </BaseDialog>
+
+      <section
+        v-if="!collectionsQuery.isPending.value && collectionsQuery.data.value?.content.length"
+        class="profile-view__collections"
+      >
+        <div class="profile-view__collections-header">
+          <h2>Coleções</h2>
+          <BaseButton v-if="isOwnProfile" variant="secondary" @click="newCollectionOpen = true">
+            Nova coleção
+          </BaseButton>
+        </div>
+        <div class="profile-view__collections-list">
+          <CollectionCard
+            v-for="collection in collectionsQuery.data.value.content"
+            :key="collection.id"
+            :collection="collection"
+          />
+        </div>
+      </section>
+      <div v-else-if="isOwnProfile" class="profile-view__collections">
+        <div class="profile-view__collections-header">
+          <h2>Coleções</h2>
+          <BaseButton variant="secondary" @click="newCollectionOpen = true">
+            Nova coleção
+          </BaseButton>
+        </div>
+      </div>
+
+      <CollectionFormDialog v-model:open="newCollectionOpen" @saved="handleCollectionCreated" />
+
       <div v-if="publicationsQuery.isPending.value" class="profile-view__state">
         Carregando publicações...
       </div>
@@ -200,6 +243,29 @@ function confirmBlock(): void {
   justify-content: flex-end;
   gap: var(--space-3);
   margin-block-start: var(--space-4);
+}
+
+.profile-view__collections {
+  margin-block-end: var(--space-10);
+}
+
+.profile-view__collections-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-block-end: var(--space-4);
+}
+
+.profile-view__collections-header h2 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+}
+
+.profile-view__collections-list {
+  display: grid;
+  gap: var(--space-4);
 }
 .profile-view__list {
   display: grid;

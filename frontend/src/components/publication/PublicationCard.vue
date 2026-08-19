@@ -5,6 +5,7 @@ import type { PublicationResponse } from '@/api/generated/models'
 import { showAuthNotice } from '@/composables/useAuthNotice'
 import { useAuthStore } from '@/stores/auth.store'
 
+import AddToCollectionButton from './AddToCollectionButton.vue'
 import PublicationHeader from './PublicationHeader.vue'
 import PublicationImage from './PublicationImage.vue'
 import ReactionBar from './ReactionBar.vue'
@@ -75,6 +76,10 @@ const imageAlt = computed(
         Editar
       </RouterLink>
       <SaveButton :publication-id="publication.id" :saved="publication.saved" />
+      <AddToCollectionButton
+        v-if="authStore.authenticated"
+        :publication-id="publication.id"
+      />
       <ReportDialog
         :publication-id="publication.id"
         :author-id="publication.authorId"
