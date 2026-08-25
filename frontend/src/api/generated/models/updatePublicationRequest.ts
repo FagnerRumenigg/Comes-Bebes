@@ -35,7 +35,7 @@ export interface UpdatePublicationRequest {
   description?: UpdatePublicationRequestDescription;
   /**
    * Nova visibilidade.
-   * @pattern PUBLIC|INTERNAL
+   * @pattern PUBLIC|INTERNAL|PRIVATE
    */
   visibility?: UpdatePublicationRequestVisibility;
   /** Receita obrigatória ao converter para RECIPE. */

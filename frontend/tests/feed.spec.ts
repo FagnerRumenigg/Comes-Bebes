@@ -38,6 +38,7 @@ async function mountFeed(options?: { authenticated?: boolean; initialPath?: stri
       role: 'USER',
       onboardingCompleted: true,
       hasUnseenPatchNotes: false,
+      emailRequired: false,
     }
   }
 
@@ -315,6 +316,7 @@ describe('PublicationCard', () => {
       role: 'USER',
       onboardingCompleted: true,
       hasUnseenPatchNotes: false,
+      emailRequired: false,
     }
 
     const wrapper = mount(PublicationCard, {

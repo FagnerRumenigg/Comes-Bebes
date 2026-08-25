@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 
 async function login(page: Page): Promise<void> {
   await page.goto('/login')
-  await page.getByLabel('Nome de usuário').fill('fagner')
+  await page.getByLabel('E-mail ou usuário').fill('fagner')
   await page.locator('#login-password').fill('MinhaSenha123!')
   await page.getByRole('button', { name: 'Entrar na conta' }).click()
   await expect(page).toHaveURL('/')

@@ -8,6 +8,6 @@
 
 /**
  * Nova visibilidade.
- * @pattern PUBLIC|INTERNAL
+ * @pattern PUBLIC|INTERNAL|PRIVATE
  */
 export type UpdatePublicationRequestVisibility = string | null;

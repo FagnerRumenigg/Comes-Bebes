@@ -37,6 +37,7 @@ function mountModal(
     role: 'USER',
     onboardingCompleted: true,
     hasUnseenPatchNotes: true,
+    emailRequired: false,
     ...identityOverrides,
   }
 

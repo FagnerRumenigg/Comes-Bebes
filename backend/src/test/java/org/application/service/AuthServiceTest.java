@@ -69,10 +69,14 @@ class AuthServiceTest {
                 .active(true).trusted(false).build();
     }
 
+    /**
+     * Conta sem e-mail (criada antes da migração — produto5.md v5 §5.1) continua
+     * entrando por @usuário.
+     */
     @Test
     void shouldIssueTokenForActiveUserWithValidPassword() {
         UUID userId = UUID.randomUUID();
-        User user = User.builder().id(userId).email("fagner@example.com").username("fagner")
+        User user = User.builder().id(userId).username("fagner")
                 .passwordHash("hash").role(UserRole.USER).build();
         UserDevice device = activeDevice(userId, OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC));
         when(normalizer.normalize(" Fagner ")).thenReturn("fagner");
@@ -91,6 +95,48 @@ class AuthServiceTest {
         assertThat(response.accessToken()).isEqualTo("token");
         assertThat(response.userId()).isEqualTo(userId);
         assertThat(response.expiresInSeconds()).isEqualTo(3600);
+        assertThat(response.emailRequired()).isTrue();
+    }
+
+    @Test
+    void shouldIssueTokenByEmailForMigratedAccount() {
+        UUID userId = UUID.randomUUID();
+        User user = User.builder().id(userId).email("fagner@example.com").username("fagner")
+                .passwordHash("hash").role(UserRole.USER).build();
+        UserDevice device = activeDevice(userId, OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC));
+        when(normalizer.normalize("fagner@example.com")).thenReturn("fagner@example.com");
+        when(userRepository.findByUsernameIgnoreCase("fagner@example.com")).thenReturn(Optional.empty());
+        when(userRepository.findByEmailIgnoreCase("fagner@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("password", "hash")).thenReturn(true);
+        when(deviceService.getOrCreateDevice(userId, null, null))
+                .thenReturn(new DeviceService.DeviceLookup(device, false));
+        Jwt jwt = mock(Jwt.class);
+        when(jwt.getTokenValue()).thenReturn("token");
+        when(jwtEncoder.encode(any(JwtEncoderParameters.class))).thenReturn(jwt);
+        when(refreshTokenRepository.save(any(org.application.model.RefreshToken.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        var response = service.login(new LoginRequest("fagner@example.com", "password"));
+
+        assertThat(response.userId()).isEqualTo(userId);
+        assertThat(response.emailRequired()).isFalse();
+    }
+
+    /**
+     * Depois que o e-mail é definido, o @usuário para de valer como login — sem isso as
+     * duas portas ficariam abertas pra sempre em vez de completar a migração.
+     */
+    @Test
+    void shouldRejectUsernameLoginOnceAccountHasEmail() {
+        UUID userId = UUID.randomUUID();
+        User migrated = User.builder().id(userId).email("fagner@example.com").username("fagner")
+                .passwordHash("hash").role(UserRole.USER).build();
+        when(normalizer.normalize("fagner")).thenReturn("fagner");
+        when(userRepository.findByUsernameIgnoreCase("fagner")).thenReturn(Optional.of(migrated));
+        when(userRepository.findByEmailIgnoreCase("fagner")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.login(new LoginRequest("fagner", "password")))
+                .isInstanceOf(InvalidOperationException.class);
     }
 
     @Test
@@ -120,7 +166,7 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> service.login(new LoginRequest("fagner", "wrong")))
                 .isInstanceOf(InvalidOperationException.class)
-                .hasMessage("Username ou senha inválidos.");
+                .hasMessage("E-mail, usuário ou senha inválidos.");
     }
 
     @Test

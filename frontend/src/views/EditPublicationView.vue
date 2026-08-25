@@ -39,7 +39,14 @@ const recipeQuery = useGetPublicationRecipe(publicationId, {
 
 const title = ref('')
 const description = ref('')
-const visibility = ref<'PUBLIC' | 'INTERNAL'>('PUBLIC')
+const visibility = ref<'PUBLIC' | 'INTERNAL' | 'PRIVATE'>('PUBLIC')
+// Vocabulário exato de produto5.md v5 §4/§6.4 — "Interno" está banido da interface.
+const VISIBILITY_HINTS: Record<'PUBLIC' | 'INTERNAL' | 'PRIVATE', string> = {
+  PUBLIC: 'Público: qualquer pessoa pode ver, mesmo sem conta no Comes&Bebes.',
+  INTERNAL: 'Só para quem tem conta: só é vista por quem entrou no Comes&Bebes.',
+  PRIVATE: 'Só para mim: ninguém além de você vê esta publicação.',
+}
+const visibilityHint = computed(() => VISIBILITY_HINTS[visibility.value])
 const instructions = ref('')
 const yieldQuantity = ref('')
 const yieldUnit = ref('')
@@ -223,18 +230,10 @@ function submit(): void {
 
       <TagEditor v-model="tags" :error="fieldErrors.tags" />
 
-      <BaseSelect
-        v-model="visibility"
-        label="Visibilidade"
-        required
-        :hint="
-          visibility === 'PUBLIC'
-            ? 'Pública: qualquer pessoa pode ver, mesmo sem conta no Comes&Bebes.'
-            : 'Interna: só é vista por quem tem conta e está conectado ao Comes&Bebes.'
-        "
-      >
-        <option value="PUBLIC">Pública</option>
-        <option value="INTERNAL">Interna</option>
+      <BaseSelect v-model="visibility" label="Quem pode ver" required :hint="visibilityHint">
+        <option value="PUBLIC">Público</option>
+        <option value="INTERNAL">Só para quem tem conta</option>
+        <option value="PRIVATE">Só para mim</option>
       </BaseSelect>
       <BaseFieldError v-if="formError" :message="formError" />
       <div class="edit-publication__actions">

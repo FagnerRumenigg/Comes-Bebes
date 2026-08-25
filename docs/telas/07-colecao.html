@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comes&Bebes — Coleção</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fff6e3; --surface:#f3f8f5; --surface-alt:#eef4f0;
+  --text:#17281f; --text-muted:#4f6157;
+  --primary:#285943; --primary-hover:#1c4131; --primary-soft:#dfe9e4; --on-primary:#ffffff;
+  --secondary:#35758a; --accent:#d5a62e; --on-accent:#17281f;
+  --danger:#9b2c2c; --danger-soft:#f7e6e6;
+  --border:#6d8074; --border-subtle:#d7e0da;
+  --shadow:rgba(23,40,31,.16); --ph-a:#cfe0d4; --ph-b:#e6d9bd;
+}
+[data-theme="dark"]{
+  --bg:#2d1a11; --surface:#341e14; --surface-alt:#3d2419;
+  --text:#fef5f1; --text-muted:#bfa899;
+  --primary:#e99d7a; --primary-hover:#f2b193; --primary-soft:#4a2c1e; --on-primary:#2d1a11;
+  --secondary:#b5cc79; --accent:#b5cc79; --on-accent:#2d1a11;
+  --danger:#ff8a8a; --danger-soft:#4a2020;
+  --border:#8a7365; --border-subtle:#4a3227;
+  --shadow:rgba(0,0,0,.45); --ph-a:#4a3227; --ph-b:#5a3d2a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;color:var(--text);background:var(--surface-alt);line-height:1.5}
+
+.harness{position:sticky;top:0;z-index:300;background:#17281f;color:#eef4f0;padding:10px 16px;
+  display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-size:13px}
+.harness strong{font-size:12px;letter-spacing:.1em;text-transform:uppercase;opacity:.55;font-weight:600}
+.harness .grp{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.harness button{font:inherit;font-weight:500;cursor:pointer;background:transparent;color:#eef4f0;
+  border:1px solid rgba(238,244,240,.3);border-radius:99px;padding:5px 13px}
+.harness button:hover{background:rgba(238,244,240,.12)}
+.harness button[aria-pressed="true"]{background:#d5a62e;border-color:#d5a62e;color:#17281f;font-weight:600}
+.harness .note{margin-left:auto;opacity:.5;font-size:12px}
+
+.stage{padding:24px 16px 60px;display:flex;justify-content:center}
+.device{background:var(--bg);border:1.5px solid var(--border-subtle);border-radius:14px;overflow:hidden;
+  box-shadow:0 16px 44px var(--shadow);width:100%;position:relative}
+.stage[data-view="web"] .device{max-width:1100px}
+.stage[data-view="mobile"] .device{max-width:400px}
+.stage[data-view="web"] .only-mobile{display:none !important}
+.stage[data-view="mobile"] .only-web{display:none !important}
+
+/* topo */
+.hd{display:flex;align-items:center;gap:24px;padding:0 26px;height:70px;background:var(--bg);
+  border-bottom:1.5px solid var(--border-subtle)}
+.hd-m{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:58px;
+  background:var(--bg);border-bottom:1.5px solid var(--border-subtle)}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text)}
+.brand .mark{width:36px;height:36px;border-radius:0;background:none;display:block;flex:none}
+.hd-m .brand .mark{width:31px;height:31px}
+.hd-m .brand .mark svg{width:31px;height:31px}
+.brand .mark svg{width:36px;height:36px;display:block}
+.brand .mark .tile{fill:var(--primary)}
+.brand .mark .book{fill:var(--accent)}
+.brand .mark .spine{fill:var(--accent);opacity:.45}
+.brand .mark .ribbon{fill:var(--primary)}
+.brand .name{font-family:'Instrument Serif',Georgia,serif;font-size:24px}
+.hd-m .brand .name{font-size:20px}
+.nav{display:flex;gap:4px}
+.nav a{position:relative;display:flex;align-items:center;gap:8px;min-height:48px;padding:0 14px;border-radius:9px;
+  text-decoration:none;color:var(--text-muted);font-size:16px;font-weight:500}
+.nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8}
+.nav a.on{color:var(--text);font-weight:700}
+.nav a.on::after{content:"";position:absolute;left:14px;right:14px;bottom:-12px;height:3px;border-radius:3px;background:var(--primary)}
+.spacer{flex:1}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--primary);color:var(--on-primary);
+  display:grid;place-items:center;font-size:15px;font-weight:700;flex:none}
+.acct{display:flex;align-items:center;gap:10px;min-height:48px;padding:4px 12px 4px 4px;background:none;
+  border:1.5px solid var(--border-subtle);border-radius:99px;cursor:pointer;font:inherit;font-size:15px;font-weight:600;color:var(--text)}
+.mini{width:44px;height:44px;border-radius:50%;border:1.5px solid var(--border-subtle);background:none;cursor:pointer;display:grid;place-items:center}
+.mini .avatar{width:32px;height:32px;font-size:13px}
+
+/* botões */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:48px;padding:0 20px;
+  border:1.5px solid transparent;border-radius:10px;font:inherit;font-size:16px;font-weight:600;cursor:pointer}
+.btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2}
+.btn-primary{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-outline{background:transparent;color:var(--primary);border-color:var(--primary)}
+.btn-outline:hover{background:var(--primary-soft)}
+.btn-quiet{background:transparent;color:var(--text);border-color:var(--border-subtle)}
+.btn-quiet:hover{background:var(--surface)}
+.icon-btn{width:48px;height:48px;padding:0;border-radius:10px;border:1.5px solid var(--border-subtle);
+  background:none;cursor:pointer;display:grid;place-items:center;color:var(--text)}
+.icon-btn:hover{background:var(--surface)}
+.icon-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2}
+
+/* corpo */
+.wrap{max-width:940px;margin:0 auto;padding:26px 26px 44px}
+.stage[data-view="mobile"] .wrap{padding:18px 18px 28px}
+.back{display:inline-flex;align-items:center;gap:8px;min-height:48px;background:none;border:0;cursor:pointer;
+  font:inherit;font-size:16px;font-weight:500;color:var(--text-muted);margin-bottom:10px}
+.back:hover{color:var(--primary)}
+.back svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2}
+
+.col-head{display:flex;gap:26px;align-items:flex-start;margin-bottom:30px}
+.col-head .cover{width:190px;flex:none;border-radius:14px;overflow:hidden;border:1.5px solid var(--border-subtle);
+  display:grid;grid-template-columns:2fr 1fr;grid-template-rows:1fr 1fr;gap:2px;aspect-ratio:16/12;background:var(--border-subtle)}
+.cover i{background:linear-gradient(135deg,var(--ph-a),var(--ph-b))}
+.cover i:first-child{grid-row:1/3}
+.cover i:nth-child(2){background:linear-gradient(200deg,var(--ph-b),var(--ph-a))}
+.col-head .info{flex:1;min-width:0}
+.col-head h1{font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:42px;line-height:1.05;
+  letter-spacing:-.02em;margin-bottom:8px}
+.stage[data-view="mobile"] .col-head{flex-direction:column;gap:16px}
+.stage[data-view="mobile"] .col-head .cover{width:100%}
+.stage[data-view="mobile"] .col-head h1{font-size:32px}
+.desc{color:var(--text-muted);font-size:16px;margin-bottom:14px;max-width:46em}
+.meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:15px;color:var(--text-muted);margin-bottom:18px}
+.lvl{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1.5px solid var(--border-subtle);
+  border-radius:99px;padding:5px 12px;font-weight:600;color:var(--text);font-size:14px}
+.lvl svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.9}
+.acts{display:flex;gap:10px;flex-wrap:wrap}
+.stage[data-view="mobile"] .acts{display:grid;grid-template-columns:1fr auto}
+
+.posts{display:grid;gap:14px;grid-template-columns:repeat(3,1fr)}
+.stage[data-view="mobile"] .posts{grid-template-columns:repeat(2,1fr);gap:10px}
+.post{border-radius:13px;overflow:hidden;border:1.5px solid var(--border-subtle);background:var(--surface)}
+.post .img{aspect-ratio:1;background:linear-gradient(150deg,var(--ph-a),var(--ph-b))}
+.post .cap{padding:10px 12px 12px}
+.post .cap b{display:block;font-size:15px;font-weight:600}
+.post .cap span{font-size:13px;color:var(--text-muted)}
+
+.empty{text-align:center;padding:34px 20px;max-width:420px;margin:0 auto;
+  border:1.5px dashed var(--border-subtle);border-radius:14px}
+.empty h2{font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:27px;margin-bottom:8px}
+.empty p{color:var(--text-muted);font-size:15px;margin-bottom:18px}
+
+/* ── modais ── */
+.veil{position:absolute;inset:0;background:rgba(20,12,8,.5);z-index:100;display:none}
+.veil.open{display:block}
+.modal{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(460px,calc(100% - 32px));
+  background:var(--bg);border:1.5px solid var(--border-subtle);border-radius:16px;z-index:110;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);padding:26px;display:none;max-height:88%;overflow:auto}
+.modal.open{display:block}
+.modal h3{font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:29px;margin-bottom:6px}
+.modal .mp{color:var(--text-muted);font-size:15px;margin-bottom:20px}
+.modal-foot{display:flex;gap:10px;margin-top:22px}
+.modal-foot .btn{flex:1}
+
+.opt{display:flex;gap:13px;align-items:flex-start;width:100%;text-align:left;background:var(--surface);
+  border:1.5px solid var(--border-subtle);border-radius:12px;padding:15px 16px;margin-bottom:10px;cursor:pointer;font:inherit}
+.opt:hover{border-color:var(--border)}
+.opt[aria-checked="true"]{border-color:var(--primary);background:var(--primary-soft)}
+.opt .radio{width:22px;height:22px;flex:none;margin-top:2px;border-radius:50%;border:2px solid var(--border);
+  display:grid;place-items:center}
+.opt[aria-checked="true"] .radio{border-color:var(--primary)}
+.opt[aria-checked="true"] .radio::after{content:"";width:11px;height:11px;border-radius:50%;background:var(--primary)}
+.opt b{display:block;font-size:16px;font-weight:600;margin-bottom:2px}
+.opt span{font-size:14px;color:var(--text-muted);line-height:1.45}
+
+.warn{display:none;gap:11px;align-items:flex-start;background:var(--danger-soft);border:1.5px solid var(--danger);
+  color:var(--danger);border-radius:11px;padding:14px 16px;font-size:15px;line-height:1.45;margin-top:4px;margin-bottom:4px}
+.warn.show{display:flex}
+.warn svg{width:20px;height:20px;flex:none;margin-top:1px;stroke:currentColor;fill:none;stroke-width:2}
+
+.linkrow{display:flex;gap:8px;margin-bottom:10px}
+.linkrow input{flex:1;min-height:48px;font:inherit;font-size:15px;color:var(--text);background:var(--surface);
+  border:1.5px solid var(--border);border-radius:10px;padding:0 14px}
+.people{margin-top:6px;border-top:1px solid var(--border-subtle);padding-top:12px}
+.person{display:flex;align-items:center;gap:12px;min-height:52px}
+.person .avatar{width:34px;height:34px;font-size:14px;background:var(--secondary)}
+.person b{font-size:15px;font-weight:600;flex:1}
+.person button{background:none;border:0;cursor:pointer;font:inherit;font-size:15px;font-weight:600;
+  color:var(--danger);min-height:44px;padding:0 6px}
+
+.tabs{display:flex;background:var(--bg);border-top:1.5px solid var(--border-subtle);padding:6px 4px 10px}
+.tabs a{flex:1;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  text-decoration:none;color:var(--text-muted);position:relative}
+.tabs a svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8}
+.tabs a span{font-size:13px;font-weight:500}
+.tabs a.on{color:var(--primary)} .tabs a.on span{font-weight:700}
+.tabs a.on::before{content:"";position:absolute;top:-6px;width:26px;height:3px;border-radius:3px;background:var(--primary)}
+.tabs .pub{flex:none;width:78px}
+.tabs .pub .circ{width:50px;height:50px;border-radius:16px;background:var(--primary);color:var(--on-primary);
+  display:grid;place-items:center}
+.tabs .pub .circ svg{width:25px;height:25px;stroke-width:2.4}
+.tabs .pub span{color:var(--text);font-weight:600}
+.hide{display:none !important}
+</style>
+</head>
+<body>
+
+<div class="harness">
+  <div class="grp"><strong>Quem vê</strong>
+    <button data-who="dona" aria-pressed="true">Dona da coleção</button>
+    <button data-who="visita" aria-pressed="false">Outra pessoa</button>
+  </div>
+  <div class="grp"><strong>Conteúdo</strong>
+    <button data-fill="cheia" aria-pressed="true">Com receitas</button>
+    <button data-fill="vazia" aria-pressed="false">Vazia</button>
+  </div>
+  <div class="grp"><strong>Plataforma</strong>
+    <button data-view="web" aria-pressed="true">Web</button>
+    <button data-view="mobile" aria-pressed="false">Celular</button>
+  </div>
+  <div class="grp"><strong>Tema</strong>
+    <button data-theme-btn="light" aria-pressed="true">Claro</button>
+    <button data-theme-btn="dark" aria-pressed="false">Escuro</button>
+  </div>
+  <span class="note">Os botões Compartilhar e Privacidade abrem de verdade.</span>
+</div>
+
+<div class="stage" id="stage" data-view="web">
+<div class="device">
+
+  <header class="hd only-web">
+    <a class="brand" href="#"><span class="mark"><svg viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg></span><span class="name">Comes&amp;Bebes</span></a>
+    <nav class="nav">
+      <a href="#"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22v-8h6v8"/></svg>Início</a>
+      <a href="#" class="on"><svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg>Salvos</a>
+      <a href="#"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 6-3 7-3 7h18s-3-1-3-7"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></svg>Avisos</a>
+    </nav>
+    <span class="spacer"></span>
+    <button class="btn btn-primary"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Publicar</button>
+    <button class="acct"><span class="avatar">F</span>Fagner</button>
+  </header>
+
+  <header class="hd-m only-mobile">
+    <a class="brand" href="#"><span class="mark"><svg viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg></span><span class="name">Comes&amp;Bebes</span></a>
+    <button class="mini"><span class="avatar">F</span></button>
+  </header>
+
+  <div class="wrap">
+    <button class="back"><svg viewBox="0 0 24 24"><path d="M19 12H5m0 0 6-6m-6 6 6 6"/></svg><span id="backlbl">Salvos</span></button>
+
+    <div class="col-head">
+      <span class="cover"><i></i><i></i><i></i></span>
+      <div class="info">
+        <h1>Doces de festa</h1>
+        <p class="desc">Bolos, tortas e docinhos que valem o trabalho. Testados em aniversário de verdade.</p>
+        <div class="meta">
+          <span id="m-autor" class="hide">de Maria</span>
+          <span id="m-count">12 receitas</span>
+          <span class="lvl" id="m-lvl"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3.5 9h17M3.5 15h17M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18"/></svg>Pública</span>
+          <span id="m-seg">8 pessoas seguem</span>
+        </div>
+
+        <div class="acts" id="acts-dona">
+          <button class="btn btn-outline" id="btn-share"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>Compartilhar</button>
+          <button class="btn btn-quiet" id="btn-priv"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Quem pode ver</button>
+          <button class="icon-btn" aria-label="Mais opções"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg></button>
+        </div>
+
+        <div class="acts hide" id="acts-visita">
+          <button class="btn btn-primary" id="btn-follow">Seguir coleção</button>
+          <button class="icon-btn" aria-label="Mais opções"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="posts" id="posts"></div>
+
+    <div class="empty hide" id="empty">
+      <h2 id="e-title">Coleção ainda vazia</h2>
+      <p id="e-text">Quando você guardar uma receita, escolha esta coleção e ela aparece aqui.</p>
+      <button class="btn btn-primary" id="e-btn">Ver o que andaram cozinhando</button>
+    </div>
+  </div>
+
+  <nav class="tabs only-mobile">
+    <a href="#"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22v-8h6v8"/></svg><span>Início</span></a>
+    <a href="#" class="on"><svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg><span>Salvos</span></a>
+    <a href="#" class="pub"><span class="circ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></span><span>Publicar</span></a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 6-3 7-3 7h18s-3-1-3-7"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></svg><span>Avisos</span></a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg><span>Perfil</span></a>
+  </nav>
+
+  <!-- ════ modais ════ -->
+  <div class="veil" id="veil"></div>
+
+  <div class="modal" id="m-priv" role="dialog" aria-labelledby="privt">
+    <h3 id="privt">Quem pode ver</h3>
+    <p class="mp">Você pode mudar isso quando quiser.</p>
+
+    <button class="opt" data-lvl="so" aria-checked="false">
+      <span class="radio"></span>
+      <span><b>Só minha</b><span>Ninguém mais vê. É assim que toda coleção começa.</span></span>
+    </button>
+    <button class="opt" data-lvl="escolher" aria-checked="false">
+      <span class="radio"></span>
+      <span><b>Para quem eu escolher</b><span>Só as pessoas que você convidar. Não aparece no seu perfil.</span></span>
+    </button>
+    <button class="opt" data-lvl="publica" aria-checked="true">
+      <span class="radio"></span>
+      <span><b>Pública</b><span>Aparece no seu perfil. Qualquer pessoa pode ver e seguir.</span></span>
+    </button>
+
+    <div class="warn" id="warn">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg>
+      <span><b>8 pessoas seguem esta coleção.</b> Se você fechar, elas perdem o acesso e não são avisadas.</span>
+    </div>
+
+    <div class="modal-foot">
+      <button class="btn btn-quiet" data-close>Cancelar</button>
+      <button class="btn btn-primary" data-close id="priv-ok">Salvar</button>
+    </div>
+  </div>
+
+  <div class="modal" id="m-share" role="dialog" aria-labelledby="shrt">
+    <h3 id="shrt">Compartilhar</h3>
+    <p class="mp" id="share-sub">Esta coleção é pública. Qualquer pessoa com o link pode abrir.</p>
+
+    <div id="share-link">
+      <div class="linkrow">
+        <input value="comesbebes.app/c/doces-de-festa" readonly aria-label="Link da coleção">
+        <button class="btn btn-primary">Copiar</button>
+      </div>
+      <p class="mp" style="margin:0">8 pessoas seguem esta coleção.</p>
+    </div>
+
+    <div id="share-invite" class="hide">
+      <div class="linkrow">
+        <input placeholder="Nome de usuário" aria-label="Convidar pessoa">
+        <button class="btn btn-primary">Convidar</button>
+      </div>
+      <div class="people">
+        <div class="person"><span class="avatar">M</span><b>Maria</b><button>Remover</button></div>
+        <div class="person"><span class="avatar">J</span><b>João</b><button>Remover</button></div>
+      </div>
+    </div>
+
+    <div class="modal-foot"><button class="btn btn-quiet" data-close>Fechar</button></div>
+  </div>
+
+</div>
+</div>
+
+<script>
+const stage=document.getElementById('stage'), veil=document.getElementById('veil');
+const NOMES=['Bolo de fubá','Torta de limão','Brigadeiro de colher','Pavê de morango','Pudim da vó','Bolo de cenoura'];
+document.getElementById('posts').innerHTML=Array.from({length:6},(_,i)=>
+  `<div class="post"><div class="img"></div><div class="cap"><b>${NOMES[i]}</b><span>de ${['Maria','João','Ana','Pedro'][i%4]}</span></div></div>`).join('');
+
+let who='dona', fill='cheia', lvl='publica';
+
+function render(){
+  document.getElementById('acts-dona').classList.toggle('hide',who!=='dona');
+  document.getElementById('acts-visita').classList.toggle('hide',who!=='visita');
+  document.getElementById('m-autor').classList.toggle('hide',who!=='visita');
+  document.getElementById('backlbl').textContent = who==='dona' ? 'Salvos' : 'Perfil de Maria';
+  // seguidores só interessam a quem é dona
+  document.getElementById('m-seg').classList.toggle('hide',who!=='dona');
+
+  const vazia = fill==='vazia';
+  document.getElementById('posts').classList.toggle('hide',vazia);
+  document.getElementById('empty').classList.toggle('hide',!vazia);
+  document.getElementById('m-count').textContent = vazia ? 'Nenhuma receita ainda' : '12 receitas';
+  // o vazio muda conforme quem olha
+  document.getElementById('e-title').textContent = who==='dona' ? 'Coleção ainda vazia' : 'Nada por aqui ainda';
+  document.getElementById('e-text').textContent = who==='dona'
+    ? 'Quando você guardar uma receita, escolha esta coleção e ela aparece aqui.'
+    : 'Maria ainda não guardou nada nesta coleção. Se você seguir, avisamos quando entrar coisa nova.';
+  document.getElementById('e-btn').textContent = who==='dona' ? 'Ver o que andaram cozinhando' : 'Seguir coleção';
+
+  const L={so:['Só minha','<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>'],
+           escolher:['Compartilhada','<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 5.5a3 3 0 0 1 0 5"/><path d="M18 20a6 6 0 0 0-2-4.5"/>'],
+           publica:['Pública','<circle cx="12" cy="12" r="9"/><path d="M3.5 9h17M3.5 15h17M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18"/>']};
+  document.getElementById('m-lvl').innerHTML=`<svg viewBox="0 0 24 24">${L[lvl][1]}</svg>${L[lvl][0]}`;
+  // visitante nunca vê o nível: isso é informação de quem criou
+  document.getElementById('m-lvl').classList.toggle('hide',who!=='dona');
+}
+
+document.querySelectorAll('[data-who]').forEach(b=>b.onclick=()=>{who=b.dataset.who;
+  document.querySelectorAll('[data-who]').forEach(x=>x.setAttribute('aria-pressed',x===b));render();});
+document.querySelectorAll('[data-fill]').forEach(b=>b.onclick=()=>{fill=b.dataset.fill;
+  document.querySelectorAll('[data-fill]').forEach(x=>x.setAttribute('aria-pressed',x===b));render();});
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{stage.dataset.view=b.dataset.view;
+  document.querySelectorAll('[data-view]').forEach(x=>x.setAttribute('aria-pressed',x===b));});
+document.querySelectorAll('[data-theme-btn]').forEach(b=>b.onclick=()=>{
+  document.documentElement.setAttribute('data-theme',b.dataset.themeBtn);
+  document.querySelectorAll('[data-theme-btn]').forEach(x=>x.setAttribute('aria-pressed',x===b));});
+
+function open(id){veil.classList.add('open');document.getElementById(id).classList.add('open');}
+function closeAll(){veil.classList.remove('open');document.querySelectorAll('.modal').forEach(m=>m.classList.remove('open'));}
+veil.onclick=closeAll;
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeAll);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll();});
+
+document.getElementById('btn-priv').onclick=()=>{
+  document.querySelectorAll('.opt').forEach(o=>o.setAttribute('aria-checked',o.dataset.lvl===lvl));
+  document.getElementById('warn').classList.remove('show');
+  open('m-priv');
+};
+let pending=lvl;
+document.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{
+  pending=o.dataset.lvl;
+  document.querySelectorAll('.opt').forEach(x=>x.setAttribute('aria-checked',x===o));
+  // aviso só quando REBAIXA uma coleção que já tem seguidores
+  document.getElementById('warn').classList.toggle('show', lvl==='publica' && pending!=='publica');
+});
+document.getElementById('priv-ok').onclick=()=>{lvl=pending;render();};
+
+document.getElementById('btn-share').onclick=()=>{
+  const pub = lvl==='publica';
+  document.getElementById('share-link').classList.toggle('hide',!pub);
+  document.getElementById('share-invite').classList.toggle('hide',pub);
+  document.getElementById('share-sub').textContent = pub
+    ? 'Esta coleção é pública. Qualquer pessoa com o link pode abrir.'
+    : (lvl==='escolher' ? 'Só quem você convidar consegue abrir esta coleção.'
+                        : 'Esta coleção é só sua. Convide alguém e ela passa a ser compartilhada.');
+  open('m-share');
+};
+document.getElementById('btn-follow').onclick=e=>{
+  const on=e.currentTarget.textContent.trim()==='Seguir coleção';
+  e.currentTarget.textContent = on ? 'Seguindo' : 'Seguir coleção';
+  e.currentTarget.className = on ? 'btn btn-quiet' : 'btn btn-primary';
+};
+render();
+</script>
+</body>
+</html>

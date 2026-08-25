@@ -17,7 +17,7 @@ public record CreatePublicationRequest(
         @Schema(description = "Tipo da publicação.", example = "RECIPE", allowableValues = {"DISH", "RECIPE"})
         @NotBlank @Pattern(regexp = "DISH|RECIPE") String type,
         @Schema(description = "Visibilidade.", example = "PUBLIC")
-        @NotBlank @Pattern(regexp = "PUBLIC|INTERNAL") String visibility,
+        @NotBlank @Pattern(regexp = "PUBLIC|INTERNAL|PRIVATE") String visibility,
         @Schema(description = "Título da publicação.", example = "Lasanha à bolonhesa", nullable = true)
         @Size(max = 150) String title,
         @Schema(description = "Descrição opcional.", example = "Receita de domingo", nullable = true)

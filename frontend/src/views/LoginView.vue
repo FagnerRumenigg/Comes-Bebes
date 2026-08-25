@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { normalizeHttpError } from '@/api/errors'
@@ -10,6 +10,7 @@ import BaseCheckbox from '@/components/base/BaseCheckbox.vue'
 import BaseDialog from '@/components/base/BaseDialog.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import BaseToast from '@/components/base/BaseToast.vue'
+import AppIcon from '@/components/icons/AppIcon.vue'
 import { isPlatformAuthenticatorAvailable, isWebAuthnSupported, useBiometric } from '@/composables/useBiometric'
 import PasswordInput from '@/features/auth/components/PasswordInput.vue'
 import { mockCredentials } from '@/mocks/fixtures/auth'
@@ -20,11 +21,34 @@ const router = useRouter()
 const authStore = useAuthStore()
 const { checkStatus, authenticate, register } = useBiometric()
 
-const form = reactive<LoginRequest>({ username: '', password: '' })
+const form = reactive<LoginRequest>({ identifier: '', password: '' })
 const remember = ref(false)
 const fieldErrors = reactive<Record<string, string>>({})
 const generalError = ref<string | null>(null)
+const credentialsInvalid = ref(false)
 const mocksEnabled = import.meta.env.DEV && import.meta.env.VITE_ENABLE_MOCKS !== 'false'
+
+// Entrada por digital só faz sentido no celular (docs/telas/02) — no
+// desktop a senha do SO não protege o navegador do jeito que protege o app.
+const MOBILE_BREAKPOINT_QUERY = '(max-width: 48rem)'
+const isMobile = ref(false)
+const showPasswordForm = ref(false)
+let mobileMediaQuery: MediaQueryList | undefined
+
+function handleMobileMediaChange(event: MediaQueryListEvent): void {
+  isMobile.value = event.matches
+}
+
+onMounted(() => {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
+  mobileMediaQuery = window.matchMedia(MOBILE_BREAKPOINT_QUERY)
+  isMobile.value = mobileMediaQuery.matches
+  mobileMediaQuery.addEventListener('change', handleMobileMediaChange)
+})
+
+onBeforeUnmount(() => {
+  mobileMediaQuery?.removeEventListener('change', handleMobileMediaChange)
+})
 
 const biometricAvailable = ref(false)
 const biometricPending = ref(false)
@@ -51,12 +75,12 @@ function dismissBiometricPromptForever(): void {
   biometricPromptOpen.value = false
 }
 
-if (typeof route.query.username === 'string') form.username = route.query.username
+if (typeof route.query.email === 'string') form.identifier = route.query.email
 
 function goToDestination(onboardingCompleted: boolean): void {
   const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
   const safeRedirect = redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/'
-  const target = onboardingCompleted ? safeRedirect : '/onboarding'
+  const target = onboardingCompleted ? safeRedirect : '/bem-vindo'
   void router.replace(target)
 }
 
@@ -125,6 +149,9 @@ const loginMutation = useLogin({
       const normalizedError = normalizeHttpError(error)
       Object.assign(fieldErrors, normalizedError.fieldErrors)
       generalError.value = normalizedError.message
+      // Sem erro de campo específico, o backend não distingue e-mail de
+      // senha errados de propósito — então marcamos os dois (docs/telas/02).
+      credentialsInvalid.value = Object.keys(normalizedError.fieldErrors).length === 0
     },
   },
 })
@@ -158,19 +185,20 @@ async function submitBiometric(): Promise<void> {
 function clearErrors(): void {
   for (const key of Object.keys(fieldErrors)) delete fieldErrors[key]
   generalError.value = null
+  credentialsInvalid.value = false
 }
 
 function submit(): void {
   if (loginMutation.isPending.value) return
   clearErrors()
 
-  if (!form.username.trim()) fieldErrors.username = 'Informe seu nome de usuário.'
+  if (!form.identifier.trim()) fieldErrors.identifier = 'Informe seu e-mail ou usuário.'
   if (!form.password) fieldErrors.password = 'Informe sua senha.'
   if (Object.keys(fieldErrors).length > 0) return
 
   loginMutation.mutate({
     data: {
-      username: form.username.trim(),
+      identifier: form.identifier.trim(),
       password: form.password,
     },
   })
@@ -203,29 +231,47 @@ function submit(): void {
       {{ generalError }}
     </BaseToast>
 
-    <BaseButton
-      v-if="biometricAvailable"
-      class="auth-form__biometric"
-      variant="secondary"
-      :loading="biometricPending"
-      @click="submitBiometric"
+    <template v-if="biometricAvailable && isMobile">
+      <BaseButton
+        class="auth-form__biometric"
+        variant="secondary"
+        :loading="biometricPending"
+        @click="submitBiometric"
+      >
+        Entrar com biometria
+      </BaseButton>
+      <button
+        v-if="!showPasswordForm"
+        type="button"
+        class="auth-view__use-password"
+        @click="showPasswordForm = true"
+      >
+        Usar e-mail e senha
+      </button>
+      <p v-if="showPasswordForm" class="auth-view__divider" role="separator">ou entre com sua senha</p>
+    </template>
+
+    <form
+      v-if="!biometricAvailable || !isMobile || showPasswordForm"
+      class="auth-form"
+      novalidate
+      @submit.prevent="submit"
     >
-      Entrar com biometria
-    </BaseButton>
-
-    <p v-if="biometricAvailable" class="auth-view__divider" role="separator">ou entre com sua senha</p>
-
-    <form class="auth-form" novalidate @submit.prevent="submit">
       <BaseInput
-        id="login-username"
-        v-model="form.username"
-        label="Nome de usuário"
+        id="login-identifier"
+        v-model="form.identifier"
+        label="E-mail ou usuário"
         autocomplete="username"
-        placeholder="Ex.: maria_cozinha"
-        :error="fieldErrors.username"
+        placeholder="seu@email.com"
+        :error="fieldErrors.identifier"
+        :invalid="credentialsInvalid"
         :disabled="loginMutation.isPending.value"
         required
-      />
+      >
+        <template #lead>
+          <AppIcon name="envelope" :size="20" />
+        </template>
+      </BaseInput>
       <PasswordInput
         id="login-password"
         v-model="form.password"
@@ -233,6 +279,7 @@ function submit(): void {
         autocomplete="current-password"
         placeholder="Digite sua senha"
         :error="fieldErrors.password"
+        :invalid="credentialsInvalid"
         :disabled="loginMutation.isPending.value"
         required
       />
@@ -245,12 +292,13 @@ function submit(): void {
       <BaseButton class="auth-form__submit" type="submit" :loading="loginMutation.isPending.value">
         Entrar na conta
       </BaseButton>
+      <RouterLink class="auth-form__forgot" to="/recuperar-senha">Esqueci minha senha</RouterLink>
     </form>
 
     <details v-if="mocksEnabled" class="mock-credentials">
       <summary>Credenciais para testar sem backend</summary>
       <p>
-        Usuário: <code>{{ mockCredentials.user.username }}</code
+        E-mail: <code>{{ mockCredentials.user.email }}</code
         ><br />
         Senha: <code>{{ mockCredentials.user.password }}</code>
       </p>
@@ -310,6 +358,24 @@ function submit(): void {
   width: 100%;
 }
 
+.auth-view__use-password {
+  display: block;
+  width: 100%;
+  min-height: var(--control-min-size);
+  color: var(--color-primary);
+  font: inherit;
+  font-weight: var(--font-weight-semibold);
+  text-align: center;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.auth-view__use-password:hover {
+  text-decoration: underline;
+}
+
 .auth-view__divider {
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
@@ -324,6 +390,21 @@ function submit(): void {
 .auth-form__submit {
   width: 100%;
   margin-block-start: var(--space-2);
+}
+
+.auth-form__forgot {
+  display: block;
+  width: 100%;
+  min-height: var(--control-min-size);
+  margin-block-start: var(--space-1);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+  text-align: center;
+  text-decoration: none;
+}
+
+.auth-form__forgot:hover {
+  text-decoration: underline;
 }
 
 .mock-credentials {

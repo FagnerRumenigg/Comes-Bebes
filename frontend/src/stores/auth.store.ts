@@ -14,7 +14,7 @@ export const DEVICE_ID_STORAGE_KEY = 'comes-e-bebes:device_id'
 type SessionStatus = 'idle' | 'initializing' | 'anonymous' | 'authenticated'
 type SessionIdentity = Pick<
   LoginResponse,
-  'userId' | 'username' | 'role' | 'onboardingCompleted' | 'hasUnseenPatchNotes'
+  'userId' | 'username' | 'role' | 'onboardingCompleted' | 'hasUnseenPatchNotes' | 'emailRequired'
 >
 
 interface StoredSession extends SessionIdentity {
@@ -42,6 +42,9 @@ function parseStoredSession(value: string | null): StoredSession | null {
     ) {
       return null
     }
+    // Sessão persistida antes deste campo existir: sem sinal em contrário, assume que
+    // não precisa pedir e-mail (é o caso comum — a maioria já tinha entrado sem problema).
+    if (typeof session.emailRequired !== 'boolean') session.emailRequired = false
     return session as StoredSession
   } catch {
     return null
@@ -179,6 +182,7 @@ export const useAuthStore = defineStore('auth', () => {
       role: response.role,
       onboardingCompleted: response.onboardingCompleted,
       hasUnseenPatchNotes: response.hasUnseenPatchNotes,
+      emailRequired: response.emailRequired,
     }
     rememberSession.value = remember
     status.value = 'authenticated'
@@ -187,6 +191,27 @@ export const useAuthStore = defineStore('auth', () => {
     persistSession()
     scheduleRefresh(response)
     startSessionMonitoring()
+  }
+
+  /**
+   * Chamado depois que a conta define o e-mail (migração de contas antigas —
+   * produto5.md v5 §5.1). Libera o resto do app sem exigir um novo login.
+   */
+  function markEmailProvided(): void {
+    if (!identity.value) return
+    identity.value.emailRequired = false
+    persistSession()
+  }
+
+  /**
+   * Chamado depois que a conta conclui o onboarding (tela de boas-vindas,
+   * docs/telas/01-boas-vindas-e-erro.html). Libera o resto do app sem exigir
+   * um novo login.
+   */
+  function markOnboardingCompleted(): void {
+    if (!identity.value) return
+    identity.value.onboardingCompleted = true
+    persistSession()
   }
 
   function clearSession(): void {
@@ -243,6 +268,7 @@ export const useAuthStore = defineStore('auth', () => {
         role: storedSession.role,
         onboardingCompleted: storedSession.onboardingCompleted,
         hasUnseenPatchNotes: storedSession.hasUnseenPatchNotes,
+        emailRequired: storedSession.emailRequired,
       }
       rememberSession.value = storedSession.remember
       try {
@@ -276,6 +302,7 @@ export const useAuthStore = defineStore('auth', () => {
         role: storedSession.role,
         onboardingCompleted: storedSession.onboardingCompleted,
         hasUnseenPatchNotes: storedSession.hasUnseenPatchNotes,
+        emailRequired: storedSession.emailRequired,
       }
       rememberSession.value = storedSession.remember
       await renewSession()
@@ -326,6 +353,8 @@ export const useAuthStore = defineStore('auth', () => {
     authenticated,
     isAdmin,
     acceptSession,
+    markEmailProvided,
+    markOnboardingCompleted,
     clearSession,
     initialize,
     renewSession,

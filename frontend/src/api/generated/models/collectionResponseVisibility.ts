@@ -15,5 +15,6 @@ export type CollectionResponseVisibility = typeof CollectionResponseVisibility[k
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CollectionResponseVisibility = {
   PUBLIC: 'PUBLIC',
+  SHARED: 'SHARED',
   PRIVATE: 'PRIVATE',
 } as const;

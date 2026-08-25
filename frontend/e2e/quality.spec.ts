@@ -12,7 +12,7 @@ async function openAppRoute(page: Page, route: string): Promise<void> {
 
 async function login(page: Page, username = 'fagner', password = 'MinhaSenha123!'): Promise<void> {
   await page.goto('/login')
-  await page.getByLabel('Nome de usuário').fill(username)
+  await page.getByLabel('E-mail ou usuário').fill(username)
   await page.locator('#login-password').fill(password)
   await page.getByRole('button', { name: 'Entrar na conta' }).click()
   await expect(page).toHaveURL('/')
@@ -24,6 +24,9 @@ for (const theme of ['light', 'dark'] as const) {
     await page.addInitScript(
       (selectedTheme) => window.localStorage.setItem('comes-e-bebes:theme', selectedTheme),
       theme,
+    )
+    await page.addInitScript(() =>
+      window.localStorage.setItem('comes-e-bebes:welcome-seen', 'true'),
     )
     for (const [route, name] of [
       ['/', 'feed'],
@@ -57,6 +60,9 @@ for (const theme of ['light', 'dark'] as const) {
       (selectedTheme) => window.localStorage.setItem('comes-e-bebes:theme', selectedTheme),
       theme,
     )
+    await page.addInitScript(() =>
+      window.localStorage.setItem('comes-e-bebes:welcome-seen', 'true'),
+    )
     await login(page)
     for (const [route, name] of [
       ['/publicar', 'publicar'],
@@ -74,6 +80,9 @@ for (const theme of ['light', 'dark'] as const) {
 
 test('a interface mantém navegação por teclado e movimento reduzido', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.addInitScript(() =>
+    window.localStorage.setItem('comes-e-bebes:welcome-seen', 'true'),
+  )
   await page.goto('/', { waitUntil: 'networkidle' })
   await expect(page.locator('article')).toHaveCount(3)
   const card = page.locator('.recipe-flip__front').first()

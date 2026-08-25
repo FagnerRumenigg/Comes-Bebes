@@ -3,12 +3,14 @@ package org.application.service;
 import lombok.RequiredArgsConstructor;
 import org.application.controller.auth.request.LoginRequest;
 import org.application.controller.auth.response.LoginResponse;
+import org.application.model.PasswordResetToken;
 import org.application.model.User;
 import org.application.model.UserDevice;
 import org.application.model.UserNotification;
 import org.application.model.UserStatus;
 import org.application.model.RefreshToken;
 import org.application.repository.UserRepository;
+import org.application.repository.PasswordResetTokenRepository;
 import org.application.repository.RefreshTokenRepository;
 import org.application.repository.UserNotificationRepository;
 import org.application.service.exception.ResourceNotFoundException;
@@ -46,10 +48,13 @@ public class AuthService {
     private final JwtEncoder jwtEncoder;
     private final Clock clock;
     private final LoginRateLimiter loginRateLimiter;
+    private final PasswordResetRateLimiter passwordResetRateLimiter;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PatchNoteService patchNoteService;
     private final DeviceService deviceService;
     private final UserNotificationRepository notificationRepository;
+    private final EmailSender emailSender;
 
     @Value("${app.security.jwt-issuer}")
     private String issuer;
@@ -59,9 +64,13 @@ public class AuthService {
     private long refreshTokenExpirationDays;
     @Value("${app.security.device-inactivity-timeout-days}")
     private long deviceInactivityTimeoutDays;
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
+
+    private static final long PASSWORD_RESET_TOKEN_TTL_MINUTES = 60;
 
     public LoginResponse login(LoginRequest request) {
-        return login(request, request.username(), null, null);
+        return login(request, request.identifier(), null, null);
     }
 
     public LoginResponse login(LoginRequest request, String rateLimitKey) {
@@ -69,15 +78,15 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest request, String rateLimitKey, String userAgent, String ipAddress) {
-        String username = normalizer.normalize(request.username());
+        String identifier = normalizer.normalize(request.identifier());
         loginRateLimiter.check(rateLimitKey);
-        var userOptional = userRepository.findByUsernameIgnoreCase(username)
+        var userOptional = findByIdentifier(identifier)
                 .filter(candidate -> candidate.getStatus() == UserStatus.ACTIVE)
                 .filter(candidate -> passwordEncoder.matches(request.password(), candidate.getPasswordHash()));
         if (userOptional.isEmpty()) {
             loginRateLimiter.registerFailure(rateLimitKey);
             log.warn("event=login_failed rateLimitKey={}", rateLimitKey);
-            throw new InvalidOperationException("INVALID_CREDENTIALS", "Username ou senha inválidos.");
+            throw new InvalidOperationException("INVALID_CREDENTIALS", "E-mail, usuário ou senha inválidos.");
         }
         var user = userOptional.get();
         loginRateLimiter.reset(rateLimitKey);
@@ -91,6 +100,18 @@ public class AuthService {
         log.info("event=login_success username={} userId={} sessionId={} deviceId={}",
                 user.getUsername(), user.getId(), response.sessionId(), deviceLookup.device().getId());
         return response;
+    }
+
+    /**
+     * Contas sem e-mail (criadas antes da migração — produto5.md v5 §5.1) continuam
+     * entrando por @usuário; assim que o e-mail é definido, o @usuário para de valer como
+     * login e passa a exigir e-mail — sem manter as duas portas abertas pra sempre.
+     */
+    private java.util.Optional<User> findByIdentifier(String identifier) {
+        var byUsername = userRepository.findByUsernameIgnoreCase(identifier)
+                .filter(candidate -> candidate.getEmail() == null);
+        if (byUsername.isPresent()) return byUsername;
+        return userRepository.findByEmailIgnoreCase(identifier);
     }
 
     public LoginResponse refresh(String rawRefreshToken) {
@@ -118,6 +139,54 @@ public class AuthService {
             refreshTokenRepository.save(token);
             log.info("event=logout userId={} sessionId={}", token.getUserId(), token.getSessionId());
         });
+    }
+
+    /**
+     * "Esqueceu a senha?" (docs/telas/11-recuperar-senha.html) — sempre "dá certo"
+     * do ponto de vista de quem pediu, exista ou não a conta com esse e-mail.
+     * Só quem realmente tem conta recebe alguma coisa; não dá pra descobrir por
+     * aqui quem tem cadastro (mesmo espírito do texto "Se existir uma conta com...").
+     */
+    public void requestPasswordReset(String email) {
+        String normalized = normalizer.normalize(email);
+        passwordResetRateLimiter.recordAttempt(normalized);
+        userRepository.findByEmailIgnoreCase(normalized)
+                .filter(candidate -> candidate.getStatus() == UserStatus.ACTIVE)
+                .ifPresent(this::sendPasswordResetEmail);
+    }
+
+    private void sendPasswordResetEmail(User user) {
+        OffsetDateTime now = OffsetDateTime.now(clock).withOffsetSameInstant(ZoneOffset.UTC);
+        String rawToken = generateRefreshToken();
+        passwordResetTokenRepository.save(PasswordResetToken.builder()
+                .id(UUID.randomUUID())
+                .userId(user.getId())
+                .tokenHash(hash(rawToken))
+                .expiresAt(now.plusMinutes(PASSWORD_RESET_TOKEN_TTL_MINUTES))
+                .build());
+        emailSender.sendPasswordReset(user.getEmail(), frontendUrl + "/recuperar-senha/" + rawToken);
+        log.info("event=password_reset_requested userId={}", user.getId());
+    }
+
+    /**
+     * Ao trocar a senha por aqui, todas as sessões da conta são encerradas
+     * (produto5.md — quem trocou a senha esquecida entra de novo em todo lugar,
+     * inclusive porque quem pediu pode não ser quem estava logado antes).
+     */
+    public void resetPassword(String rawToken, String newPassword) {
+        OffsetDateTime now = OffsetDateTime.now(clock).withOffsetSameInstant(ZoneOffset.UTC);
+        PasswordResetToken token = passwordResetTokenRepository.findByTokenHash(hash(rawToken))
+                .filter(candidate -> candidate.isUsable(now))
+                .orElseThrow(() -> new InvalidOperationException("PASSWORD_RESET_TOKEN_INVALID", "Este link não vale mais."));
+        User user = userRepository.findByIdAndStatus(token.getUserId(), UserStatus.ACTIVE)
+                .orElseThrow(() -> new ResourceNotFoundException("USER_NOT_FOUND", "Usuário não encontrado."));
+
+        user.updatePasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        token.markUsed(now);
+        passwordResetTokenRepository.save(token);
+        logoutAll(user.getId());
+        log.info("event=password_reset_completed userId={}", user.getId());
     }
 
     public void logoutAll(UUID userId) {
@@ -184,7 +253,9 @@ public class AuthService {
                 .tokenHash(hash(rawRefreshToken))
                 .expiresAt(issuedAt.plusDays(refreshTokenExpirationDays))
                 .build());
-        return new LoginResponse(token, rawRefreshToken, "Bearer", expirationMinutes * 60, user.getId(), user.getUsername(), user.getRole(), user.isOnboardingCompleted(), patchNoteService.hasUnseen(user), expiresAt, sessionId, device.getId());
+        return new LoginResponse(token, rawRefreshToken, "Bearer", expirationMinutes * 60, user.getId(), user.getUsername(),
+                user.getRole(), user.isOnboardingCompleted(), patchNoteService.hasUnseen(user), user.getEmail() == null,
+                expiresAt, sessionId, device.getId());
     }
 
     private String generateRefreshToken() {

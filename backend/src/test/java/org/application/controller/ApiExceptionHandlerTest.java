@@ -51,6 +51,7 @@ class ApiExceptionHandlerTest {
     @Mock private SavedPublicationService savedPublicationService;
     @Mock private PublicationViewService publicationViewService;
     @Mock private ReportService reportService;
+    @Mock private org.application.service.PhotoValidationFeedbackService photoValidationFeedbackService;
     @Mock private PublicationResponseFactory responseFactory;
     @Mock private ImageStorage imageStorage;
     @Mock private CurrentUser currentUser;
@@ -68,6 +69,7 @@ class ApiExceptionHandlerTest {
                         savedPublicationService,
                         publicationViewService,
                         reportService,
+                        photoValidationFeedbackService,
                         responseFactory,
                         imageStorage,
                         ZoneId.of("America/Sao_Paulo"),

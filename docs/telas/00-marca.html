@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comes&Bebes — Marca</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fff6e3; --surface:#f3f8f5; --surface-alt:#eef4f0;
+  --text:#17281f; --text-muted:#4f6157;
+  --primary:#285943; --on-primary:#fff; --accent:#d5a62e; --on-accent:#17281f;
+  --brand-red:#A8322A;             /* exclusivo da marca — nunca em outro lugar */
+  --danger:#9b2c2c; --border-subtle:#d7e0da; --shadow:rgba(23,40,31,.16);
+}
+[data-theme="dark"]{
+  --bg:#2d1a11; --surface:#341e14; --surface-alt:#3d2419;
+  --text:#fef5f1; --text-muted:#bfa899;
+  --primary:#e99d7a; --on-primary:#2d1a11; --accent:#b5cc79; --on-accent:#2d1a11;
+  --brand-red:#E4685C;
+  --danger:#ff8a8a; --border-subtle:#4a3227; --shadow:rgba(0,0,0,.45);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;color:var(--text);background:var(--surface-alt);line-height:1.5}
+.harness{position:sticky;top:0;z-index:50;background:#17281f;color:#eef4f0;padding:10px 16px;
+  display:flex;gap:16px;align-items:center;font-size:13px;flex-wrap:wrap}
+.harness strong{font-size:12px;letter-spacing:.1em;text-transform:uppercase;opacity:.55;font-weight:600}
+.harness button{font:inherit;font-weight:500;cursor:pointer;background:transparent;color:#eef4f0;
+  border:1px solid rgba(238,244,240,.3);border-radius:99px;padding:5px 13px}
+.harness button[aria-pressed="true"]{background:#d5a62e;border-color:#d5a62e;color:#17281f;font-weight:600}
+.harness .note{margin-left:auto;opacity:.5;font-size:12px}
+
+.stage{padding:32px 16px 70px;display:flex;justify-content:center}
+.sheet{width:100%;max-width:900px;background:var(--bg);border:1.5px solid var(--border-subtle);
+  border-radius:16px;padding:38px 36px 40px;box-shadow:0 16px 44px var(--shadow)}
+h1{font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:38px;margin-bottom:6px}
+.lead{color:var(--text-muted);font-size:16px;margin-bottom:30px}
+
+.opt{border:1.5px solid var(--border-subtle);border-radius:14px;padding:22px 24px;margin-bottom:16px}
+.opt.pick{border-color:var(--primary);border-width:2px}
+.opt h2{font-size:18px;font-weight:700;margin-bottom:3px;display:flex;align-items:center;gap:10px}
+.opt .tag{font-size:12px;font-weight:700;background:var(--primary);color:var(--on-primary);
+  border-radius:99px;padding:3px 10px}
+.opt p{font-size:15px;color:var(--text-muted);margin-bottom:18px}
+.sizes{display:flex;align-items:flex-end;gap:30px;flex-wrap:wrap}
+.item{display:flex;flex-direction:column;align-items:center;gap:8px}
+.item small{font-size:12px;color:var(--text-muted)}
+.lockup{display:flex;align-items:center;gap:11px;margin-left:auto}
+.lockup .nm{font-family:'Instrument Serif',Georgia,serif;font-size:25px}
+
+/* a marca */
+.mk{display:block;border-radius:26%}
+.mk .tile{fill:var(--mk-tile)}
+.mk .book{fill:var(--mk-ink)}
+.mk .spine{fill:var(--mk-ink);opacity:.45}
+.mk .ribbon{fill:var(--mk-tile)}
+.a{--mk-tile:var(--primary);--mk-ink:var(--accent)}
+.b{--mk-tile:var(--accent);--mk-ink:var(--primary)}
+[data-theme="dark"] .b{--mk-ink:#2d1a11}
+.c{--mk-tile:var(--brand-red);--mk-ink:#fff6e3}
+</style>
+</head>
+<body>
+
+<div class="harness">
+  <strong>Tema</strong>
+  <button data-t="light" aria-pressed="true">Claro</button>
+  <button data-t="dark" aria-pressed="false">Escuro</button>
+  <span class="note">Três tratamentos do mesmo livro. Alterne o tema para ver os dois.</span>
+</div>
+
+<div class="stage"><div class="sheet">
+  <h1>A marca</h1>
+  <p class="lead">O livro que você já usa, em três tratamentos de cor. O desenho é o mesmo nos três — muda só a paleta. Confira principalmente o tamanho de 20px: é o que aparece no topo do celular.</p>
+
+  <div class="opt pick">
+    <h2>A — Livro dourado sobre verde <span class="tag">minha escolha</span></h2>
+    <p>Usa só cores que já existem no sistema. Nenhum vermelho, nenhuma exceção a manter.</p>
+    <div class="sizes">
+      <div class="item"><svg class="mk a" width="72" height="72" viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg><small>72px</small></div>
+      <div class="item"><svg class="mk a" width="36" height="36" viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg><small>36px</small></div>
+      <div class="item"><svg class="mk a" width="20" height="20" viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg><small>20px</small></div>
+      <div class="lockup"><svg class="mk a" width="38" height="38" viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg><span class="nm">Comes&amp;Bebes</span></div>
+    </div>
+  </div>
+
+  <div class="opt">
+    <h2>B — Livro verde sobre dourado</h2>
+    <p>Mais quente e mais visível no escuro. O dourado puxa muita atenção para o canto da tela.</p>
+    <div class="sizes">
+      <div class="item"><svg class="mk b" width="72" height="72" viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg><small>72px</small></div>
+      <div class="item"><svg class="mk b" width="36" height="36" viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg><small>36px</small></div>
+      <div class="item"><svg class="mk b" width="20" height="20" viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg><small>20px</small></div>
+      <div class="lockup"><svg class="mk b" width="38" height="38" viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg><span class="nm">Comes&amp;Bebes</span></div>
+    </div>
+  </div>
+
+  <div class="opt">
+    <h2>C — Livro creme sobre vermelho</h2>
+    <p>O mais perto do que você tem hoje. Exige um token <code>--brand-red</code> reservado só para a marca, para não confundir com a cor de erro.</p>
+    <div class="sizes">
+      <div class="item"><svg class="mk c" width="72" height="72" viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg><small>72px</small></div>
+      <div class="item"><svg class="mk c" width="36" height="36" viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg><small>36px</small></div>
+      <div class="item"><svg class="mk c" width="20" height="20" viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg><small>20px</small></div>
+      <div class="lockup"><svg class="mk c" width="38" height="38" viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg><span class="nm">Comes&amp;Bebes</span></div>
+    </div>
+  </div>
+</div></div>
+
+<script>
+document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{
+  document.documentElement.setAttribute('data-theme',b.dataset.t);
+  document.querySelectorAll('[data-t]').forEach(x=>x.setAttribute('aria-pressed',x===b));});
+</script>
+</body>
+</html>

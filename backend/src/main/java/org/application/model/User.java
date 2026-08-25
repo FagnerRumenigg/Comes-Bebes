@@ -41,6 +41,14 @@ public class User {
     @Column(name = "display_name", nullable = false, length = 100)
     private String displayName;
 
+    @Column(length = 280)
+    private String bio;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "default_publication_visibility", nullable = false, length = 10)
+    @Builder.Default
+    private PublicationVisibility defaultPublicationVisibility = PublicationVisibility.PUBLIC;
+
     @Column(name = "blocked_username_hmac", length = 64)
     private String blockedUsernameHmac;
     @Column(name = "blocked_by")
@@ -60,17 +68,40 @@ public class User {
     @Builder.Default
     private UserStatus status = UserStatus.ACTIVE;
 
-    @Column(name = "show_reaction_counts", nullable = false)
-    @Builder.Default
-    private boolean showReactionCounts = true;
-
     @Column(name = "onboarding_completed", nullable = false)
     @Builder.Default
     private boolean onboardingCompleted = false;
 
+    // Avisos (docs/telas/09-configuracoes.html, seção "Avisos"). Todos ligados
+    // por padrão, exceto "alguém que sigo publica" e o resumo semanal — a
+    // própria referência mostra esses dois desligados de cara.
     @Column(name = "notify_on_followed_publish", nullable = false)
     @Builder.Default
-    private boolean notifyOnFollowedPublish = true;
+    private boolean notifyOnFollowedPublish = false;
+
+    @Column(name = "notify_on_saved", nullable = false)
+    @Builder.Default
+    private boolean notifyOnSaved = true;
+
+    @Column(name = "notify_on_reacted", nullable = false)
+    @Builder.Default
+    private boolean notifyOnReacted = true;
+
+    @Column(name = "notify_on_my_version", nullable = false)
+    @Builder.Default
+    private boolean notifyOnMyVersion = true;
+
+    @Column(name = "notify_on_collection_new_item", nullable = false)
+    @Builder.Default
+    private boolean notifyOnCollectionNewItem = true;
+
+    @Column(name = "notify_on_collection_shared", nullable = false)
+    @Builder.Default
+    private boolean notifyOnCollectionShared = true;
+
+    @Column(name = "notify_weekly_email", nullable = false)
+    @Builder.Default
+    private boolean notifyWeeklyEmail = false;
 
     @Column(name = "last_seen_patch_note_at")
     private OffsetDateTime lastSeenPatchNoteAt;
@@ -102,6 +133,18 @@ public class User {
         this.username = username;
     }
 
+    public void updateBio(String bio) {
+        this.bio = bio;
+    }
+
+    public void updateDefaultPublicationVisibility(PublicationVisibility visibility) {
+        this.defaultPublicationVisibility = visibility;
+    }
+
+    public void updateEmail(String email) {
+        this.email = email;
+    }
+
     public void updatePasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
     }
@@ -118,6 +161,30 @@ public class User {
         this.notifyOnFollowedPublish = value;
     }
 
+    public void updateNotifyOnSaved(boolean value) {
+        this.notifyOnSaved = value;
+    }
+
+    public void updateNotifyOnReacted(boolean value) {
+        this.notifyOnReacted = value;
+    }
+
+    public void updateNotifyOnMyVersion(boolean value) {
+        this.notifyOnMyVersion = value;
+    }
+
+    public void updateNotifyOnCollectionNewItem(boolean value) {
+        this.notifyOnCollectionNewItem = value;
+    }
+
+    public void updateNotifyOnCollectionShared(boolean value) {
+        this.notifyOnCollectionShared = value;
+    }
+
+    public void updateNotifyWeeklyEmail(boolean value) {
+        this.notifyWeeklyEmail = value;
+    }
+
     public void delete(OffsetDateTime deletedAt) {
         this.status = UserStatus.DELETED;
         this.deletedAt = deletedAt;
@@ -127,6 +194,7 @@ public class User {
         email = null;
         username = "deleted_" + id.toString().replace("-", "").substring(0, 20);
         displayName = "Conta removida";
+        bio = null;
         passwordHash = "INVALIDATED";
         status = UserStatus.DELETED;
         deletedAt = OffsetDateTime.now(ZoneOffset.UTC);

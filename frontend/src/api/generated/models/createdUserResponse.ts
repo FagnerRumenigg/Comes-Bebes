@@ -13,12 +13,12 @@ import type { CreatedUserResponseRole } from './createdUserResponseRole';
 export interface CreatedUserResponse {
   /** Identificador único do usuário. */
   id: string;
-  /** Nome público do usuário. */
+  /** E-mail da conta — é a credencial de login. */
+  email: string;
+  /** @usuário, gerado automaticamente a partir do nome de exibição. */
   username: string;
   /** Nome exibido no perfil. */
   displayName: string;
   /** Papel de acesso da conta. */
   role: CreatedUserResponseRole;
-  /** Indica se os totais das reações ficam visíveis. */
-  showReactionCounts: boolean;
 }

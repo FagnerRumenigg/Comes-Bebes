@@ -35,6 +35,7 @@ function mountReactionBar(publication: Partial<PublicationResponse>, authenticat
       role: 'USER',
       onboardingCompleted: true,
       hasUnseenPatchNotes: false,
+      emailRequired: false,
     }
   }
 
@@ -46,59 +47,66 @@ function mountReactionBar(publication: Partial<PublicationResponse>, authenticat
 }
 
 describe('ReactionBar', () => {
-  it('mostra as reações principais e o botão + Reagir', () => {
-    const wrapper = mountReactionBar({ authorId: 'outro-usuario', selectedReactions: [] })
+  it('mostra as reações já usadas e o botão Reagir, sem número', () => {
+    const wrapper = mountReactionBar({
+      authorId: 'outro-usuario',
+      usedReactions: ['HUNGRY', 'BEAUTIFUL'],
+      selectedReactions: [],
+    })
 
-    expect(wrapper.text()).toContain('Eu comeria')
-    expect(wrapper.text()).toContain('Quero fazer')
-    expect(wrapper.text()).toContain('Comida afetiva')
-    expect(wrapper.text()).toContain('+ Reagir')
+    const badges = wrapper.findAll('.reaction-bar__badge')
+    expect(badges.map((badge) => badge.text())).toEqual(['Me deu fome', 'Ficou lindo'])
+    expect(wrapper.get('.reaction-bar__reagir').text()).toBe('Reagir')
+    // Nenhum contador público em lugar nenhum do produto (produto5.md v5 §3.1) —
+    // as reações no cartão são só presença, nunca número.
+    badges.forEach((badge) => expect(badge.text()).not.toMatch(/\d/))
   })
 
-  it('alterna uma reação principal ao clicar', async () => {
-    mockServer.use(http.put('*/publications/:id/reactions', () => new HttpResponse(null, { status: 204 })))
-    const wrapper = mountReactionBar({ authorId: 'outro-usuario', selectedReactions: [] })
+  it('reação sem nenhum uso não aparece como emblema no cartão', () => {
+    const wrapper = mountReactionBar({
+      authorId: 'outro-usuario',
+      usedReactions: [],
+      selectedReactions: [],
+    })
 
-    const button = wrapper.findAll('button').find((b) => b.text().includes('Eu comeria'))!
+    expect(wrapper.findAll('.reaction-bar__badge')).toHaveLength(0)
+  })
+
+  it('abre o seletor ao clicar em Reagir e alterna uma reação', async () => {
+    mockServer.use(http.put('*/publications/:id/reactions', () => new HttpResponse(null, { status: 204 })))
+    const wrapper = mountReactionBar({
+      authorId: 'outro-usuario',
+      usedReactions: [],
+      selectedReactions: [],
+    })
+
+    await wrapper.get('button.reaction-bar__reagir').trigger('click')
+    const button = wrapper.findAll('button').find((b) => b.text() === 'Me deu fome')!
     await button.trigger('click')
 
     expect(button.attributes('aria-pressed')).toBe('true')
+    expect(wrapper.text()).toContain('1 de 3 escolhidas')
   })
 
-  it('impede uma quarta reação e mostra o aviso de limite', async () => {
+  it('explica em vez de ignorar ao tentar uma quarta reação', async () => {
     const wrapper = mountReactionBar({
       authorId: 'outro-usuario',
-      selectedReactions: ['WOULD_EAT', 'WANT_TO_MAKE', 'COMFORT_FOOD'],
+      selectedReactions: ['HUNGRY', 'BEAUTIFUL', 'PERFECT_COMBO'],
     })
 
-    expect(wrapper.text()).toContain('Você pode escolher até 3 reações para esta publicação.')
+    await wrapper.get('button.reaction-bar__reagir').trigger('click')
+    const fourth = wrapper.findAll('button').find((b) => b.text() === 'Nunca provei')!
+    await fourth.trigger('click')
 
-    await wrapper.get('button.reaction-bar__more').trigger('click')
-    const secondary = wrapper.findAll('button').find((b) => b.text().includes('Preciso da receita!'))!
-    expect(secondary.attributes('disabled')).toBeDefined()
+    expect(wrapper.text()).toContain('Você já escolheu 3. Tire uma para poder escolher outra.')
+    expect(fourth.attributes('aria-pressed')).toBe('false')
   })
 
-  it('abre "+ Reagir" e a reação secundária escolhida passa a aparecer na barra principal', async () => {
-    mockServer.use(http.put('*/publications/:id/reactions', () => new HttpResponse(null, { status: 204 })))
-    const wrapper = mountReactionBar({ authorId: 'outro-usuario', selectedReactions: [] })
-
-    await wrapper.get('button.reaction-bar__more').trigger('click')
-    const recipeButton = wrapper.findAll('button').find((b) => b.text().includes('Preciso da receita!'))!
-    await recipeButton.trigger('click')
-
-    await vi.waitFor(() => {
-      const barButtons = wrapper.findAll('button').filter((b) => b.text().includes('Preciso da receita!'))
-      expect(barButtons.length).toBeGreaterThanOrEqual(1)
-      expect(barButtons.some((b) => b.attributes('aria-pressed') === 'true')).toBe(true)
-    })
-  })
-
-  it('visitante aciona aviso de autenticação em vez de reagir', async () => {
+  it('visitante aciona aviso de autenticação ao tentar reagir', async () => {
     dismissAuthNotice()
     const wrapper = mountReactionBar({ authorId: 'outro-usuario', selectedReactions: [] }, false)
 
-    const button = wrapper.findAll('button').find((b) => b.text().includes('Eu comeria'))!
-    await button.trigger('click')
+    await wrapper.get('button.reaction-bar__reagir').trigger('click')
 
     expect(authNotice.visible).toBe(true)
     dismissAuthNotice()
@@ -108,8 +116,26 @@ describe('ReactionBar', () => {
     const wrapper = mountReactionBar({ authorId: viewerId, selectedReactions: [] })
 
     expect(wrapper.text()).toContain('Você não pode reagir à própria publicação.')
-    const button = wrapper.findAll('button').find((b) => b.text().includes('Eu comeria'))!
-    expect(button.attributes('disabled')).toBeDefined()
-    expect(wrapper.get('button.reaction-bar__more').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('button.reaction-bar__reagir').attributes('disabled')).toBeDefined()
+  })
+
+  it('mostra erro e desfaz a seleção quando a chamada falha', async () => {
+    mockServer.use(
+      http.put('*/publications/:id/reactions', () =>
+        HttpResponse.json({ code: 'ERROR', message: 'Não foi possível salvar.' }, { status: 400 }),
+      ),
+    )
+    const wrapper = mountReactionBar({
+      authorId: 'outro-usuario',
+      usedReactions: [],
+      selectedReactions: [],
+    })
+
+    await wrapper.get('button.reaction-bar__reagir').trigger('click')
+    const button = wrapper.findAll('button').find((b) => b.text() === 'Me deu fome')!
+    await button.trigger('click')
+
+    await vi.waitFor(() => expect(button.attributes('aria-pressed')).toBe('false'))
+    expect(wrapper.text()).toContain('Não foi possível salvar.')
   })
 })

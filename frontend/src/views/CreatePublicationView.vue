@@ -8,15 +8,19 @@ import {
   useCreateUpload,
   useGetPublicationById,
   useGetPublicationRecipe,
+  useReportPhotoValidationFeedback,
 } from '@/api/generated/publications/publications'
 import type { CreateRecipeRequest } from '@/api/generated/models'
 import { normalizeHttpError } from '@/api/errors'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseFieldError from '@/components/base/BaseFieldError.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
+import RadioCardGroup from '@/components/base/RadioCardGroup.vue'
 import BaseSelect from '@/components/base/BaseSelect.vue'
 import BaseTextarea from '@/components/base/BaseTextarea.vue'
 import BaseToast from '@/components/base/BaseToast.vue'
+import StatusRing from '@/components/base/StatusRing.vue'
+import AppIcon from '@/components/icons/AppIcon.vue'
 import IngredientEditor, {
   type IngredientDraft,
 } from '@/components/publication/IngredientEditor.vue'
@@ -30,6 +34,9 @@ import {
   saveDraft,
   type PublicationDraft,
 } from '@/features/publications/drafts'
+import { PUBLICATION_VISIBILITY_OPTIONS } from '@/features/publications/visibilityOptions'
+import { useAccountInfo } from '@/composables/useAccountInfo'
+import { resolveImageUrl } from '@/utils/resolveImageUrl'
 
 const route = useRoute()
 const router = useRouter()
@@ -45,7 +52,20 @@ const recipeQuery = useGetPublicationRecipe(sourceId, {
 })
 
 const type = ref<'DISH' | 'RECIPE'>('DISH')
-const visibility = ref<'PUBLIC' | 'INTERNAL'>('PUBLIC')
+const visibility = ref<'PUBLIC' | 'INTERNAL' | 'PRIVATE'>('PUBLIC')
+const VISIBILITY_OPTIONS = PUBLICATION_VISIBILITY_OPTIONS
+
+// Pré-seleciona com a preferência salva em Configurações → Minha conta
+// (docs/telas/09-configuracoes.html), sem sobrescrever se a pessoa já mexeu
+// no campo ou está retomando um rascunho.
+const { defaultPublicationVisibility } = useAccountInfo()
+const visibilityTouched = ref(false)
+watch(defaultPublicationVisibility, (value) => {
+  if (value && !visibilityTouched.value) visibility.value = value
+})
+watch(visibility, () => {
+  visibilityTouched.value = true
+})
 const title = ref('')
 const description = ref('')
 const titleSuffix = ref('')
@@ -60,6 +80,7 @@ const formError = ref('')
 const ingredientError = ref('')
 const fieldErrors = reactive<Record<string, string>>({})
 const published = ref(false)
+const publishedId = ref('')
 const ingredients = ref<IngredientDraft[]>([{ name: '', quantity: '', unit: '', note: '' }])
 const tags = ref<string[]>([])
 
@@ -181,7 +202,8 @@ const isSubmitting = computed(
   () => createMutation.isPending.value || versionMutation.isPending.value,
 )
 const recipeMode = computed(() => isMyVersion.value || type.value === 'RECIPE')
-const pageTitle = computed(() => (isMyVersion.value ? 'Publicar minha versão' : 'Criar publicação'))
+const pageTitle = computed(() => (isMyVersion.value ? 'Publicar minha versão' : 'O que você fez?'))
+const submitLabel = computed(() => (isMyVersion.value ? 'Publicar minha versão' : 'Publicar'))
 
 const ACCEPTED_IMAGE_TYPES = [
   'image/jpeg',
@@ -201,6 +223,10 @@ function acceptImage(event: Event): void {
   const selected = (event.target as HTMLInputElement).files?.[0] ?? null
   imageError.value = ''
   image.value = null
+  photoRejected.value = false
+  photoFeedbackOpen.value = false
+  photoFeedbackSent.value = false
+  photoFeedbackComment.value = ''
   clearImagePreview()
   if (!selected) return
   // Alguns navegadores (ex.: Safari com arquivos HEIC) não preenchem `type`,
@@ -228,6 +254,31 @@ function clearErrors(): void {
   for (const key of Object.keys(fieldErrors)) delete fieldErrors[key]
 }
 
+// Canal mínimo de "acha que erramos" (impl10.md v10 §21.2): a recusa é definitiva,
+// não existe publicar assim mesmo — isto é o jeito de descobrir falsos negativos,
+// já que não existe monitoramento automático do classificador.
+const photoRejected = ref(false)
+const photoFeedbackOpen = ref(false)
+const photoFeedbackComment = ref('')
+const photoFeedbackSent = ref(false)
+const photoFeedbackMutation = useReportPhotoValidationFeedback({
+  mutation: {
+    onSuccess: () => {
+      photoFeedbackSent.value = true
+      photoFeedbackOpen.value = false
+    },
+  },
+})
+
+function submitPhotoFeedback(): void {
+  photoFeedbackMutation.mutate({
+    data: {
+      reasonCode: 'IMAGE_NOT_FOOD',
+      ...(photoFeedbackComment.value.trim() ? { comment: photoFeedbackComment.value } : {}),
+    },
+  })
+}
+
 function handleMutationError(error: unknown, fallback: string): void {
   const normalized = normalizeHttpError(error)
   Object.assign(fieldErrors, normalized.fieldErrors)
@@ -236,7 +287,10 @@ function handleMutationError(error: unknown, fallback: string): void {
     normalized.fieldErrors.ingredients ??
     normalized.fieldErrors['recipe.ingredients'] ??
     ingredientError.value
-  formError.value = `${normalized.message || fallback} Seus dados foram preservados.`
+  photoRejected.value = normalized.code === 'IMAGE_NOT_FOOD'
+  formError.value = photoRejected.value
+    ? 'Não reconhecemos comida nesta foto. Escolha outra para continuar.'
+    : `${normalized.message || fallback} Seus dados foram preservados.`
   if (normalized.code === 'RATE_LIMIT_EXCEEDED' && normalized.nextAvailableAt) {
     startRateLimitCooldown(normalized.nextAvailableAt)
   }
@@ -314,11 +368,37 @@ function submit(): void {
 
 function finish(id: string): void {
   published.value = true
+  publishedId.value = id
   clearImagePreview()
   if (autosaveTimer) clearInterval(autosaveTimer)
   void deleteDraft(draftId.value)
   queryClient.invalidateQueries({ queryKey: ['publications'] })
-  void router.push(`/publicacoes/${id}`)
+}
+
+function goToFeed(): void {
+  void router.push('/')
+}
+
+function publishAnother(): void {
+  published.value = false
+  publishedId.value = ''
+  type.value = 'DISH'
+  visibility.value = 'PUBLIC'
+  title.value = ''
+  description.value = ''
+  changeSummary.value = ''
+  instructions.value = ''
+  yieldQuantity.value = ''
+  yieldUnit.value = ''
+  image.value = null
+  clearImagePreview()
+  ingredients.value = [{ name: '', quantity: '', unit: '', note: '' }]
+  tags.value = []
+  clearErrors()
+  draftId.value = crypto.randomUUID()
+  draftCreatedAt = new Date().toISOString()
+  lastDraftSavedAt.value = null
+  autosaveTimer = setInterval(() => void autosaveDraft(), 10_000)
 }
 
 const prefilled = ref(false)
@@ -338,6 +418,7 @@ watch(recipeQuery.data, (recipe) => {
 })
 
 const sourceTitle = computed(() => sourceQuery.data.value?.title ?? 'receita original')
+const titlePreview = computed(() => `${sourceTitle.value} · ${titleSuffix.value.trim() || 'sua versão'}`)
 const sourceLoadError = computed(() => {
   const error = sourceQuery.error.value ?? recipeQuery.error.value
   return isMyVersion.value && error ? normalizeHttpError(error).message : null
@@ -353,182 +434,308 @@ onBeforeUnmount(() => {
 
 <template>
   <article class="create-publication">
-    <p class="create-publication__eyebrow">Publicação</p>
-    <h1>{{ pageTitle }}</h1>
-    <p v-if="isMyVersion" class="create-publication__intro">
-      Crie sua própria versão de <strong>{{ sourceTitle }}</strong
-      >.
-    </p>
-    <div v-if="sourceLoadError" class="create-publication__source-error" role="alert">
-      <strong>Não foi possível carregar a receita original.</strong>
-      <p>{{ sourceLoadError }}</p>
-      <BaseButton variant="secondary" @click="router.back()">Voltar</BaseButton>
-    </div>
-    <form v-else class="create-publication__form" novalidate @submit.prevent="submit">
-      <p v-if="lastDraftSavedAt || existingDraftsCount" class="create-publication__draft-status">
-        <span v-if="lastDraftSavedAt">Rascunho salvo às {{ formatSavedTime(lastDraftSavedAt) }}. </span>
-        <RouterLink to="/rascunhos"
-          >Ver rascunhos salvos<span v-if="existingDraftsCount"> ({{ existingDraftsCount }})</span></RouterLink
-        >
+    <section v-if="published" class="create-publication__done">
+      <StatusRing variant="success" />
+      <h1>Publicado!</h1>
+      <p>Sua publicação já está sendo validada e vai aparecer no feed em instantes.</p>
+      <div class="create-publication__done-actions">
+        <BaseButton @click="goToFeed">Ver no feed</BaseButton>
+        <BaseButton variant="secondary" @click="publishAnother">Publicar outra coisa</BaseButton>
+      </div>
+    </section>
+
+    <template v-else>
+      <RouterLink class="create-publication__back" to="/">
+        <AppIcon name="back" :size="18" :stroke-width="2" />
+        Voltar
+      </RouterLink>
+
+      <h1>{{ pageTitle }}</h1>
+      <p v-if="isMyVersion" class="create-publication__intro">
+        Já trouxemos a receita — mude o que você fez diferente, o resto pode ficar como está.
       </p>
-      <section v-if="isMyVersion" class="create-publication__source">
-        <p v-if="recipeQuery.isPending.value">Carregando a receita original…</p>
-        <p v-else>
-          Começamos com a receita original para facilitar. Ajuste os ingredientes, o preparo e o
-          rendimento para mostrar como você fez a sua versão.
-        </p>
-      </section>
-      <BaseSelect v-if="!isMyVersion" v-model="type" label="Tipo de publicação" required>
-        <option value="DISH">Prato</option>
-        <option value="RECIPE">Receita</option>
-      </BaseSelect>
-      <BaseInput
-        v-if="isMyVersion"
-        v-model="titleSuffix"
-        label="Sufixo do título"
-        hint="Será acrescentado ao título da publicação original."
-        maxlength="100"
-        :error="fieldErrors.titleSuffix"
-        required
-      />
-      <BaseInput
-        v-else
-        v-model="title"
-        label="Título"
-        hint="Opcional, até 150 caracteres."
-        maxlength="150"
-        :error="fieldErrors.title"
-      />
-      <BaseTextarea
-        v-if="!isMyVersion && type === 'DISH'"
-        v-model="description"
-        label="Descrição"
-        hint="Opcional, até 2.000 caracteres."
-        maxlength="2000"
-        :error="fieldErrors.description"
-      />
-      <BaseTextarea
-        v-if="isMyVersion"
-        v-model="changeSummary"
-        label="O que você mudou?"
-        hint="Opcional, até 2.000 caracteres."
-        maxlength="2000"
-        :error="fieldErrors.changeSummary"
-      />
-      <fieldset class="create-publication__image">
-        <legend>Imagem <span aria-hidden="true">*</span></legend>
-        <label class="create-publication__file"
-          >Escolher imagem<input
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
-            required
-            @change="acceptImage"
-        /></label>
-        <p>JPEG, PNG, WebP, HEIC ou HEIF até 20 MB.</p>
-        <img v-if="imagePreview" :src="imagePreview" alt="Prévia da imagem selecionada" />
-      </fieldset>
-      <div v-if="recipeMode" class="create-publication__recipe">
-        <IngredientEditor v-model="ingredients" :error="ingredientError" /><PreparationStepsEditor
-          v-model="instructions"
-          :error="fieldErrors.instructions ?? fieldErrors['recipe.instructions']"
+      <p v-else class="create-publication__intro">
+        Uma foto e duas linhas já bastam. Não precisa ser receita completa.
+      </p>
+
+      <RouterLink
+        v-if="isMyVersion && sourceQuery.data.value"
+        class="create-publication__origin"
+        :to="`/publicacoes/${sourceId}`"
+      >
+        <img
+          v-if="sourceQuery.data.value.imageUrl"
+          class="create-publication__origin-thumb"
+          :src="resolveImageUrl(sourceQuery.data.value.imageUrl)"
+          alt=""
         />
-        <div class="create-publication__yield">
-          <BaseInput v-model="yieldQuantity" label="Rendimento" type="number" :min="0" /><BaseInput
-            v-model="yieldUnit"
-            label="Unidade do rendimento"
-            placeholder="porções, fatias..."
-            maxlength="50"
-          />
+        <span>
+          <strong>{{ sourceTitle }}</strong>
+          <span class="create-publication__origin-meta">
+            de {{ sourceQuery.data.value.authorDisplayName }} · a receita original
+          </span>
+        </span>
+        <span class="create-publication__origin-link">Ver original</span>
+      </RouterLink>
+
+      <div v-if="sourceLoadError" class="create-publication__source-error" role="alert">
+        <strong>Não foi possível carregar a receita original.</strong>
+        <p>{{ sourceLoadError }}</p>
+        <BaseButton variant="secondary" @click="router.back()">Voltar</BaseButton>
+      </div>
+      <form v-else class="create-publication__form" novalidate @submit.prevent="submit">
+        <p v-if="lastDraftSavedAt || existingDraftsCount" class="create-publication__draft-status">
+          <AppIcon name="check" :size="15" :stroke-width="2.2" />
+          <span v-if="lastDraftSavedAt">Rascunho salvo às {{ formatSavedTime(lastDraftSavedAt) }}. </span>
+          <RouterLink to="/rascunhos"
+            >Ver rascunhos salvos<span v-if="existingDraftsCount"> ({{ existingDraftsCount }})</span></RouterLink
+          >
+        </p>
+
+        <fieldset class="create-publication__image">
+          <legend>Foto <span aria-hidden="true">*</span></legend>
+          <label
+            class="create-publication__photo"
+            :class="{ 'create-publication__photo--filled': imagePreview }"
+          >
+            <input
+              type="file"
+              class="create-publication__photo-input"
+              accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
+              required
+              @change="acceptImage"
+            />
+            <template v-if="!imagePreview">
+              <AppIcon name="camera" :size="32" :stroke-width="1.5" />
+              <span class="create-publication__photo-cta">Comece pela foto</span>
+              <span class="create-publication__photo-hint">
+                JPEG, PNG, WebP, HEIC ou HEIF até 20 MB.
+              </span>
+            </template>
+            <template v-else>
+              <img :src="imagePreview" alt="Prévia da imagem selecionada" />
+              <span class="create-publication__photo-swap">Trocar foto</span>
+            </template>
+          </label>
+          <p v-if="imagePreview" class="create-publication__photo-note">
+            Depois de publicar, ela não poderá mais ser trocada.
+          </p>
+        </fieldset>
+
+        <BaseSelect v-if="!isMyVersion" v-model="type" label="Tipo de publicação" required>
+          <option value="DISH">Prato</option>
+          <option value="RECIPE">Receita</option>
+        </BaseSelect>
+
+        <div v-if="isMyVersion" class="create-publication__title-box">
+          <label class="create-publication__title-label" for="my-version-suffix">
+            Como você vai chamar a sua? <span aria-hidden="true">*</span>
+          </label>
+          <div class="create-publication__title-control">
+            <span class="create-publication__title-fixed">{{ sourceTitle }} ·</span>
+            <input
+              id="my-version-suffix"
+              v-model="titleSuffix"
+              type="text"
+              maxlength="100"
+              placeholder="do meu jeito"
+            />
+          </div>
+          <BaseFieldError v-if="fieldErrors.titleSuffix" :message="fieldErrors.titleSuffix" />
+          <p class="create-publication__title-preview">
+            Vai aparecer como: <strong>{{ titlePreview }}</strong>
+          </p>
         </div>
-      </div>
-      <TagEditor v-model="tags" :error="fieldErrors.tags" />
-      <BaseSelect
-        v-model="visibility"
-        label="Visibilidade"
-        required
-        :hint="
-          visibility === 'PUBLIC'
-            ? 'Pública: qualquer pessoa pode ver, mesmo sem conta no Comes&Bebes.'
-            : 'Interna: só é vista por quem tem conta e está conectado ao Comes&Bebes.'
-        "
-        ><option value="PUBLIC">Pública</option>
-        <option value="INTERNAL">Interna</option></BaseSelect
-      >
-      <BaseFieldError v-if="imageError" :message="imageError" /><BaseFieldError
-        v-if="formError"
-        :message="formError"
-      />
-      <BaseToast
-        v-if="isRateLimited"
-        kind="warning"
-        title="Limite de publicações atingido"
-        :dismissible="false"
-      >
-        Tente novamente em {{ cooldownSecondsRemaining }}
-        {{ cooldownSecondsRemaining === 1 ? 'segundo' : 'segundos' }}.
-      </BaseToast>
-      <div class="create-publication__actions">
-        <BaseButton type="submit" :loading="isSubmitting" :disabled="isRateLimited">
-          {{ isRateLimited ? `Aguarde ${cooldownSecondsRemaining}s` : 'Publicar' }}
-        </BaseButton
-        ><BaseButton
-          type="button"
-          variant="secondary"
-          :disabled="isSubmitting"
-          @click="router.back()"
-          >Cancelar</BaseButton
+        <BaseInput
+          v-else
+          v-model="title"
+          label="Como se chama?"
+          hint="Opcional, até 150 caracteres."
+          maxlength="150"
+          :error="fieldErrors.title"
+        />
+
+        <BaseTextarea
+          v-if="!isMyVersion && type === 'DISH'"
+          v-model="description"
+          label="Conte alguma coisa"
+          hint="Opcional, até 2.000 caracteres."
+          maxlength="2000"
+          :error="fieldErrors.description"
+        />
+        <BaseTextarea
+          v-if="isMyVersion"
+          v-model="changeSummary"
+          label="O que você mudou?"
+          hint="Opcional, até 2.000 caracteres."
+          maxlength="2000"
+          :error="fieldErrors.changeSummary"
+        />
+
+        <div v-if="recipeMode" class="create-publication__recipe">
+          <IngredientEditor v-model="ingredients" :error="ingredientError" /><PreparationStepsEditor
+            v-model="instructions"
+            :error="fieldErrors.instructions ?? fieldErrors['recipe.instructions']"
+          />
+          <div class="create-publication__yield">
+            <BaseInput v-model="yieldQuantity" label="Rendimento" type="number" :min="0" /><BaseInput
+              v-model="yieldUnit"
+              label="Unidade do rendimento"
+              placeholder="porções, fatias..."
+              maxlength="50"
+            />
+          </div>
+        </div>
+
+        <TagEditor v-model="tags" :error="fieldErrors.tags" />
+
+        <div class="create-publication__visibility">
+          <span class="create-publication__visibility-label">Quem pode ver</span>
+          <RadioCardGroup v-model="visibility" :options="VISIBILITY_OPTIONS" />
+        </div>
+
+        <BaseFieldError v-if="imageError" :message="imageError" /><BaseFieldError
+          v-if="formError"
+          :message="formError"
+        />
+
+        <div v-if="photoRejected" class="create-publication__photo-feedback">
+          <p v-if="photoFeedbackSent">Obrigado! Seu relato foi enviado.</p>
+          <template v-else-if="photoFeedbackOpen">
+            <BaseTextarea
+              v-model="photoFeedbackComment"
+              label="Conte pra gente"
+              hint="Opcional. Ajuda a melhorar o reconhecimento de fotos."
+              maxlength="1000"
+            />
+            <BaseButton
+              type="button"
+              variant="secondary"
+              :loading="photoFeedbackMutation.isPending.value"
+              @click="submitPhotoFeedback"
+            >
+              Enviar relato
+            </BaseButton>
+          </template>
+          <button
+            v-else
+            type="button"
+            class="create-publication__photo-feedback-link"
+            @click="photoFeedbackOpen = true"
+          >
+            Acha que erramos? Conte pra gente
+          </button>
+        </div>
+
+        <BaseToast
+          v-if="isRateLimited"
+          kind="warning"
+          title="Limite de publicações atingido"
+          :dismissible="false"
         >
-      </div>
-      <p v-if="published" class="create-publication__status" role="status">
-        A imagem será validada antes da publicação aparecer no feed.
-      </p>
-    </form>
+          Tente novamente em {{ cooldownSecondsRemaining }}
+          {{ cooldownSecondsRemaining === 1 ? 'segundo' : 'segundos' }}.
+        </BaseToast>
+
+        <div class="create-publication__actions">
+          <BaseButton
+            type="button"
+            variant="secondary"
+            :disabled="isSubmitting"
+            @click="router.back()"
+          >
+            Cancelar
+          </BaseButton>
+          <BaseButton type="submit" :loading="isSubmitting" :disabled="isRateLimited">
+            {{ isRateLimited ? `Aguarde ${cooldownSecondsRemaining}s` : submitLabel }}
+          </BaseButton>
+        </div>
+      </form>
+    </template>
   </article>
 </template>
 
 <style scoped>
 .create-publication {
-  max-width: 50rem;
+  max-width: 40rem;
   margin-inline: auto;
 }
-.create-publication__eyebrow {
-  margin-block-end: var(--space-2);
-  color: var(--color-primary);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
-  letter-spacing: var(--letter-spacing-wide);
-  text-transform: uppercase;
+
+.create-publication__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-end: var(--space-4);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  text-decoration: none;
 }
+
+.create-publication__back:hover {
+  color: var(--color-primary);
+}
+
 .create-publication h1 {
   margin: 0;
-  font-family: var(--font-family-display);
-  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-size: clamp(2rem, 5vw, 2.5rem);
 }
+
 .create-publication__intro {
-  margin-block: var(--space-3) var(--space-8);
+  margin-block: var(--space-2) var(--space-8);
   color: var(--color-text-secondary);
 }
+
+.create-publication__origin {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  margin-block-end: var(--space-6);
+  color: inherit;
+  text-decoration: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.create-publication__origin-thumb {
+  width: 3rem;
+  height: 3rem;
+  flex: none;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
+.create-publication__origin strong {
+  display: block;
+}
+
+.create-publication__origin-meta {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.create-publication__origin-link {
+  margin-inline-start: auto;
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
 .create-publication__form {
   display: grid;
   gap: var(--space-6);
-  margin-block-start: var(--space-8);
-  padding: var(--space-8);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 }
+
 .create-publication__draft-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
 }
-.create-publication__source {
-  padding: var(--space-4);
-  color: var(--color-text-secondary);
-  background: var(--color-surface-raised);
-  border-inline-start: 3px solid var(--color-primary);
-}
+
 .create-publication__source-error {
   display: grid;
   gap: var(--space-3);
@@ -539,81 +746,216 @@ onBeforeUnmount(() => {
   border: 1px solid var(--color-danger);
   border-radius: var(--radius-md);
 }
+
 .create-publication__source-error p {
   margin: 0;
 }
+
 .create-publication__source-error .base-button {
   width: fit-content;
 }
-.create-publication__source p {
-  margin: 0;
-}
+
 .create-publication__image {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-2);
   padding: 0;
   border: 0;
 }
+
 .create-publication__image legend {
+  margin-block-end: var(--space-2);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
 }
+
 .create-publication__image legend span {
   color: var(--color-danger);
 }
-.create-publication__file {
-  display: inline-flex;
-  width: fit-content;
-  min-height: var(--control-min-size);
-  align-items: center;
-  padding: var(--space-3) var(--space-5);
-  color: var(--color-primary-contrast);
-  font-weight: var(--font-weight-semibold);
-  background: var(--color-primary);
-  border-radius: var(--radius-sm);
+
+.create-publication__photo {
+  position: relative;
+  display: grid;
+  aspect-ratio: 4 / 3;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  text-align: center;
   cursor: pointer;
+  background: var(--color-surface);
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  place-content: center;
 }
-.create-publication__file input {
+
+.create-publication__photo:hover {
+  border-color: var(--color-primary);
+}
+
+.create-publication__photo--filled {
+  border-style: solid;
+  padding: 0;
+}
+
+.create-publication__photo-input {
   position: absolute;
   width: 1px;
   height: 1px;
   overflow: hidden;
   clip: rect(0 0 0 0);
 }
-.create-publication__image > p {
+
+.create-publication__photo-cta {
+  color: var(--color-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+.create-publication__photo-hint {
+  font-size: var(--font-size-sm);
+}
+
+.create-publication__photo--filled img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.create-publication__photo-swap {
+  position: absolute;
+  right: var(--space-3);
+  bottom: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+}
+
+.create-publication__photo-note {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.create-publication__title-box {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.create-publication__title-label {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.create-publication__title-control {
+  display: flex;
+  align-items: center;
+  min-height: var(--control-min-size);
+  padding-inline-start: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.create-publication__title-fixed {
+  flex: none;
+  padding-inline-end: var(--space-1);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.create-publication__title-control input {
+  width: 100%;
+  min-height: var(--control-min-size);
+  padding-inline: var(--space-1) var(--space-4);
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+}
+
+.create-publication__title-preview {
   margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
 }
-.create-publication__image img {
-  width: min(100%, 18rem);
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
-  border-radius: var(--radius-sm);
+
+.create-publication__title-preview strong {
+  color: var(--color-text);
 }
+
 .create-publication__recipe {
   display: grid;
   gap: var(--space-6);
 }
+
 .create-publication__yield {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-4);
 }
-.create-publication__actions {
-  display: flex;
-  flex-wrap: wrap;
+
+.create-publication__visibility {
+  display: grid;
   gap: var(--space-3);
 }
-.create-publication__status {
-  margin: 0;
+
+.create-publication__visibility-label {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.create-publication__actions {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.create-publication__photo-feedback {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.create-publication__photo-feedback-link {
+  width: fit-content;
+  padding: 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
+  text-decoration: underline;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
 }
+
+.create-publication__done {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+}
+
+.create-publication__done p {
+  max-width: 26rem;
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.create-publication__done-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-block-start: var(--space-4);
+}
+
 @media (max-width: 48rem) {
-  .create-publication__form {
-    padding: var(--space-5);
-  }
   .create-publication__yield {
     grid-template-columns: 1fr;
   }

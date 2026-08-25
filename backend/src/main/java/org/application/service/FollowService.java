@@ -72,15 +72,8 @@ public class FollowService {
         return followRepository.existsByFollowerIdAndFollowedIdAndDeletedAtIsNull(followerId, followedId);
     }
 
-    @Transactional(readOnly = true)
-    public long countFollowers(UUID userId) {
-        return followRepository.countByFollowedIdAndDeletedAtIsNull(userId);
-    }
-
-    @Transactional(readOnly = true)
-    public long countFollowing(UUID userId) {
-        return followRepository.countByFollowerIdAndDeletedAtIsNull(userId);
-    }
+    // Sem countFollowers/countFollowing: nenhum contador público em lugar nenhum
+    // do produto (produto5.md v5 §3.1) — ver docs/BACKEND_A_REMOVER.md.
 
     @Transactional(readOnly = true)
     public Page<User> listFollowers(UUID userId, Pageable pageable) {

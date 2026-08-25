@@ -7,7 +7,13 @@ const props = defineProps<{
   visibility: PublicationResponseVisibility
 }>()
 
-const label = computed(() => (props.visibility === 'INTERNAL' ? 'Somente comunidade' : 'Pública'))
+// Vocabulário exato de produto5.md v5 §4/§6.4 — "Interno" está banido da interface.
+const LABELS: Record<PublicationResponseVisibility, string> = {
+  PUBLIC: 'Público',
+  INTERNAL: 'Só para quem tem conta',
+  PRIVATE: 'Só para mim',
+}
+const label = computed(() => LABELS[props.visibility])
 </script>
 
 <template>
@@ -32,5 +38,12 @@ const label = computed(() => (props.visibility === 'INTERNAL' ? 'Somente comunid
 .visibility-badge--internal {
   color: var(--color-primary);
   background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+}
+
+.visibility-badge--private {
+  /* Vermelho é exclusivo de erro real (produto5.md v5 §3.4) — "Só para mim" não é
+     um alerta, então usa o mesmo tom neutro do rótulo padrão, só com borda para
+     se diferenciar visualmente de "Público". */
+  border: 1px solid var(--color-border);
 }
 </style>

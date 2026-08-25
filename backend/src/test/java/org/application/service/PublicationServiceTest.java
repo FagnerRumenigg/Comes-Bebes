@@ -678,6 +678,86 @@ class PublicationServiceTest {
         verify(publicationRepository, never()).save(any(Publication.class));
     }
 
+    @Test
+    void shouldHidePrivatePublicationFromNonAuthor() {
+        UUID id = UUID.randomUUID();
+        UUID authorId = UUID.randomUUID();
+        UUID strangerId = UUID.randomUUID();
+        Publication publication = privatePublication(id, authorId);
+        when(publicationRepository.findByIdAndStatus(id, PublicationStatus.ACTIVE)).thenReturn(Optional.of(publication));
+
+        assertThatThrownBy(() -> publicationService.findAccessible(id, strangerId))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Publicação não encontrada.");
+    }
+
+    @Test
+    void shouldAllowPrivatePublicationForAuthor() {
+        UUID id = UUID.randomUUID();
+        UUID authorId = UUID.randomUUID();
+        Publication publication = privatePublication(id, authorId);
+        when(publicationRepository.findByIdAndStatus(id, PublicationStatus.ACTIVE)).thenReturn(Optional.of(publication));
+
+        assertThat(publicationService.findAccessible(id, authorId)).isSameAs(publication);
+    }
+
+    @Test
+    void shouldHidePrivatePublicationFromAnonymousVisitor() {
+        UUID id = UUID.randomUUID();
+        when(publicationRepository.findByIdAndStatusAndVisibility(id, PublicationStatus.ACTIVE, PublicationVisibility.PUBLIC))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> publicationService.findAccessible(id, null))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void shouldExcludePrivatePublicationsFromStrangersProfile() {
+        UUID authorId = UUID.randomUUID();
+        UUID viewerId = UUID.randomUUID();
+        when(publicationRepository.findByAuthorIdAndStatusAndVisibilityInOrderByPublishedAtDescIdDesc(
+                eq(authorId), eq(PublicationStatus.ACTIVE), any(), any())).thenReturn(Page.empty());
+
+        publicationService.profile(authorId, Pageable.unpaged(), viewerId);
+
+        verify(publicationRepository).findByAuthorIdAndStatusAndVisibilityInOrderByPublishedAtDescIdDesc(
+                eq(authorId), eq(PublicationStatus.ACTIVE),
+                eq(java.util.EnumSet.of(PublicationVisibility.PUBLIC, PublicationVisibility.INTERNAL)), any());
+        verify(publicationRepository, never()).findByAuthorIdAndStatusOrderByPublishedAtDescIdDesc(any(), any(), any());
+    }
+
+    @Test
+    void shouldShowAllVisibilitiesOnOwnProfile() {
+        UUID authorId = UUID.randomUUID();
+        when(publicationRepository.findByAuthorIdAndStatusOrderByPublishedAtDescIdDesc(authorId, PublicationStatus.ACTIVE, Pageable.unpaged()))
+                .thenReturn(Page.empty());
+
+        publicationService.profile(authorId, Pageable.unpaged(), authorId);
+
+        verify(publicationRepository).findByAuthorIdAndStatusOrderByPublishedAtDescIdDesc(authorId, PublicationStatus.ACTIVE, Pageable.unpaged());
+    }
+
+    @Test
+    void shouldNotNotifyFollowersWhenPublicationIsPrivate() {
+        UUID id = UUID.randomUUID();
+        UUID authorId = UUID.randomUUID();
+        Publication publication = privatePublication(id, authorId);
+
+        ReflectionTestUtils.invokeMethod(publicationService, "notifyFollowers", publication);
+
+        verify(followRepository, never()).findByFollowedIdAndDeletedAtIsNullOrderByCreatedAtDesc(any(), any());
+    }
+
+    private Publication privatePublication(UUID id, UUID authorId) {
+        return Publication.builder()
+                .id(id)
+                .authorId(authorId)
+                .type(org.application.model.PublicationType.DISH)
+                .visibility(PublicationVisibility.PRIVATE)
+                .status(PublicationStatus.ACTIVE)
+                .build();
+    }
+
     private Publication publication(UUID id) {
         return Publication.builder()
                 .id(id)

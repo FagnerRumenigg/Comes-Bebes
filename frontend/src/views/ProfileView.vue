@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useQueryClient } from '@tanstack/vue-query'
 
 import { getFindByUsernameQueryKey, useFindByUsername } from '@/api/generated/profiles/profiles'
+import type { UserResponse } from '@/api/generated/models'
 import {
   getGetUserCollectionsQueryKey,
   useBlock,
   useGetUserCollections,
   useGetUserPublications,
 } from '@/api/generated/users/users'
+import BaseAvatar from '@/components/base/BaseAvatar.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseDialog from '@/components/base/BaseDialog.vue'
 import BaseFieldError from '@/components/base/BaseFieldError.vue'
@@ -17,15 +19,22 @@ import BaseTextarea from '@/components/base/BaseTextarea.vue'
 import CollectionCard from '@/components/collection/CollectionCard.vue'
 import CollectionFormDialog from '@/components/collection/CollectionFormDialog.vue'
 import FollowButton from '@/components/profile/FollowButton.vue'
-import PublicationCard from '@/components/publication/PublicationCard.vue'
+import PublicationTile from '@/components/publication/PublicationTile.vue'
 import { normalizeHttpError } from '@/api/errors'
 import { useAuthStore } from '@/stores/auth.store'
 
+// bio ainda não passou pelo orval (mesma situação de coverImageUrls) —
+// trocar por UserResponse puro depois de rodar o backend e `npm run
+// api:generate`.
+type ProfileWithBio = UserResponse & { bio?: string | null }
+
 const route = useRoute()
+const router = useRouter()
 const queryClient = useQueryClient()
 const authStore = useAuthStore()
 const username = computed(() => String(route.params.username ?? ''))
 const profileQuery = useFindByUsername(username)
+const profile = computed(() => profileQuery.data.value as ProfileWithBio | undefined)
 const userId = computed(() => profileQuery.data.value?.id ?? '')
 const publicationsQuery = useGetUserPublications(userId, { page: 1, size: 20 })
 const collectionsQuery = useGetUserCollections(userId, { page: 1, size: 20 })
@@ -38,6 +47,16 @@ function handleCollectionCreated(): void {
 const blockDialogOpen = ref(false)
 const blockReason = ref('')
 const blockError = ref('')
+
+// "Coleções públicas" — mostra só as abertas, mesmo no próprio perfil
+// (produto5.md: coleções privadas/compartilhadas ficam em Salvos, nunca
+// aparecem na vitrine pública, nem para quem é dono).
+const publicCollections = computed(
+  () =>
+    collectionsQuery.data.value?.content.filter(
+      (collection) => collection.visibility === 'PUBLIC',
+    ) ?? [],
+)
 
 const canBlock = computed(
   () =>
@@ -91,20 +110,29 @@ function confirmBlock(): void {
     </div>
     <template v-else-if="profileQuery.data.value">
       <header class="profile-view__header">
-        <p class="profile-view__eyebrow">Perfil público</p>
+        <BaseAvatar :name="profileQuery.data.value.displayName" size="large" />
         <h1>{{ profileQuery.data.value.displayName }}</h1>
         <p class="profile-view__username">@{{ profileQuery.data.value.username }}</p>
-        <p class="profile-view__counts">
-          <strong>{{ profileQuery.data.value.followersCount }}</strong> seguidores ·
-          <strong>{{ profileQuery.data.value.followingCount }}</strong> seguindo
+        <p v-if="profile?.bio" class="profile-view__bio">{{ profile.bio }}</p>
+        <p v-else-if="isOwnProfile" class="profile-view__bio profile-view__bio--empty">
+          Conte um pouco sobre você.
+          <RouterLink to="/perfil/editar">Adicionar descrição</RouterLink>
         </p>
-        <FollowButton
-          v-if="showFollowButton"
-          class="profile-view__follow"
-          :user-id="profileQuery.data.value.id"
-          :following="Boolean(profileQuery.data.value.followedByCurrentUser)"
-          @toggled="refreshProfile"
-        />
+        <div class="profile-view__actions">
+          <BaseButton v-if="isOwnProfile" variant="secondary" @click="router.push('/perfil/editar')">
+            Editar perfil
+          </BaseButton>
+          <FollowButton
+            v-if="showFollowButton"
+            class="profile-view__follow"
+            :user-id="profileQuery.data.value.id"
+            :following="Boolean(profileQuery.data.value.followedByCurrentUser)"
+            @toggled="refreshProfile"
+          />
+          <RouterLink class="profile-view__following-link" :to="`/u/${username}/seguindo`">
+            {{ isOwnProfile ? 'Quem eu sigo' : `Quem ${profileQuery.data.value.displayName} segue` }}
+          </RouterLink>
+        </div>
         <BaseButton
           v-if="canBlock"
           variant="ghost"
@@ -113,9 +141,6 @@ function confirmBlock(): void {
         >
           Bloquear usuário
         </BaseButton>
-        <RouterLink v-if="isOwnProfile" class="profile-view__devices-link" to="/dispositivos">
-          Meus dispositivos
-        </RouterLink>
       </header>
 
       <BaseDialog
@@ -140,47 +165,64 @@ function confirmBlock(): void {
       </BaseDialog>
 
       <section
-        v-if="!collectionsQuery.isPending.value && collectionsQuery.data.value?.content.length"
-        class="profile-view__collections"
+        v-if="!collectionsQuery.isPending.value && (publicCollections.length || isOwnProfile)"
+        class="profile-view__section"
       >
-        <div class="profile-view__collections-header">
-          <h2>Coleções</h2>
+        <div class="profile-view__section-header">
+          <div>
+            <h2>Coleções públicas</h2>
+            <p v-if="isOwnProfile" class="profile-view__section-hint">
+              Só as abertas aparecem aqui.
+            </p>
+          </div>
           <BaseButton v-if="isOwnProfile" variant="secondary" @click="newCollectionOpen = true">
             Nova coleção
           </BaseButton>
         </div>
-        <div class="profile-view__collections-list">
+        <div v-if="publicCollections.length" class="profile-view__grid">
           <CollectionCard
-            v-for="collection in collectionsQuery.data.value.content"
+            v-for="collection in publicCollections"
             :key="collection.id"
             :collection="collection"
           />
         </div>
-      </section>
-      <div v-else-if="isOwnProfile" class="profile-view__collections">
-        <div class="profile-view__collections-header">
-          <h2>Coleções</h2>
-          <BaseButton variant="secondary" @click="newCollectionOpen = true">
-            Nova coleção
-          </BaseButton>
+        <div v-else-if="isOwnProfile" class="profile-view__empty">
+          <p><strong>Nenhuma coleção aberta</strong></p>
+          <p>
+            Suas coleções ficam em Salvos. Se abrir alguma, ela aparece aqui para quem visitar
+            seu perfil.
+          </p>
+          <BaseButton variant="ghost" @click="router.push('/salvos')">Ir para Salvos</BaseButton>
         </div>
-      </div>
+      </section>
 
       <CollectionFormDialog v-model:open="newCollectionOpen" @saved="handleCollectionCreated" />
 
-      <div v-if="publicationsQuery.isPending.value" class="profile-view__state">
-        Carregando publicações...
-      </div>
-      <div v-else-if="!publicationsQuery.data.value?.content.length" class="profile-view__state">
-        Este perfil ainda não tem publicações visíveis.
-      </div>
-      <div v-else class="profile-view__list">
-        <PublicationCard
-          v-for="publication in publicationsQuery.data.value.content"
-          :key="publication.id"
-          :publication="publication"
-        />
-      </div>
+      <section class="profile-view__section">
+        <h2>Publicações</h2>
+        <div v-if="publicationsQuery.isPending.value" class="profile-view__state">
+          Carregando publicações...
+        </div>
+        <div
+          v-else-if="!publicationsQuery.data.value?.content.length"
+          class="profile-view__empty"
+        >
+          <p v-if="isOwnProfile"><strong>Nada publicado ainda</strong></p>
+          <p v-else>
+            <strong>{{ profileQuery.data.value.displayName }} ainda não publicou nada.</strong>
+          </p>
+          <BaseButton v-if="isOwnProfile" @click="router.push('/publicar')">
+            Publicar algo que você fez
+          </BaseButton>
+        </div>
+        <div v-else class="profile-view__grid">
+          <PublicationTile
+            v-for="publication in publicationsQuery.data.value.content"
+            :key="publication.id"
+            :publication="publication"
+          />
+        </div>
+      </section>
     </template>
   </section>
 </template>
@@ -190,51 +232,58 @@ function confirmBlock(): void {
   max-width: var(--content-feed);
   margin-inline: auto;
 }
+
 .profile-view__header {
   margin-block-end: var(--space-10);
 }
-.profile-view__eyebrow {
-  margin-block-end: var(--space-2);
-  color: var(--color-primary);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
-  letter-spacing: var(--letter-spacing-wide);
-  text-transform: uppercase;
-}
+
 .profile-view h1 {
-  margin: 0;
-  font-family: var(--font-family-display);
+  margin: var(--space-4) 0 0;
   font-size: clamp(2rem, 5vw, 3.5rem);
 }
+
 .profile-view__username {
   margin-block-start: var(--space-2);
   color: var(--color-text-secondary);
 }
 
-.profile-view__counts {
-  margin-block-start: var(--space-2);
+.profile-view__bio {
+  max-width: 44em;
+  margin-block-start: var(--space-3);
+  line-height: var(--line-height-body);
+}
+
+.profile-view__bio--empty {
   color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
+  font-style: italic;
 }
 
-.profile-view__counts strong {
-  color: var(--color-text);
+.profile-view__bio--empty a {
+  margin-inline-start: var(--space-1);
+  font-style: normal;
 }
 
-.profile-view__follow {
+.profile-view__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
   margin-block-start: var(--space-4);
+}
+
+.profile-view__following-link {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: none;
+}
+
+.profile-view__following-link:hover {
+  text-decoration: underline;
 }
 
 .profile-view__block {
   margin-block-start: var(--space-4);
   color: var(--color-danger);
-}
-
-.profile-view__devices-link {
-  display: inline-block;
-  margin-block-start: var(--space-4);
-  color: var(--color-primary);
-  font-weight: var(--font-weight-medium);
 }
 
 .profile-view__dialog-actions {
@@ -245,32 +294,60 @@ function confirmBlock(): void {
   margin-block-start: var(--space-4);
 }
 
-.profile-view__collections {
+.profile-view__section {
   margin-block-end: var(--space-10);
 }
 
-.profile-view__collections-header {
+.profile-view__section-header {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-3);
   margin-block-end: var(--space-4);
 }
 
-.profile-view__collections-header h2 {
-  margin: 0;
+.profile-view__section h2 {
+  margin: 0 0 var(--space-4);
   font-size: var(--font-size-xl);
 }
 
-.profile-view__collections-list {
-  display: grid;
-  gap: var(--space-4);
+.profile-view__section-header h2 {
+  margin-block-end: 0;
 }
-.profile-view__list {
-  display: grid;
-  gap: var(--space-8);
+
+.profile-view__section-hint {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
 }
+
+.profile-view__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: var(--space-4) var(--space-3);
+}
+
+.profile-view__empty {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  padding: var(--space-8);
+  color: var(--color-text-secondary);
+  text-align: left;
+  background: var(--color-surface);
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.profile-view__empty p {
+  margin: 0;
+}
+
+.profile-view__empty strong {
+  color: var(--color-text);
+}
+
 .profile-view__state {
   padding: var(--space-8);
   color: var(--color-text-secondary);

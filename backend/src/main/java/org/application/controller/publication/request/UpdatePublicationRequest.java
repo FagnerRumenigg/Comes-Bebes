@@ -19,7 +19,7 @@ public record UpdatePublicationRequest(
         @Schema(description = "Nova descrição.", example = "Atualizada", nullable = true)
         @Size(max = 2000) String description,
         @Schema(description = "Nova visibilidade.", example = "PUBLIC", nullable = true)
-        @Pattern(regexp = "PUBLIC|INTERNAL") String visibility,
+        @Pattern(regexp = "PUBLIC|INTERNAL|PRIVATE") String visibility,
         @Schema(description = "Receita obrigatória ao converter para RECIPE.")
         @Valid CreateRecipeRequest recipe,
         @Schema(description = "Nova lista de tags (no máximo 5), substituindo a anterior por completo. "

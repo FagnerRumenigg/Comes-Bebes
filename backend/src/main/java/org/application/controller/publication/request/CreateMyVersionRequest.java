@@ -15,7 +15,7 @@ public record CreateMyVersionRequest(
         @Schema(description = "UUID do autor da versão.", example = "4f5c2c9e-5d5b-4cc9-8f57-7e4dbd5b5b9a")
         @NotNull UUID authorId,
         @Schema(description = "Visibilidade da versão.", example = "PUBLIC")
-        @NotBlank @Pattern(regexp = "PUBLIC|INTERNAL") String visibility,
+        @NotBlank @Pattern(regexp = "PUBLIC|INTERNAL|PRIVATE") String visibility,
         @Schema(description = "Complemento obrigatório do título original.", example = "versão com berinjela")
         @NotBlank @Size(max = 100) String titleSuffix,
         @Schema(description = "Resumo opcional das alterações.", example = "Troquei a carne por berinjela.", nullable = true)

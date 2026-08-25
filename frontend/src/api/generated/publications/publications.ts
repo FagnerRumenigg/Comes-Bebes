@@ -32,6 +32,7 @@ import type {
 import type {
   ApiErrorResponse,
   CreateMyVersionBody,
+  CreatePhotoValidationFeedbackRequest,
   CreateReportRequest,
   CreateUploadBody,
   FeedParams,
@@ -585,6 +586,71 @@ export const useMarkViewed = <TError = unknown,
       > => {
 
       const mutationOptions = getMarkViewedMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
+ * Canal mínimo para quem teve uma foto recusada pelo validador de imagens e acha que foi um engano. Não existe monitoramento automático do classificador — este relato é hoje a única forma de descobrir falsos negativos.
+ * @summary Relatar foto recusada por engano
+ */
+export const reportPhotoValidationFeedback = (
+    createPhotoValidationFeedbackRequest: MaybeRef<CreatePhotoValidationFeedbackRequest>,
+ options?: SecondParameter<typeof apiRequest>,signal?: AbortSignal
+) => {
+      createPhotoValidationFeedbackRequest = unref(createPhotoValidationFeedbackRequest);
+      
+      return apiRequest<void>(
+      {url: `/publications/photo-feedback`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createPhotoValidationFeedbackRequest, signal
+    },
+      options);
+    }
+  
+
+
+export const getReportPhotoValidationFeedbackMutationOptions = <TError = ApiErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportPhotoValidationFeedback>>, TError,{data: CreatePhotoValidationFeedbackRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof reportPhotoValidationFeedback>>, TError,{data: CreatePhotoValidationFeedbackRequest}, TContext> => {
+
+const mutationKey = ['reportPhotoValidationFeedback'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reportPhotoValidationFeedback>>, {data: CreatePhotoValidationFeedbackRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  reportPhotoValidationFeedback(data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReportPhotoValidationFeedbackMutationResult = NonNullable<Awaited<ReturnType<typeof reportPhotoValidationFeedback>>>
+    export type ReportPhotoValidationFeedbackMutationBody = CreatePhotoValidationFeedbackRequest
+    export type ReportPhotoValidationFeedbackMutationError = ApiErrorResponse
+
+    /**
+ * @summary Relatar foto recusada por engano
+ */
+export const useReportPhotoValidationFeedback = <TError = ApiErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportPhotoValidationFeedback>>, TError,{data: CreatePhotoValidationFeedbackRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof reportPhotoValidationFeedback>>,
+        TError,
+        {data: CreatePhotoValidationFeedbackRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getReportPhotoValidationFeedbackMutationOptions(options);
 
       return useMutation(mutationOptions, queryClient);
     }

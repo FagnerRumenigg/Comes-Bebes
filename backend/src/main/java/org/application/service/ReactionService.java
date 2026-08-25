@@ -2,12 +2,16 @@ package org.application.service;
 
 import lombok.RequiredArgsConstructor;
 import org.application.controller.publication.request.ReactionRequest;
+import org.application.model.Publication;
 import org.application.model.PublicationReaction;
 import org.application.model.PublicationReactionId;
 import org.application.model.PublicationStatus;
+import org.application.model.User;
+import org.application.model.UserNotification;
 import org.application.repository.PublicationReactionRepository;
 import org.application.repository.PublicationRepository;
 import org.application.repository.ReactionTypeRepository;
+import org.application.repository.UserNotificationRepository;
 import org.application.repository.UserRepository;
 import org.application.model.UserStatus;
 import org.application.service.exception.ResourceNotFoundException;
@@ -24,11 +28,13 @@ import java.util.Locale;
 @Service
 @RequiredArgsConstructor
 public class ReactionService {
+    private static final String REACTED_TO_YOUR_PUBLICATION = "REACTED_TO_YOUR_PUBLICATION";
 
     private final PublicationReactionRepository reactionRepository;
     private final PublicationRepository publicationRepository;
     private final ReactionTypeRepository reactionTypeRepository;
     private final UserRepository userRepository;
+    private final UserNotificationRepository notificationRepository;
     private final Clock clock;
     private final StringNormalizer stringNormalizer;
 
@@ -41,7 +47,7 @@ public class ReactionService {
 
     @Transactional
     public void apply(java.util.UUID publicationId, ReactionRequest request, java.util.UUID userId) {
-        validateActors(publicationId, userId);
+        Publication publication = validateActors(publicationId, userId);
         var type = reactionTypeRepository.findByCodeAndActiveTrue(stringNormalizer.normalize(request.reactionCode()).toUpperCase(Locale.ROOT))
                 .orElseThrow(() -> new ResourceNotFoundException("REACTION_TYPE_NOT_FOUND", "Tipo de reação não encontrado."));
         PublicationReactionId id = new PublicationReactionId(publicationId, userId, type.getId());
@@ -62,6 +68,22 @@ public class ReactionService {
         }
         reaction.reactivate();
         reactionRepository.save(reaction);
+
+        if (!alreadyActive) {
+            notifyReacted(publication, userId);
+        }
+    }
+
+    private void notifyReacted(Publication publication, java.util.UUID userId) {
+        userRepository.findByIdAndStatus(publication.getAuthorId(), UserStatus.ACTIVE)
+                .filter(User::isNotifyOnReacted)
+                .ifPresent(author -> notificationRepository.save(UserNotification.builder()
+                        .id(java.util.UUID.randomUUID())
+                        .userId(author.getId())
+                        .type(REACTED_TO_YOUR_PUBLICATION)
+                        .actorId(userId)
+                        .publicationId(publication.getId())
+                        .build()));
     }
 
     @Transactional
@@ -72,7 +94,7 @@ public class ReactionService {
     @Transactional
     public void remove(java.util.UUID publicationId, ReactionRequest request, java.util.UUID userId) {
         validateActors(publicationId, userId);
-        var type = reactionTypeRepository.findByCodeAndActiveTrue(stringNormalizer.normalize(request.reactionCode()).toUpperCase(Locale.ROOT))
+        var type = reactionTypeRepository.findByCode(stringNormalizer.normalize(request.reactionCode()).toUpperCase(Locale.ROOT))
                 .orElseThrow(() -> new ResourceNotFoundException("REACTION_TYPE_NOT_FOUND", "Tipo de reação não encontrado."));
         reactionRepository.findById(new PublicationReactionId(publicationId, userId, type.getId()))
                 .ifPresent(reaction -> {
@@ -81,13 +103,14 @@ public class ReactionService {
                 });
     }
 
-    private void validateActors(java.util.UUID publicationId, java.util.UUID userId) {
-        publicationRepository.findByIdAndStatus(publicationId, PublicationStatus.ACTIVE)
+    private Publication validateActors(java.util.UUID publicationId, java.util.UUID userId) {
+        Publication publication = publicationRepository.findByIdAndStatus(publicationId, PublicationStatus.ACTIVE)
                 .orElseThrow(() -> new ResourceNotFoundException("PUBLICATION_NOT_FOUND", "Publicação não encontrada."));
         userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)
                 .orElseThrow(() -> new ResourceNotFoundException("USER_NOT_FOUND", "Usuário não encontrado."));
-        if (publicationRepository.findById(publicationId).map(p -> p.getAuthorId().equals(userId)).orElse(false)) {
+        if (publication.getAuthorId().equals(userId)) {
             throw new InvalidOperationException("AUTHOR_SELF_REACTION", "O autor não pode reagir à própria publicação.");
         }
+        return publication;
     }
 }

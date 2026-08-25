@@ -22,6 +22,8 @@ import org.application.controller.publication.request.CreateReportRequest;
 import org.application.controller.publication.request.CreatePublicationUploadRequest;
 import org.application.controller.publication.request.DeletePublicationRequest;
 import org.application.controller.publication.request.MarkPublicationsViewedRequest;
+import org.application.controller.publication.request.CreatePhotoValidationFeedbackRequest;
+import org.application.service.PhotoValidationFeedbackService;
 import org.application.service.ReportService;
 import org.application.service.ReactionService;
 import org.application.service.SavedPublicationService;
@@ -54,6 +56,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import java.time.ZoneId;
 import java.util.Set;
 import java.util.UUID;
+import org.application.model.FeedScope;
+import org.application.model.FeedSort;
 import org.application.model.PublicationType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -71,11 +75,12 @@ public class PublicationController {
     private final SavedPublicationService savedPublicationService;
     private final PublicationViewService publicationViewService;
     private final ReportService reportService;
+    private final PhotoValidationFeedbackService photoValidationFeedbackService;
     private final PublicationResponseFactory responseFactory;
     private final ImageStorage imageStorage;
 
     @GetMapping("/feed")
-    @Operation(summary = "Listar feed", description = "Retorna publicações ativas paginadas. Visitantes recebem somente PUBLIC; usuários autenticados podem receber PUBLIC e INTERNAL. A primeira página é 1. Sem o parâmetro types, retorna todos os tipos (Mix).")
+    @Operation(summary = "Listar feed", description = "Retorna publicações ativas paginadas. Visitantes recebem somente PUBLIC; usuários autenticados podem receber PUBLIC e INTERNAL. A primeira página é 1. Sem o parâmetro types, retorna todos os tipos (Mix). scope=FOLLOWING/MY_COLLECTIONS exige sessão — sem uma, o resultado cai para EVERYONE.")
     @Parameters({
             @Parameter(name = "page", description = "Número da página, iniciando em 1.", schema = @Schema(type = "integer", minimum = "1", example = "1")),
             @Parameter(name = "size", description = "Quantidade de itens por página.", schema = @Schema(type = "integer", minimum = "1", maximum = "50", example = "20")),
@@ -85,9 +90,13 @@ public class PublicationController {
             @Parameter(hidden = true) Pageable pageable,
             @Parameter(description = "Filtra por um ou mais tipos de publicação. Sem valor, retorna todos (Mix).")
             @RequestParam(required = false) Set<PublicationType> types,
+            @Parameter(description = "De quem: todo mundo, quem o viewer segue, ou publicações em coleções que o viewer segue. Padrão EVERYONE.")
+            @RequestParam(required = false) FeedScope scope,
+            @Parameter(description = "Ordenar por: mais recentes (padrão, autenticado vê não-vistas primeiro) ou mais antigas (cronológico puro).")
+            @RequestParam(required = false) FeedSort sort,
             Authentication authentication
     ) {
-        return PageResponse.of(publicationService.feed(pageable, viewerId(authentication), types), item -> responseFactory.of(item, applicationZoneId, viewerId(authentication)));
+        return PageResponse.of(publicationService.feed(pageable, viewerId(authentication), types, scope, sort), item -> responseFactory.of(item, applicationZoneId, viewerId(authentication)));
     }
 
     @GetMapping("/search")
@@ -379,6 +388,22 @@ public class PublicationController {
             Authentication authentication
     ) {
         reportService.create(id, request, currentUser.id(authentication));
+        return org.springframework.http.ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/photo-feedback")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Relatar foto recusada por engano", description = "Canal mínimo para quem teve uma foto recusada pelo validador de imagens e acha que foi um engano. Não existe monitoramento automático do classificador — este relato é hoje a única forma de descobrir falsos negativos.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Relato registrado."),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public org.springframework.http.ResponseEntity<Void> reportPhotoValidationFeedback(
+            @Valid @org.springframework.web.bind.annotation.RequestBody CreatePhotoValidationFeedbackRequest request,
+            Authentication authentication
+    ) {
+        photoValidationFeedbackService.create(currentUser.id(authentication), request);
         return org.springframework.http.ResponseEntity.noContent().build();
     }
 

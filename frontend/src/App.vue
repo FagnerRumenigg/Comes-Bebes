@@ -1,18 +1,35 @@
 <script setup lang="ts">
 import BackendOfflineScreen from '@/components/layout/BackendOfflineScreen.vue'
+import ErrorScreen from '@/components/layout/ErrorScreen.vue'
 import SlowRequestNotice from '@/components/layout/SlowRequestNotice.vue'
 import BaseToast from '@/components/base/BaseToast.vue'
 import PatchNotesModal from '@/components/patchnotes/PatchNotesModal.vue'
 import { dismissNavigationError, navigationState } from '@/app/router'
+import { appCrashed } from '@/composables/useAppCrash'
 import { authNotice, dismissAuthNotice } from '@/composables/useAuthNotice'
 import { backendStatus } from '@/composables/useBackendStatus'
 import { useKeepAlivePing } from '@/composables/useKeepAlivePing'
+import { onlineStatus } from '@/composables/useOnlineStatus'
 
 useKeepAlivePing()
+
+function reloadApp(): void {
+  window.location.reload()
+}
+
+function goHomeAfterCrash(): void {
+  window.location.href = '/'
+}
+
+function retryOffline(): void {
+  onlineStatus.online = navigator.onLine
+}
 </script>
 
 <template>
-  <BackendOfflineScreen v-if="backendStatus.offline" />
+  <ErrorScreen v-if="appCrashed" cause="unknown" @retry="reloadApp" @home="goHomeAfterCrash" />
+  <ErrorScreen v-else-if="!onlineStatus.online" cause="offline" @retry="retryOffline" />
+  <BackendOfflineScreen v-else-if="backendStatus.offline" />
   <template v-else>
     <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
     <div

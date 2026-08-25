@@ -1,0 +1,36 @@
+/* ============================================================
+   COMES&BEBES — TOKENS
+   Fonte unica de verdade das cores do produto.
+   Contrastes validados par a par (WCAG AA) em 20/08/2026.
+   NAO alterar um valor sem revalidar. Ver secoes 2 e 3 do
+   documento de Implementacao.
+
+   Copiar para: src/assets/styles/tokens.css
+   Importar uma unica vez, no main.js.
+   ============================================================ */
+
+:root{
+  --bg:#fff6e3; --surface:#f3f8f5; --surface-alt:#eef4f0;
+  --text:#17281f; --text-muted:#4f6157;
+  --primary:#285943; --primary-hover:#1c4131; --primary-soft:#dfe9e4; --on-primary:#ffffff;
+  --secondary:#35758a; --accent:#d5a62e; --on-accent:#17281f;
+  --danger:#9b2c2c; --danger-soft:#f7e6e6;
+  --border:#6d8074; --border-subtle:#d7e0da;
+  --shadow:rgba(23,40,31,.16); --ph-a:#cfe0d4; --ph-b:#e6d9bd;
+}
+[data-theme="dark"]{
+  --bg:#2d1a11; --surface:#341e14; --surface-alt:#3d2419;
+  --text:#fef5f1; --text-muted:#bfa899;
+  --primary:#e99d7a; --primary-hover:#f2b193; --primary-soft:#4a2c1e; --on-primary:#2d1a11;
+  --secondary:#b5cc79; --accent:#b5cc79; --on-accent:#2d1a11;
+  --danger:#ff8a8a; --danger-soft:#4a2020;
+  --border:#8a7365; --border-subtle:#4a3227;
+  --shadow:rgba(0,0,0,.45); --ph-a:#4a3227; --ph-b:#5a3d2a;
+}
+
+/* ---------- a marca ---------- */
+/* azulejo verde com livro dourado. Ver secao 20 do documento. */
+.brand-mark .tile   { fill: var(--primary) }
+.brand-mark .book   { fill: var(--accent) }
+.brand-mark .spine  { fill: var(--accent); opacity:.45 }
+.brand-mark .ribbon { fill: var(--primary) }

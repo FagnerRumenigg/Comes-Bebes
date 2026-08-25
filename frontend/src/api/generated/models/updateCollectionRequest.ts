@@ -25,7 +25,7 @@ export interface UpdateCollectionRequest {
   description?: UpdateCollectionRequestDescription;
   /**
    * Nova visibilidade.
-   * @pattern PUBLIC|PRIVATE
+   * @pattern PUBLIC|SHARED|PRIVATE
    */
   visibility: string;
 }

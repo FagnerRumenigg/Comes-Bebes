@@ -44,11 +44,11 @@ class AuthControllerTest {
     @Test
     void shouldLoginAndReturnToken() throws Exception {
         when(authService.login(any(LoginRequest.class), any(String.class), any(), any())).thenReturn(
-                new LoginResponse("token", "refresh", "Bearer", 3600, UUID.randomUUID(), "fagner", org.application.model.UserRole.USER, false, false, OffsetDateTime.now()));
+                new LoginResponse("token", "refresh", "Bearer", 3600, UUID.randomUUID(), "fagner", org.application.model.UserRole.USER, false, false, false, OffsetDateTime.now()));
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"fagner\",\"password\":\"password\"}"))
+                        .content("{\"identifier\":\"fagner@exemplo.com.br\",\"password\":\"password\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").value("token"));
     }
@@ -57,7 +57,7 @@ class AuthControllerTest {
     void shouldRejectInvalidLoginPayload() throws Exception {
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"\",\"password\":\"\"}"))
+                        .content("{\"identifier\":\"\",\"password\":\"\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
     }
@@ -65,14 +65,14 @@ class AuthControllerTest {
     @Test
     void shouldRegisterUser() throws Exception {
         UUID id = UUID.randomUUID();
-        var user = org.application.model.User.builder().id(id).username("fagner").displayName("Fagner")
+        var user = org.application.model.User.builder().id(id).email("fagner@exemplo.com.br").username("fagner").displayName("Fagner")
                 .role(org.application.model.UserRole.USER).status(org.application.model.UserStatus.ACTIVE)
                 .createdAt(OffsetDateTime.now()).updatedAt(OffsetDateTime.now()).build();
         when(userService.create(any(CreateUserRequest.class))).thenReturn(user);
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"password\":\"password\",\"username\":\"fagner\",\"displayName\":\"Fagner\"}"))
+                        .content("{\"email\":\"fagner@exemplo.com.br\",\"password\":\"password\",\"displayName\":\"Fagner\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(id.toString()))
                 .andExpect(jsonPath("$.status").doesNotExist())
@@ -83,7 +83,7 @@ class AuthControllerTest {
     @Test
     void shouldRefreshSession() throws Exception {
         when(authService.refresh("refresh")).thenReturn(
-                new LoginResponse("token-2", "refresh-2", "Bearer", 3600, UUID.randomUUID(), "fagner", org.application.model.UserRole.USER, false, false, OffsetDateTime.now()));
+                new LoginResponse("token-2", "refresh-2", "Bearer", 3600, UUID.randomUUID(), "fagner", org.application.model.UserRole.USER, false, false, false, OffsetDateTime.now()));
 
         mockMvc.perform(post("/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)

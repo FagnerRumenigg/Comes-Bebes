@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 
 import BaseInput from '@/components/base/BaseInput.vue'
+import AppIcon from '@/components/icons/AppIcon.vue'
 
 defineOptions({ inheritAttrs: false })
 
@@ -12,6 +13,7 @@ withDefaults(
     id?: string
     hint?: string
     error?: string
+    invalid?: boolean
     disabled?: boolean
     required?: boolean
   }>(),
@@ -20,6 +22,7 @@ withDefaults(
     id: undefined,
     hint: undefined,
     error: undefined,
+    invalid: false,
     disabled: false,
     required: false,
   },
@@ -41,10 +44,14 @@ const visible = ref(false)
     :type="visible ? 'text' : 'password'"
     :hint="hint"
     :error="error"
+    :invalid="invalid"
     :disabled="disabled"
     :required="required"
     @update:model-value="$emit('update:modelValue', $event)"
   >
+    <template #lead>
+      <AppIcon name="lock" :size="20" />
+    </template>
     <template #trailing>
       <button
         class="password-input__toggle"
@@ -54,7 +61,7 @@ const visible = ref(false)
         :disabled="disabled"
         @click="visible = !visible"
       >
-        {{ visible ? 'Ocultar' : 'Mostrar' }}
+        <AppIcon name="eye" :size="20" />
       </button>
     </template>
   </BaseInput>
@@ -62,13 +69,17 @@ const visible = ref(false)
 
 <style scoped>
 .password-input__toggle {
-  min-height: 2rem;
-  padding-inline: var(--space-2);
-  color: var(--color-primary);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  color: var(--color-text-secondary);
   background: transparent;
   border: 0;
   border-radius: var(--radius-sm);
+}
+
+.password-input__toggle[aria-pressed='true'] {
+  color: var(--color-primary);
 }
 </style>

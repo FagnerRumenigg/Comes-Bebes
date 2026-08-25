@@ -45,7 +45,7 @@ describe('botões base', () => {
     })
     const button = wrapper.get('button')
 
-    expect(button.attributes('disabled')).toBeDefined()
+    expect(button.attributes('disabled')).toBeUndefined()
     expect(button.attributes('aria-busy')).toBe('true')
     await button.trigger('click')
     expect(wrapper.emitted('click')).toBeUndefined()

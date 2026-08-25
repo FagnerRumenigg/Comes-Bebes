@@ -21,5 +21,6 @@ declare module 'vue-router' {
   interface RouteMeta {
     access?: 'public' | 'guest' | 'authenticated' | 'admin'
     pageTitle?: string
+    documentSlug?: 'TERMS_OF_SERVICE' | 'PRIVACY_POLICY' | 'FAQ'
   }
 }

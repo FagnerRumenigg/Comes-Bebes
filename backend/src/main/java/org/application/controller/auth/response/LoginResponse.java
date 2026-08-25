@@ -18,6 +18,10 @@ public record LoginResponse(
         boolean onboardingCompleted,
         @Schema(description = "Indica se existem notas de versão publicadas ainda não vistas pelo usuário.")
         boolean hasUnseenPatchNotes,
+        @Schema(description = "Conta ainda sem e-mail cadastrado (criada antes da migração — produto5.md v5 "
+                + "§5.1). O frontend deve pedir o e-mail antes de liberar o resto do app; a partir de então "
+                + "o login desta conta passa a exigir e-mail.")
+        boolean emailRequired,
         OffsetDateTime expiresAt,
         UUID sessionId,
         @Schema(description = "Dispositivo vinculado a esta sessão. Guarde-o para permitir login por biometria neste dispositivo mais tarde.")
@@ -25,7 +29,8 @@ public record LoginResponse(
 ) {
     public LoginResponse(String accessToken, String refreshToken, String tokenType, long expiresInSeconds,
                          UUID userId, String username, UserRole role, boolean onboardingCompleted,
-                         boolean hasUnseenPatchNotes, OffsetDateTime expiresAt) {
-        this(accessToken, refreshToken, tokenType, expiresInSeconds, userId, username, role, onboardingCompleted, hasUnseenPatchNotes, expiresAt, UUID.randomUUID(), UUID.randomUUID());
+                         boolean hasUnseenPatchNotes, boolean emailRequired, OffsetDateTime expiresAt) {
+        this(accessToken, refreshToken, tokenType, expiresInSeconds, userId, username, role, onboardingCompleted,
+                hasUnseenPatchNotes, emailRequired, expiresAt, UUID.randomUUID(), UUID.randomUUID());
     }
 }

@@ -9,7 +9,7 @@ import { mockAuthenticatedUsername } from '@/mocks/authentication'
 import { mockAccounts } from '@/mocks/fixtures/auth'
 import { mockPublications } from '@/mocks/fixtures/publications'
 import { personalizePublication, savedPublications } from '@/mocks/state/publications'
-import { followersCountMock, followingCountMock, isFollowingMock } from '@/mocks/state/follows'
+import { isFollowingMock } from '@/mocks/state/follows'
 
 const account = mockAccounts[0]
 const page = <T>(content: T[], requestedPage = 1, size = 20) => ({
@@ -34,10 +34,7 @@ export const discoveryMockHandlers = [
       displayName: found.displayName,
       role: found.role,
       status: 'ACTIVE',
-      showReactionCounts: true,
       onboardingCompleted: true,
-      followersCount: followersCountMock(found.userId),
-      followingCount: followingCountMock(found.username),
       followedByCurrentUser:
         !viewerUsername || viewerUsername === found.username
           ? null

@@ -39,7 +39,7 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 /**
- * Cria uma conta usando username e senha. O e-mail não participa do cadastro no MVP.
+ * Cria uma conta usando e-mail e senha (produto5.md v5 §5.1) — o @usuário é gerado automaticamente a partir do nome de exibição, editável depois.
  * @summary Criar conta
  */
 export const register = (

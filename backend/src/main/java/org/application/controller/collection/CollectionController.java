@@ -13,13 +13,17 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.application.config.CurrentUser;
 import org.application.controller.collection.request.CreateCollectionRequest;
+import org.application.controller.collection.request.InviteCollectionMemberRequest;
 import org.application.controller.collection.request.UpdateCollectionRequest;
+import org.application.controller.collection.response.CollectionInviteResponse;
 import org.application.controller.collection.response.CollectionResponse;
 import org.application.controller.publication.response.PublicationResponse;
 import org.application.controller.response.ApiErrorResponse;
+import org.application.controller.user.response.UserResponse;
 import org.application.dto.PageResponse;
 import org.application.model.CollectionVisibility;
 import org.application.model.PublicationCollection;
+import org.application.model.User;
 import org.application.repository.UserRepository;
 import org.application.service.CollectionService;
 import org.application.service.PublicationResponseFactory;
@@ -219,13 +223,114 @@ public class CollectionController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/{id}/invite-link")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(operationId = "getCollectionInviteLink", summary = "Consultar link de convite", description = "Retorna o token do link de convite ativo da coleção, criando um na primeira chamada. Só o autor pode consultar.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Token retornado."),
+            @ApiResponse(responseCode = "400", description = "Você não é o autor desta coleção.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Coleção não encontrada.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public CollectionInviteResponse inviteLink(@PathVariable UUID id, Authentication authentication) {
+        return new CollectionInviteResponse(collectionService.getOrCreateInviteLink(id, currentUser.id(authentication)));
+    }
+
+    @PostMapping("/{id}/invite-link")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(operationId = "regenerateCollectionInviteLink", summary = "Gerar novo link de convite", description = "Revoga o link de convite atual e cria outro no lugar — quem tinha o link antigo perde o acesso a partir de agora. Só o autor pode gerar.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Novo token retornado."),
+            @ApiResponse(responseCode = "400", description = "Você não é o autor desta coleção.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Coleção não encontrada.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public CollectionInviteResponse regenerateInviteLink(@PathVariable UUID id, Authentication authentication) {
+        return new CollectionInviteResponse(collectionService.regenerateInviteLink(id, currentUser.id(authentication)));
+    }
+
+    @PostMapping("/invites/{token}/accept")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(operationId = "acceptCollectionInvite", summary = "Aceitar convite de coleção", description = "Passa a ver a coleção 'Para quem eu escolher' associada ao token, como quem segue uma coleção pública.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Convite aceito; coleção retornada."),
+            @ApiResponse(responseCode = "404", description = "Convite inválido ou coleção não encontrada.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public CollectionResponse acceptInvite(@PathVariable String token, Authentication authentication) {
+        UUID viewerId = currentUser.id(authentication);
+        return toResponse(collectionService.acceptInvite(token, viewerId), viewerId);
+    }
+
+    @GetMapping("/{id}/invitees")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(operationId = "getCollectionInvitees", summary = "Listar quem já tem acesso", description = "Retorna as pessoas que já aceitaram o convite da coleção. Só o autor pode consultar.")
+    @Parameters({
+            @Parameter(name = "page", description = "Número da página, iniciando em 1.", schema = @Schema(type = "integer", minimum = "1", example = "1")),
+            @Parameter(name = "size", description = "Quantidade de itens por página.", schema = @Schema(type = "integer", minimum = "1", maximum = "50", example = "20"))
+    })
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Pessoas retornadas."),
+            @ApiResponse(responseCode = "400", description = "Você não é o autor desta coleção.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Coleção não encontrada.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public PageResponse<UserResponse> invitees(
+            @PathVariable UUID id,
+            @Parameter(hidden = true) Pageable pageable,
+            Authentication authentication
+    ) {
+        UUID authorId = currentUser.id(authentication);
+        return PageResponse.of(collectionService.listInvitees(id, authorId, pageable),
+                user -> UserResponse.of(user, applicationZoneId, null));
+    }
+
+    @PutMapping("/{id}/invitees")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(operationId = "inviteCollectionMember", summary = "Convidar pessoa por @usuário", description = "Concede acesso imediato a uma coleção \"Para quem eu escolher\", sem passo de aceite. Só o autor pode convidar.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Pessoa convidada."),
+            @ApiResponse(responseCode = "400", description = "Você não é o autor, a coleção não é \"Para quem eu escolher\", ou você tentou convidar a si mesmo.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Coleção ou usuário não encontrado.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public UserResponse inviteMember(
+            @PathVariable UUID id,
+            @Valid @RequestBody InviteCollectionMemberRequest request,
+            Authentication authentication
+    ) {
+        UUID authorId = currentUser.id(authentication);
+        User invitee = collectionService.inviteByUsername(id, authorId, request.username());
+        return UserResponse.of(invitee, applicationZoneId, null);
+    }
+
+    @DeleteMapping("/{id}/invitees/{userId}")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(operationId = "removeCollectionInvitee", summary = "Remover acesso de uma pessoa", description = "Tira o acesso de uma pessoa específica, sem afetar as outras nem revogar o link de convite. Só o autor pode remover.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Acesso removido, ou já inexistente."),
+            @ApiResponse(responseCode = "400", description = "Você não é o autor desta coleção.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Coleção não encontrada.", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public ResponseEntity<Void> removeInvitee(
+            @PathVariable UUID id,
+            @PathVariable UUID userId,
+            Authentication authentication
+    ) {
+        collectionService.removeInvitee(id, currentUser.id(authentication), userId);
+        return ResponseEntity.noContent().build();
+    }
+
     private CollectionResponse toResponse(PublicationCollection collection, UUID viewerId) {
         var author = userRepository.findById(collection.getAuthorId()).orElse(null);
         long publicationsCount = collectionService.countPublications(collection.getId());
-        long followersCount = collectionService.countFollowers(collection.getId());
-        Boolean followedByCurrentUser = viewerId == null || viewerId.equals(collection.getAuthorId())
-                ? null : collectionService.isFollowing(viewerId, collection.getId());
-        return CollectionResponse.of(collection, applicationZoneId, author, publicationsCount, followersCount, followedByCurrentUser);
+        var coverImageUrls = collectionService.coverImageUrls(collection.getId());
+        boolean isOwner = viewerId != null && viewerId.equals(collection.getAuthorId());
+        // Contador de seguidores só para o dono: visitante nunca vê (produto5.md v5 §3.1, impl10.md v10 §13.8).
+        Long followersCount = isOwner ? collectionService.countFollowers(collection.getId()) : null;
+        Boolean followedByCurrentUser = isOwner ? null : viewerId == null ? null : collectionService.isFollowing(viewerId, collection.getId());
+        return CollectionResponse.of(collection, applicationZoneId, author, publicationsCount, coverImageUrls, followersCount, followedByCurrentUser);
     }
 
     private UUID viewerId(Authentication authentication) {

@@ -42,7 +42,7 @@ async function mountLogin() {
     routes: [
       { path: '/login', component: LoginView },
       { path: '/', component: { template: '<p>Feed</p>' } },
-      { path: '/onboarding', component: { template: '<p>Onboarding</p>' } },
+      { path: '/bem-vindo', component: { template: '<p>Boas-vindas</p>' } },
     ],
   })
   await router.push('/login')
@@ -55,7 +55,7 @@ async function mountLogin() {
 }
 
 async function submitLogin(wrapper: Awaited<ReturnType<typeof mountLogin>>['wrapper']): Promise<void> {
-  await wrapper.get('#login-username').setValue('fagner')
+  await wrapper.get('#login-identifier').setValue('fagner')
   await wrapper.get('#login-password').setValue('SenhaForte123!')
   await wrapper.get('form').trigger('submit')
   await flushPromises()
@@ -76,6 +76,7 @@ describe('prompt de ativação de biometria pós-login', () => {
           role: 'USER',
           onboardingCompleted: true,
           hasUnseenPatchNotes: false,
+          emailRequired: false,
           sessionId: 'a4f0f2b0-df43-4b40-9df1-4f6da3e6f36e',
           deviceId: 'e1f0f2b0-df43-4b40-9df1-4f6da3e6f36e',
         }),
@@ -108,6 +109,7 @@ describe('prompt de ativação de biometria pós-login', () => {
           role: 'USER',
           onboardingCompleted: true,
           hasUnseenPatchNotes: false,
+          emailRequired: false,
           sessionId: 'a4f0f2b0-df43-4b40-9df1-4f6da3e6f36e',
           deviceId: 'e1f0f2b0-df43-4b40-9df1-4f6da3e6f36e',
         }),
@@ -142,6 +144,7 @@ describe('prompt de ativação de biometria pós-login', () => {
           role: 'USER',
           onboardingCompleted: true,
           hasUnseenPatchNotes: false,
+          emailRequired: false,
           sessionId: 'a4f0f2b0-df43-4b40-9df1-4f6da3e6f36e',
           deviceId: 'e1f0f2b0-df43-4b40-9df1-4f6da3e6f36e',
         }),

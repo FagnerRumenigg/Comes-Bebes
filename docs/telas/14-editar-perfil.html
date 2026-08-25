@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comes&Bebes — Editar perfil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fff6e3; --surface:#f3f8f5; --surface-alt:#eef4f0;
+  --text:#17281f; --text-muted:#4f6157;
+  --primary:#285943; --primary-hover:#1c4131; --primary-soft:#dfe9e4; --on-primary:#ffffff;
+  --secondary:#35758a; --accent:#d5a62e; --on-accent:#17281f;
+  --danger:#9b2c2c; --danger-soft:#f7e6e6;
+  --border:#6d8074; --border-subtle:#d7e0da; --placeholder:#5f7168;
+  --shadow:rgba(23,40,31,.16);
+}
+[data-theme="dark"]{
+  --bg:#2d1a11; --surface:#341e14; --surface-alt:#3d2419;
+  --text:#fef5f1; --text-muted:#bfa899;
+  --primary:#e99d7a; --primary-hover:#f2b193; --primary-soft:#4a2c1e; --on-primary:#2d1a11;
+  --secondary:#b5cc79; --accent:#b5cc79; --on-accent:#2d1a11;
+  --danger:#ff8a8a; --danger-soft:#4a2020;
+  --border:#8a7365; --border-subtle:#4a3227; --placeholder:#a68d7e;
+  --shadow:rgba(0,0,0,.45);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;color:var(--text);background:var(--surface-alt);line-height:1.5}
+
+.harness{position:sticky;top:0;z-index:300;background:#17281f;color:#eef4f0;padding:10px 16px;
+  display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-size:13px}
+.harness strong{font-size:12px;letter-spacing:.1em;text-transform:uppercase;opacity:.55;font-weight:600}
+.harness .grp{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.harness button{font:inherit;font-weight:500;cursor:pointer;background:transparent;color:#eef4f0;
+  border:1px solid rgba(238,244,240,.3);border-radius:99px;padding:5px 13px}
+.harness button[aria-pressed="true"]{background:#d5a62e;border-color:#d5a62e;color:#17281f;font-weight:600}
+.harness .note{margin-left:auto;opacity:.5;font-size:12px}
+
+.stage{padding:24px 16px 60px;display:flex;justify-content:center}
+.device{background:var(--bg);border:1.5px solid var(--border-subtle);border-radius:14px;overflow:hidden;
+  box-shadow:0 16px 44px var(--shadow);width:100%}
+.stage[data-view="web"] .device{max-width:1100px}
+.stage[data-view="mobile"] .device{max-width:400px}
+.stage[data-view="web"] .only-mobile{display:none !important}
+.stage[data-view="mobile"] .only-web{display:none !important}
+
+.hd{display:flex;align-items:center;gap:24px;padding:0 26px;height:70px;background:var(--bg);border-bottom:1.5px solid var(--border-subtle)}
+.hd-m{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:58px;background:var(--bg);border-bottom:1.5px solid var(--border-subtle)}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text)}
+.brand .mark{width:36px;height:36px;flex:none}
+.hd-m .brand .mark{width:31px;height:31px}
+.brand .mark svg{width:100%;height:100%;display:block}
+.brand .mark .tile{fill:var(--primary)} .brand .mark .book{fill:var(--accent)}
+.brand .mark .spine{fill:var(--accent);opacity:.45} .brand .mark .ribbon{fill:var(--primary)}
+.brand .name{font-family:'Instrument Serif',Georgia,serif;font-size:24px}
+.hd-m .brand .name{font-size:20px}
+.nav{display:flex;gap:4px}
+.nav a{display:flex;align-items:center;gap:8px;min-height:48px;padding:0 14px;border-radius:9px;
+  text-decoration:none;color:var(--text-muted);font-size:16px;font-weight:500}
+.nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8}
+.spacer{flex:1}
+.avatar{border-radius:50%;background:var(--primary);color:var(--on-primary);display:grid;place-items:center;font-weight:700;flex:none}
+.acct .avatar{width:36px;height:36px;font-size:15px}
+.acct{display:flex;align-items:center;gap:10px;min-height:48px;padding:4px 12px 4px 4px;background:none;
+  border:1.5px solid var(--border-subtle);border-radius:99px;cursor:pointer;font:inherit;font-size:15px;font-weight:600;color:var(--text)}
+.mini{width:44px;height:44px;border-radius:50%;border:1.5px solid var(--border-subtle);background:none;cursor:pointer;display:grid;place-items:center}
+.mini .avatar{width:32px;height:32px;font-size:13px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:48px;padding:0 20px;
+  border:1.5px solid transparent;border-radius:10px;font:inherit;font-size:16px;font-weight:600;cursor:pointer}
+.btn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2}
+.btn-primary{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-quiet{background:transparent;color:var(--text);border-color:var(--border-subtle)}
+.btn-quiet:hover{background:var(--surface)}
+
+.wrap{max-width:560px;margin:0 auto;padding:28px 24px 44px}
+.stage[data-view="mobile"] .wrap{padding:18px 16px 28px}
+.back{display:inline-flex;align-items:center;gap:8px;min-height:48px;background:none;border:0;cursor:pointer;
+  font:inherit;font-size:16px;font-weight:500;color:var(--text-muted);margin-bottom:6px}
+.back:hover{color:var(--primary)}
+.back svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2}
+h1{font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:38px;line-height:1.06;
+  letter-spacing:-.02em;margin-bottom:6px}
+.stage[data-view="mobile"] h1{font-size:31px}
+.sub{color:var(--text-muted);font-size:16px;margin-bottom:26px}
+
+.avrow{display:flex;align-items:center;gap:16px;background:var(--surface);border:1.5px solid var(--border-subtle);
+  border-radius:13px;padding:16px 18px;margin-bottom:24px}
+.avrow .big{width:64px;height:64px;font-size:25px}
+.avrow div{flex:1}
+.avrow b{display:block;font-size:16px;font-weight:600}
+.avrow span{font-size:14px;color:var(--text-muted)}
+
+.field{margin-bottom:22px}
+.field label{display:block;font-size:15px;font-weight:600;margin-bottom:7px}
+.field input,.field textarea{width:100%;min-height:50px;font:inherit;font-size:16px;color:var(--text);
+  background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:13px 15px;resize:vertical}
+.field textarea{min-height:100px;line-height:1.55}
+.field input::placeholder,.field textarea::placeholder{color:var(--placeholder)}
+.field input:focus,.field textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.field .help{font-size:14px;color:var(--text-muted);margin-top:7px;line-height:1.5}
+.field .count{font-size:14px;color:var(--text-muted);margin-top:7px;text-align:right}
+.at{display:flex;align-items:stretch;border:1.5px solid var(--border);border-radius:10px;
+  background:var(--surface);overflow:hidden}
+.at .sig{display:flex;align-items:center;padding:0 6px 0 15px;font-size:17px;font-weight:700;
+  color:var(--text-muted);background:var(--surface-alt);border-right:1.5px solid var(--border-subtle)}
+.at input{border:0 !important;box-shadow:none !important;background:transparent !important;flex:1;min-width:0}
+
+.aviso{display:none;gap:11px;align-items:flex-start;background:var(--surface);border:1.5px solid var(--secondary);
+  border-radius:11px;padding:13px 15px;font-size:15px;line-height:1.45;margin-top:10px}
+.aviso.show{display:flex}
+.aviso svg{width:19px;height:19px;flex:none;margin-top:2px;stroke:var(--secondary);fill:none;stroke-width:2}
+
+.foot{margin-top:30px;display:flex;gap:10px}
+.foot .btn{flex:1}
+
+.tabs{display:flex;background:var(--bg);border-top:1.5px solid var(--border-subtle);padding:6px 4px 10px}
+.tabs a{flex:1;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  text-decoration:none;color:var(--text-muted);position:relative}
+.tabs a svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8}
+.tabs a span{font-size:13px;font-weight:500}
+.tabs a.on{color:var(--primary)} .tabs a.on span{font-weight:700}
+.tabs a.on::before{content:"";position:absolute;top:-6px;width:26px;height:3px;border-radius:3px;background:var(--primary)}
+.tabs .pub{flex:none;width:78px}
+.tabs .pub .circ{width:50px;height:50px;border-radius:16px;background:var(--primary);color:var(--on-primary);display:grid;place-items:center}
+.tabs .pub .circ svg{width:25px;height:25px;stroke-width:2.4}
+.tabs .pub span{color:var(--text);font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="harness">
+  <div class="grp"><strong>Plataforma</strong>
+    <button data-view="web" aria-pressed="true">Web</button>
+    <button data-view="mobile" aria-pressed="false">Celular</button>
+  </div>
+  <div class="grp"><strong>Tema</strong>
+    <button data-theme-btn="light" aria-pressed="true">Claro</button>
+    <button data-theme-btn="dark" aria-pressed="false">Escuro</button>
+  </div>
+  <span class="note">Mude o @ e veja o aviso aparecer.</span>
+</div>
+
+<div class="stage" id="stage" data-view="web">
+<div class="device">
+
+  <header class="hd only-web">
+    <a class="brand" href="#"><span class="mark"><svg viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg></span><span class="name">Comes&amp;Bebes</span></a>
+    <nav class="nav">
+      <a href="#"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22v-8h6v8"/></svg>Início</a>
+      <a href="#"><svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg>Salvos</a>
+      <a href="#"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 6-3 7-3 7h18s-3-1-3-7"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></svg>Avisos</a>
+    </nav>
+    <span class="spacer"></span>
+    <button class="btn btn-primary"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Publicar</button>
+    <button class="acct"><span class="avatar">F</span>Fagner</button>
+  </header>
+  <header class="hd-m only-mobile">
+    <a class="brand" href="#"><span class="mark"><svg viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg></span><span class="name">Comes&amp;Bebes</span></a>
+    <button class="mini"><span class="avatar">F</span></button>
+  </header>
+
+  <div class="wrap">
+    <button class="back"><svg viewBox="0 0 24 24"><path d="M19 12H5m0 0 6-6m-6 6 6 6"/></svg>Voltar para o perfil</button>
+    <h1>Editar perfil</h1>
+    <p class="sub">É assim que as outras pessoas veem você.</p>
+
+    <div class="avrow">
+      <span class="avatar big">F</span>
+      <div>
+        <b>Sua imagem</b>
+        <span>Por enquanto é a inicial do seu nome. Em breve dá para escolher um desenho.</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="n">Como você quer ser chamado</label>
+      <input type="text" id="n" value="Fagner" maxlength="40">
+      <p class="help">É o nome que aparece nas suas publicações.</p>
+    </div>
+
+    <div class="field">
+      <label for="u">Seu nome no Comes&amp;Bebes</label>
+      <div class="at">
+        <span class="sig">@</span>
+        <input type="text" id="u" value="fagner" maxlength="20">
+      </div>
+      <p class="help">Serve para as pessoas te encontrarem. Letras, números e sublinhado.</p>
+      <div class="aviso" id="aviso">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg>
+        <span>Trocando para <b id="novo">@novo</b>, os links antigos param de funcionar.
+        Guardamos <b>@fagner</b> por 30 dias, para ninguém usar no seu lugar.</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="d">Escreva alguma coisa sobre você</label>
+      <textarea id="d" maxlength="160">Cozinho mais no fim de semana. Gosto de comida que demora e de bolo simples.</textarea>
+      <p class="count"><span id="c">76</span> de 160</p>
+      <p class="help">Aparece no seu perfil, embaixo do nome. Pode deixar em branco.</p>
+    </div>
+
+    <div class="foot">
+      <button class="btn btn-quiet">Cancelar</button>
+      <button class="btn btn-primary">Salvar</button>
+    </div>
+  </div>
+
+  <nav class="tabs only-mobile">
+    <a href="#"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22v-8h6v8"/></svg><span>Início</span></a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg><span>Salvos</span></a>
+    <a href="#" class="pub"><span class="circ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></span><span>Publicar</span></a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 6-3 7-3 7h18s-3-1-3-7"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></svg><span>Avisos</span></a>
+    <a href="#" class="on" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg><span>Perfil</span></a>
+  </nav>
+
+</div>
+</div>
+
+<script>
+const stage=document.getElementById('stage'), $=id=>document.getElementById(id);
+const ORIG='fagner';
+// O aviso só aparece quando o @ realmente muda — não ao simplesmente tocar no campo.
+$('u').addEventListener('input',e=>{
+  const v=e.target.value.trim();
+  const mudou = v && v!==ORIG;
+  $('aviso').classList.toggle('show',mudou);
+  if(mudou) $('novo').textContent='@'+v;
+});
+$('n').addEventListener('input',e=>{
+  const i=(e.target.value.trim()[0]||'F').toUpperCase();
+  document.querySelectorAll('.avrow .avatar').forEach(a=>a.textContent=i);
+});
+$('d').addEventListener('input',e=>$('c').textContent=e.target.value.length);
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{stage.dataset.view=b.dataset.view;
+  document.querySelectorAll('[data-view]').forEach(x=>x.setAttribute('aria-pressed',x===b));});
+document.querySelectorAll('[data-theme-btn]').forEach(b=>b.onclick=()=>{
+  document.documentElement.setAttribute('data-theme',b.dataset.themeBtn);
+  document.querySelectorAll('[data-theme-btn]').forEach(x=>x.setAttribute('aria-pressed',x===b));});
+</script>
+</body>
+</html>

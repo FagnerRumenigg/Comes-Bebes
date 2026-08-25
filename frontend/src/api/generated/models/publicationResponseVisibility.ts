@@ -16,4 +16,5 @@ export type PublicationResponseVisibility = typeof PublicationResponseVisibility
 export const PublicationResponseVisibility = {
   PUBLIC: 'PUBLIC',
   INTERNAL: 'INTERNAL',
+  PRIVATE: 'PRIVATE',
 } as const;

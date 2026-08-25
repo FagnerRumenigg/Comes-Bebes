@@ -50,15 +50,3 @@ export function setFollowingMock(username: string, targetUserId: string, followi
   else set.delete(targetUserId)
   persistState()
 }
-
-export function followersCountMock(targetUserId: string): number {
-  let count = 0
-  for (const set of followingByUser.values()) {
-    if (set.has(targetUserId)) count += 1
-  }
-  return count
-}
-
-export function followingCountMock(username: string): number {
-  return followingFor(username).size
-}

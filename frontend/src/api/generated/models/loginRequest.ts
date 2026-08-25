@@ -10,8 +10,11 @@
  * Credenciais para autenticação.
  */
 export interface LoginRequest {
-  /** @minLength 1 */
-  username: string;
+  /**
+   * E-mail ou @usuário da conta. Contas sem e-mail cadastrado (criadas antes da migração — produto5.md v5 §5.1) só aceitam @usuário; assim que o e-mail é definido, o login passa a exigir e-mail.
+   * @minLength 1
+   */
+  identifier: string;
   /** @minLength 1 */
   password: string;
 }

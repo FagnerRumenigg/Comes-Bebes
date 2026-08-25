@@ -13,6 +13,6 @@ public record CreateCollectionRequest(
         @Schema(description = "Descrição opcional.", example = "Pratos para reunir a família", nullable = true)
         @Size(max = 280) String description,
         @Schema(description = "Visibilidade da coleção.", example = "PUBLIC")
-        @NotNull @Pattern(regexp = "PUBLIC|PRIVATE") String visibility
+        @NotNull @Pattern(regexp = "PUBLIC|SHARED|PRIVATE") String visibility
 ) {
 }

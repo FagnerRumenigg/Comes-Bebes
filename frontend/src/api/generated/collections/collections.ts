@@ -31,12 +31,15 @@ import type {
 
 import type {
   ApiErrorResponse,
+  CollectionInviteResponse,
   CollectionResponse,
   CreateCollectionRequest,
+  GetCollectionInviteesParams,
   GetCollectionPublicationsParams,
   GetFollowedCollectionsParams,
   PageResponseCollectionResponse,
   PageResponsePublicationResponse,
+  PageResponseUserResponse,
   UpdateCollectionRequest
 } from '.././models';
 
@@ -365,6 +368,201 @@ export const useCreateCollection = <TError = ApiErrorResponse,
       return useMutation(mutationOptions, queryClient);
     }
     /**
+ * Retorna o token do link de convite ativo da coleção, criando um na primeira chamada. Só o autor pode consultar.
+ * @summary Consultar link de convite
+ */
+export const getCollectionInviteLink = (
+    id: MaybeRef<string>,
+ options?: SecondParameter<typeof apiRequest>,signal?: AbortSignal
+) => {
+      id = unref(id);
+      
+      return apiRequest<CollectionInviteResponse>(
+      {url: `/collections/${id}/invite-link`, method: 'GET', signal
+    },
+      options);
+    }
+  
+
+
+
+export const getGetCollectionInviteLinkQueryKey = (id?: MaybeRef<string>,) => {
+    return [
+    'collections',id,'invite-link'
+    ] as const;
+    }
+
+    
+export const getGetCollectionInviteLinkQueryOptions = <TData = Awaited<ReturnType<typeof getCollectionInviteLink>>, TError = ApiErrorResponse>(id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCollectionInviteLink>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  getGetCollectionInviteLinkQueryKey(id);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCollectionInviteLink>>> = ({ signal }) => getCollectionInviteLink(id, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: computed(() => !!(unref(id))), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCollectionInviteLink>>, TError, TData> 
+}
+
+export type GetCollectionInviteLinkQueryResult = NonNullable<Awaited<ReturnType<typeof getCollectionInviteLink>>>
+export type GetCollectionInviteLinkQueryError = ApiErrorResponse
+
+
+/**
+ * @summary Consultar link de convite
+ */
+
+export function useGetCollectionInviteLink<TData = Awaited<ReturnType<typeof getCollectionInviteLink>>, TError = ApiErrorResponse>(
+ id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCollectionInviteLink>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient 
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCollectionInviteLinkQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+/**
+ * Revoga o link de convite atual e cria outro no lugar — quem tinha o link antigo perde o acesso a partir de agora. Só o autor pode gerar.
+ * @summary Gerar novo link de convite
+ */
+export const regenerateCollectionInviteLink = (
+    id: MaybeRef<string>,
+ options?: SecondParameter<typeof apiRequest>,signal?: AbortSignal
+) => {
+      id = unref(id);
+      
+      return apiRequest<CollectionInviteResponse>(
+      {url: `/collections/${id}/invite-link`, method: 'POST', signal
+    },
+      options);
+    }
+  
+
+
+export const getRegenerateCollectionInviteLinkMutationOptions = <TError = ApiErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof regenerateCollectionInviteLink>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof regenerateCollectionInviteLink>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['regenerateCollectionInviteLink'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof regenerateCollectionInviteLink>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  regenerateCollectionInviteLink(id,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegenerateCollectionInviteLinkMutationResult = NonNullable<Awaited<ReturnType<typeof regenerateCollectionInviteLink>>>
+    
+    export type RegenerateCollectionInviteLinkMutationError = ApiErrorResponse
+
+    /**
+ * @summary Gerar novo link de convite
+ */
+export const useRegenerateCollectionInviteLink = <TError = ApiErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof regenerateCollectionInviteLink>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof regenerateCollectionInviteLink>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+
+      const mutationOptions = getRegenerateCollectionInviteLinkMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
+ * Passa a ver a coleção 'Para quem eu escolher' associada ao token, como quem segue uma coleção pública.
+ * @summary Aceitar convite de coleção
+ */
+export const acceptCollectionInvite = (
+    token: MaybeRef<string>,
+ options?: SecondParameter<typeof apiRequest>,signal?: AbortSignal
+) => {
+      token = unref(token);
+      
+      return apiRequest<CollectionResponse>(
+      {url: `/collections/invites/${token}/accept`, method: 'POST', signal
+    },
+      options);
+    }
+  
+
+
+export const getAcceptCollectionInviteMutationOptions = <TError = ApiErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptCollectionInvite>>, TError,{token: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof acceptCollectionInvite>>, TError,{token: string}, TContext> => {
+
+const mutationKey = ['acceptCollectionInvite'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acceptCollectionInvite>>, {token: string}> = (props) => {
+          const {token} = props ?? {};
+
+          return  acceptCollectionInvite(token,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AcceptCollectionInviteMutationResult = NonNullable<Awaited<ReturnType<typeof acceptCollectionInvite>>>
+    
+    export type AcceptCollectionInviteMutationError = ApiErrorResponse
+
+    /**
+ * @summary Aceitar convite de coleção
+ */
+export const useAcceptCollectionInvite = <TError = ApiErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptCollectionInvite>>, TError,{token: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof acceptCollectionInvite>>,
+        TError,
+        {token: string},
+        TContext
+      > => {
+
+      const mutationOptions = getAcceptCollectionInviteMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna uma coleção. Coleções privadas só ficam visíveis para o próprio autor.
  * @summary Consultar coleção
  */
@@ -625,6 +823,81 @@ export function useGetCollectionPublications<TData = Awaited<ReturnType<typeof g
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetCollectionPublicationsQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+/**
+ * Retorna as pessoas que já aceitaram o convite da coleção. Só o autor pode consultar.
+ * @summary Listar quem já tem acesso
+ */
+export const getCollectionInvitees = (
+    id: MaybeRef<string>,
+    params?: MaybeRef<GetCollectionInviteesParams>,
+ options?: SecondParameter<typeof apiRequest>,signal?: AbortSignal
+) => {
+      id = unref(id);
+params = unref(params);
+      
+      return apiRequest<PageResponseUserResponse>(
+      {url: `/collections/${id}/invitees`, method: 'GET',
+        params: unref(params), signal
+    },
+      options);
+    }
+  
+
+
+
+export const getGetCollectionInviteesQueryKey = (id?: MaybeRef<string>,
+    params?: MaybeRef<GetCollectionInviteesParams>,) => {
+    return [
+    'collections',id,'invitees', ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetCollectionInviteesQueryOptions = <TData = Awaited<ReturnType<typeof getCollectionInvitees>>, TError = ApiErrorResponse>(id: MaybeRef<string>,
+    params?: MaybeRef<GetCollectionInviteesParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCollectionInvitees>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  getGetCollectionInviteesQueryKey(id,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCollectionInvitees>>> = ({ signal }) => getCollectionInvitees(id,params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: computed(() => !!(unref(id))), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCollectionInvitees>>, TError, TData> 
+}
+
+export type GetCollectionInviteesQueryResult = NonNullable<Awaited<ReturnType<typeof getCollectionInvitees>>>
+export type GetCollectionInviteesQueryError = ApiErrorResponse
+
+
+/**
+ * @summary Listar quem já tem acesso
+ */
+
+export function useGetCollectionInvitees<TData = Awaited<ReturnType<typeof getCollectionInvitees>>, TError = ApiErrorResponse>(
+ id: MaybeRef<string>,
+    params?: MaybeRef<GetCollectionInviteesParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCollectionInvitees>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient 
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCollectionInviteesQueryOptions(id,params,options)
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

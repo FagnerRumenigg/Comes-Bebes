@@ -14,7 +14,7 @@ import type { CreateMyVersionUploadRequestTags } from './createMyVersionUploadRe
 export interface CreateMyVersionUploadRequest {
   /**
    * @minLength 1
-   * @pattern PUBLIC|INTERNAL
+   * @pattern PUBLIC|INTERNAL|PRIVATE
    */
   visibility: string;
   /**

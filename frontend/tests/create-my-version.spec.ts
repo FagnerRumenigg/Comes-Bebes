@@ -25,6 +25,7 @@ async function mountMyVersion() {
     role: 'USER',
     onboardingCompleted: true,
     hasUnseenPatchNotes: false,
+    emailRequired: false,
     sessionId: 'a4f0f2b0-df43-4b40-9df1-4f6da3e6f36e',
     deviceId: 'e1f0f2b0-df43-4b40-9df1-4f6da3e6f36e',
   })
@@ -74,7 +75,7 @@ describe('publicar minha versão', () => {
     expect((yieldInputs[1]!.element as HTMLInputElement).value).toBe(recipe.yieldUnit)
 
     expect(wrapper.text()).toContain(
-      'Começamos com a receita original para facilitar. Ajuste os ingredientes, o preparo e o rendimento para mostrar como você fez a sua versão.',
+      'Já trouxemos a receita — mude o que você fez diferente, o resto pode ficar como está.',
     )
   })
 

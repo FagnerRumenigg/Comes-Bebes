@@ -1,9 +1,12 @@
 import { expect, test } from '@playwright/test'
 
 test('a aplicação navega pela fundação e protege rotas autenticadas', async ({ page }) => {
+  await page.addInitScript(() =>
+    window.localStorage.setItem('comes-e-bebes:welcome-seen', 'true'),
+  )
   await page.goto('/')
 
-  await expect(page.getByRole('heading', { name: 'Feed' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'O que andaram cozinhando' })).toBeVisible()
   await expect(page.getByRole('banner')).toBeVisible()
 
   await page.getByRole('link', { name: 'Buscar', exact: true }).click()
@@ -15,6 +18,9 @@ test('a aplicação navega pela fundação e protege rotas autenticadas', async 
 })
 
 test('a preferência de tema permanece após recarregar', async ({ page }) => {
+  await page.addInitScript(() =>
+    window.localStorage.setItem('comes-e-bebes:welcome-seen', 'true'),
+  )
   await page.goto('/')
 
   await page.getByRole('button', { name: 'Ativar tema escuro' }).click()
@@ -42,9 +48,14 @@ test('a preferência de tema permanece após recarregar', async ({ page }) => {
 
 test('a navegação móvel expõe os cinco destinos previstos', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
+  await page.addInitScript(() =>
+    window.localStorage.setItem('comes-e-bebes:welcome-seen', 'true'),
+  )
   await page.goto('/')
 
   const navigation = page.getByRole('navigation', { name: 'Navegação móvel' })
   await expect(navigation).toBeVisible()
-  await expect(navigation.getByRole('link')).toHaveCount(5)
+  // Visitante: alguns destinos (Salvos/Publicar/Avisos) são botões que pedem
+  // login em vez de links diretos — ver showAuthNotice() em MobileNavigation.
+  await expect(navigation.locator('a, button')).toHaveCount(5)
 })

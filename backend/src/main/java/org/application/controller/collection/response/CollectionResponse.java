@@ -9,6 +9,7 @@ import org.application.util.DateTimeConverter;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.UUID;
 
 @Builder
@@ -28,10 +29,12 @@ public record CollectionResponse(
         String description,
         @Schema(description = "Visibilidade da coleção.", example = "PUBLIC")
         CollectionVisibility visibility,
-        @Schema(description = "Quantidade de publicações na coleção.", example = "8")
+        @Schema(description = "Quantidade de publicações na coleção. Não é contador de aprovação, é inventário — fica visível para todo mundo (produto5.md v5 §14.5).", example = "8")
         long publicationsCount,
-        @Schema(description = "Quantidade de seguidores da coleção.", example = "3")
-        long followersCount,
+        @Schema(description = "Até 3 imagens de capa (mosaico do cartão), na ordem das publicações da coleção. Vazio quando a coleção não tem nenhuma publicação ativa.")
+        List<String> coverImageUrls,
+        @Schema(description = "Quantidade de seguidores da coleção. Só preenchido para o próprio autor: visitante nunca vê contador de seguidores (produto5.md v5 §3.1, impl10.md v10 §13.8).", nullable = true, example = "3")
+        Long followersCount,
         @Schema(description = "Indica se a conta autenticada segue esta coleção. Nulo para visitantes ou para o próprio autor.", nullable = true)
         Boolean followedByCurrentUser,
         @Schema(description = "Data de criação.")
@@ -40,7 +43,8 @@ public record CollectionResponse(
         OffsetDateTime updatedAt
 ) {
     public static CollectionResponse of(PublicationCollection collection, ZoneId zoneId, User author,
-                                         long publicationsCount, long followersCount, Boolean followedByCurrentUser) {
+                                         long publicationsCount, List<String> coverImageUrls,
+                                         Long followersCount, Boolean followedByCurrentUser) {
         return CollectionResponse.builder()
                 .id(collection.getId())
                 .authorId(collection.getAuthorId())
@@ -50,6 +54,7 @@ public record CollectionResponse(
                 .description(collection.getDescription())
                 .visibility(collection.getVisibility())
                 .publicationsCount(publicationsCount)
+                .coverImageUrls(coverImageUrls)
                 .followersCount(followersCount)
                 .followedByCurrentUser(followedByCurrentUser)
                 .createdAt(DateTimeConverter.toApplicationTime(collection.getCreatedAt(), zoneId))

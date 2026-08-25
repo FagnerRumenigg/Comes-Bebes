@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comes&Bebes — Boas-vindas e erro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fff6e3; --surface:#f3f8f5; --surface-alt:#eef4f0;
+  --text:#17281f; --text-muted:#4f6157;
+  --primary:#285943; --primary-hover:#1c4131; --primary-soft:#dfe9e4; --on-primary:#ffffff;
+  --secondary:#35758a; --accent:#d5a62e; --on-accent:#17281f;
+  --danger:#9b2c2c; --danger-soft:#f7e6e6;
+  --border:#6d8074; --border-subtle:#d7e0da;
+  --shadow:rgba(23,40,31,.16);
+}
+[data-theme="dark"]{
+  --bg:#2d1a11; --surface:#341e14; --surface-alt:#3d2419;
+  --text:#fef5f1; --text-muted:#bfa899;
+  --primary:#e99d7a; --primary-hover:#f2b193; --primary-soft:#4a2c1e; --on-primary:#2d1a11;
+  --secondary:#b5cc79; --accent:#b5cc79; --on-accent:#2d1a11;
+  --danger:#ff8a8a; --danger-soft:#4a2020;
+  --border:#8a7365; --border-subtle:#4a3227;
+  --shadow:rgba(0,0,0,.45);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;color:var(--text);background:var(--surface-alt);
+  line-height:1.55;transition:background .2s}
+
+.harness{position:sticky;top:0;z-index:50;background:#17281f;color:#eef4f0;padding:10px 16px;
+  display:flex;flex-wrap:wrap;gap:18px;align-items:center;font-size:13px}
+.harness strong{font-size:12px;letter-spacing:.1em;text-transform:uppercase;opacity:.55;font-weight:600}
+.harness .grp{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.harness button{font:inherit;font-weight:500;cursor:pointer;background:transparent;color:#eef4f0;
+  border:1px solid rgba(238,244,240,.3);border-radius:99px;padding:5px 13px}
+.harness button:hover{background:rgba(238,244,240,.12)}
+.harness button[aria-pressed="true"]{background:#d5a62e;border-color:#d5a62e;color:#17281f;font-weight:600}
+.harness .note{margin-left:auto;opacity:.5;font-size:12px}
+
+.stage{padding:34px 16px 70px;display:flex;justify-content:center}
+.sheet{width:100%;max-width:560px;background:var(--bg);border:1.5px solid var(--border-subtle);
+  border-radius:18px;padding:46px 44px 40px;box-shadow:0 18px 48px var(--shadow)}
+@media (max-width:640px){ .sheet{padding:34px 22px 32px} }
+.screen{display:none}
+.screen.active{display:block}
+
+/* ---------- boas-vindas ---------- */
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:26px}
+.brand .mark{width:36px;height:36px;border-radius:0;background:none;display:block;flex:none}
+.brand .mark svg{width:36px;height:36px;display:block}
+.brand .mark .tile{fill:var(--primary)}
+.brand .mark .book{fill:var(--accent)}
+.brand .mark .spine{fill:var(--accent);opacity:.45}
+.brand .mark .ribbon{fill:var(--primary)}
+.brand .name{font-family:'Instrument Serif',Georgia,serif;font-size:23px}
+
+h1{font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:46px;line-height:1.06;
+  letter-spacing:-.02em;margin-bottom:14px}
+@media (max-width:640px){ h1{font-size:36px} }
+h1 em{font-style:italic;color:var(--primary)}
+.lead{font-size:18px;color:var(--text-muted);margin-bottom:30px;max-width:34em}
+
+.cards{display:grid;gap:12px;margin-bottom:30px}
+.card{background:var(--surface);border:1.5px solid var(--border-subtle);border-radius:13px;
+  padding:18px 20px;display:flex;gap:15px;align-items:flex-start}
+.card .ico{width:40px;height:40px;flex:none;border-radius:11px;background:var(--primary-soft);
+  display:grid;place-items:center;font-size:20px;line-height:1}
+.card h2{font-size:17px;font-weight:600;margin-bottom:3px;letter-spacing:-.01em}
+.card p{font-size:15px;color:var(--text-muted);line-height:1.5}
+
+.newnote{font-size:15px;color:var(--text-muted);line-height:1.55;
+  border-left:3px solid var(--accent);padding:2px 0 2px 15px;margin-bottom:30px}
+.newnote a{color:var(--primary);font-weight:600}
+
+.btn{width:100%;min-height:52px;font:inherit;font-size:17px;font-weight:600;border-radius:10px;
+  cursor:pointer;border:1.5px solid transparent;display:flex;align-items:center;justify-content:center;gap:9px}
+.btn-primary{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.btn-primary:hover{background:var(--primary-hover);border-color:var(--primary-hover)}
+.btn-text{background:none;border:0;color:var(--primary);font-weight:600;min-height:48px;
+  cursor:pointer;font-size:16px;width:100%;margin-top:6px}
+.btn-text:hover{text-decoration:underline}
+
+/* ---------- tela de erro (fallback unico) ---------- */
+.errscreen{text-align:center;padding:12px 0}
+.errscreen .art{width:132px;height:132px;margin:0 auto 20px;display:block}
+.errscreen .pot{fill:var(--border)}
+.errscreen .spill{fill:var(--accent);opacity:.85}
+.errscreen .drop{fill:var(--accent);opacity:.7}
+.errscreen h1{font-size:38px;margin-bottom:12px}
+.errscreen p{font-size:17px;color:var(--text-muted);max-width:27em;margin:0 auto 24px}
+.errscreen .tiny{font-size:14px;color:var(--text-muted);opacity:.85;margin-top:18px}
+.errscreen .actions{display:grid;gap:6px;max-width:320px;margin:0 auto}
+
+@keyframes drip{0%{transform:translateY(0);opacity:0}
+  25%{opacity:.7} 100%{transform:translateY(13px);opacity:0}}
+.errscreen .drop{animation:drip 2.6s ease-in infinite}
+.errscreen .d2{animation-delay:1.2s}
+@media (prefers-reduced-motion: reduce){ .errscreen .drop{animation:none;opacity:.6} }
+</style>
+</head>
+<body>
+
+<div class="harness">
+  <div class="grp"><strong>Tela</strong>
+    <button data-screen="welcome" aria-pressed="true">Boas-vindas</button>
+    <button data-screen="error" aria-pressed="false">Erro</button>
+  </div>
+  <div class="grp" id="causes" hidden><strong>Causa</strong>
+    <button data-cause="offline" aria-pressed="true">Sem internet</button>
+    <button data-cause="server" aria-pressed="false">Erro do servidor</button>
+    <button data-cause="unknown" aria-pressed="false">Erro inesperado</button>
+  </div>
+  <div class="grp"><strong>Tema</strong>
+    <button data-theme-btn="light" aria-pressed="true">Claro</button>
+    <button data-theme-btn="dark" aria-pressed="false">Escuro</button>
+  </div>
+  <span class="note">Barra de revisão — não faz parte do produto.</span>
+</div>
+
+<div class="stage">
+  <div class="sheet">
+
+    <!-- ══════════ BOAS-VINDAS ══════════ -->
+    <section class="screen active" id="welcome">
+      <div class="brand">
+        <span class="mark"><svg viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg></span>
+        <span class="name">Comes&amp;Bebes</span>
+      </div>
+
+      <h1>Senta que <em>já vai sair</em></h1>
+      <p class="lead">Este é um lugar para compartilhar aquilo de que todo mundo gosta: comida boa.</p>
+
+      <div class="cards">
+        <div class="card">
+          <span class="ico" aria-hidden="true">🍳</span>
+          <div>
+            <h2>Publique o que você cozinha</h2>
+            <p>Seus pratos, suas receitas, sua versão daquela receita que você viu por aqui. Bonito, torto ou de terça-feira — tudo cabe.</p>
+          </div>
+        </div>
+        <div class="card">
+          <span class="ico" aria-hidden="true">🌿</span>
+          <div>
+            <h2>Sem comentário, sem plateia</h2>
+            <p>Não tem comentário, não tem foto de gente, não tem quem ganha. Gostou de alguma coisa? Reaja, salve, ou faça a sua versão.</p>
+          </div>
+        </div>
+        <div class="card">
+          <span class="ico" aria-hidden="true">🍋</span>
+          <div>
+            <h2>Simples de propósito</h2>
+            <p>Comida, receitas e inspiração. Só isso. E a intenção é continuar assim.</p>
+          </div>
+        </div>
+      </div>
+
+      <p class="newnote">O Comes&amp;Bebes é novo e ainda está crescendo. Se alguma coisa parecer estranha, ou se você tiver uma ideia, <a href="#">conta pra gente</a> — a cozinha ainda está sendo montada.</p>
+
+      <button class="btn btn-primary">Começar a explorar</button>
+    </section>
+
+    <!-- ══════════ ERRO — fallback único ══════════ -->
+    <section class="screen errscreen" id="error">
+      <svg class="art" viewBox="0 0 132 132" role="img" aria-label="Panela tombada">
+        <!-- panela tombada -->
+        <g transform="rotate(-28 66 76)">
+          <path class="pot" d="M30 62h60v22a12 12 0 0 1-12 12H42a12 12 0 0 1-12-12z"/>
+          <rect class="pot" x="24" y="54" width="72" height="8" rx="4"/>
+          <rect class="pot" x="57" y="46" width="6" height="9" rx="3"/>
+          <path class="pot" d="M90 66h10a8 8 0 0 1 0 16H90z"/>
+        </g>
+        <!-- o que entornou -->
+        <path class="spill" d="M34 108c10-7 24-8 36-5 9 2 18 2 26-2 5-2 8 5 3 8-11 6-24 6-35 4-8-2-16-1-23 3-5 3-11-4-7-8z"/>
+        <circle class="drop d1" cx="88" cy="92" r="3.2"/>
+        <circle class="drop d2" cx="46" cy="96" r="2.6"/>
+      </svg>
+
+      <h1 id="err-title">Você está sem internet</h1>
+      <p id="err-text">Parece que a conexão caiu. Assim que ela voltar, é só tentar de novo.</p>
+
+      <div class="actions">
+        <button class="btn btn-primary">Tentar de novo</button>
+        <button class="btn-text" id="err-home">Voltar ao início</button>
+      </div>
+      <p class="tiny" id="err-tiny">Nada do que você escreveu foi perdido.</p>
+    </section>
+
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('[data-screen]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===b.dataset.screen));
+  document.querySelectorAll('[data-screen]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  document.getElementById('causes').hidden = b.dataset.screen!=='error';
+});
+
+// Uma tela, tres causas. So o texto muda.
+const CAUSES={
+  offline:{ title:'Você está sem internet',
+            text:'Parece que a conexão caiu. Assim que ela voltar, é só tentar de novo.',
+            home:false },
+  server: { title:'A cozinha deu uma engasgada',
+            text:'O problema é nosso, não seu. Tente de novo em alguns instantes.',
+            home:true },
+  unknown:{ title:'Alguma coisa entornou aqui',
+            text:'Aconteceu um erro inesperado. Tentar de novo costuma resolver.',
+            home:true }
+};
+document.querySelectorAll('[data-cause]').forEach(b=>b.onclick=()=>{
+  const c=CAUSES[b.dataset.cause];
+  document.getElementById('err-title').textContent=c.title;
+  document.getElementById('err-text').textContent=c.text;
+  document.getElementById('err-home').hidden=!c.home;
+  document.querySelectorAll('[data-cause]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+});
+document.getElementById('err-home').hidden=true;
+document.querySelectorAll('[data-theme-btn]').forEach(b=>b.onclick=()=>{
+  document.documentElement.setAttribute('data-theme',b.dataset.themeBtn);
+  document.querySelectorAll('[data-theme-btn]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+});
+</script>
+</body>
+</html>

@@ -23,6 +23,24 @@ import { resolveMockTags } from '@/mocks/state/tags'
 
 const mockAuthor = mockAccounts[0]!
 
+// Mesma regra de acesso do backend (produto5.md v5 §6.4): visitante só PUBLIC,
+// autenticado também INTERNAL, PRIVATE só para o próprio autor.
+function isVisibleTo(
+  visibility: PublicationResponse['visibility'],
+  authorId: string,
+  username: string | null,
+): boolean {
+  if (visibility === 'PUBLIC') return true
+  if (!username) return false
+  if (visibility === 'INTERNAL') return true
+  const viewer = mockAccounts.find((account) => account.username === username)
+  return viewer?.userId === authorId
+}
+
+function parseVisibility(value: string): PublicationResponse['visibility'] {
+  return value === 'INTERNAL' || value === 'PRIVATE' ? value : 'PUBLIC'
+}
+
 function authorFor(request: Request): (typeof mockAccounts)[number] {
   const username = mockAuthenticatedUsername(request)
   return mockAccounts.find((account) => account.username === username) ?? mockAuthor
@@ -66,9 +84,9 @@ export const feedMockHandlers = [
     const page = Math.max(Number(url.searchParams.get('page') ?? 1), 1)
     const size = Math.min(Math.max(Number(url.searchParams.get('size') ?? 20), 1), 50)
     const username = mockAuthenticatedUsername(request)
-    const authenticated = Boolean(username)
+    // "Só para mim" nunca aparece no feed, nem para o próprio autor (impl10.md v10 §17).
     const visiblePublications = mockPublications.filter(
-      (publication) => publication.visibility === 'PUBLIC' || authenticated,
+      (publication) => publication.visibility === 'PUBLIC' || (username && publication.visibility === 'INTERNAL'),
     )
     const start = (page - 1) * size
     const content = visiblePublications
@@ -94,7 +112,7 @@ export const feedMockHandlers = [
     if (!publication)
       return HttpResponse.json({ message: 'Publicação não encontrada.' }, { status: 404 })
     const username = mockAuthenticatedUsername(request)
-    if (publication.visibility === 'INTERNAL' && !username) {
+    if (!isVisibleTo(publication.visibility, publication.authorId, username)) {
       return HttpResponse.json({ message: 'Publicação não encontrada.' }, { status: 404 })
     }
     return HttpResponse.json(personalizePublication(publication, username))
@@ -104,7 +122,8 @@ export const feedMockHandlers = [
     const publication = mockPublications.find((item) => item.id === params.id)
     if (!publication?.recipePreview)
       return HttpResponse.json({ message: 'Receita não encontrada.' }, { status: 404 })
-    if (publication.visibility === 'INTERNAL' && !request.headers.has('authorization')) {
+    const username = mockAuthenticatedUsername(request)
+    if (!isVisibleTo(publication.visibility, publication.authorId, username)) {
       return HttpResponse.json({ message: 'Receita não encontrada.' }, { status: 404 })
     }
     return HttpResponse.json(publication.recipePreview)
@@ -187,7 +206,7 @@ export const feedMockHandlers = [
       id,
       authorId: author.userId,
       type: 'MY_VERSION',
-      visibility: data.visibility === 'INTERNAL' ? 'INTERNAL' : 'PUBLIC',
+      visibility: parseVisibility(data.visibility),
       title: `${source.title ?? 'Receita'} — ${data.titleSuffix}`,
       description: data.changeSummary || null,
       status: 'PENDING_VALIDATION',
@@ -196,19 +215,18 @@ export const feedMockHandlers = [
       imageUrl: source.imageUrl,
       authorUsername: author.username,
       authorDisplayName: author.displayName,
-      showReactionCounts: true,
-      reactionTotals: {},
+      usedReactions: [],
       selectedReactions: [],
       saved: false,
       viewedByCurrentUser: false,
-      versionsCount: 0,
+      hasVersions: false,
       originalPublicationId: source.id,
       reportedByCurrentUser: false,
       recipePreview: recipePreview(id, data.recipe),
       editedByAdmin: false,
       tags: resolveMockTags(data.tags),
     }
-    source.versionsCount += 1
+    source.hasVersions = true
     addMockPublication(publication)
     return HttpResponse.json(publication, { status: 201 })
   }),
@@ -222,7 +240,7 @@ export const feedMockHandlers = [
       id,
       authorId: author.userId,
       type: data.type === 'RECIPE' ? 'RECIPE' : 'DISH',
-      visibility: data.visibility === 'INTERNAL' ? 'INTERNAL' : 'PUBLIC',
+      visibility: parseVisibility(data.visibility),
       title: data.title || null,
       description: data.description || null,
       status: 'PENDING_VALIDATION',
@@ -231,12 +249,11 @@ export const feedMockHandlers = [
       imageUrl: mockPublications[0]!.imageUrl,
       authorUsername: author.username,
       authorDisplayName: author.displayName,
-      showReactionCounts: true,
-      reactionTotals: {},
+      usedReactions: [],
       selectedReactions: [],
       saved: false,
       viewedByCurrentUser: false,
-      versionsCount: 0,
+      hasVersions: false,
       originalPublicationId: null,
       reportedByCurrentUser: false,
       recipePreview: data.recipe ? recipePreview(id, data.recipe) : null,

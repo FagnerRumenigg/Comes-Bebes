@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 @Schema(name = "ReactionRequest", description = "Código da reação aplicada pelo usuário autenticado.")
 public record ReactionRequest(
         @Schema(hidden = true) java.util.UUID userId,
-        @Schema(description = "Código técnico da reação.", example = "WOULD_EAT", allowableValues = {"WOULD_EAT", "WANT_TO_MAKE", "COMFORT_FOOD", "HUNGRY", "BEAUTIFUL", "PERFECT_COMBO", "NEVER_TRIED", "WANT_TO_TRY", "SUNDAY_LUNCH_VIBES", "GOES_WITH_COFFEE", "DANGEROUSLY_GOOD", "NEED_RECIPE"})
+        @Schema(description = "Código técnico da reação.", example = "HUNGRY", allowableValues = {"HUNGRY", "BEAUTIFUL", "PERFECT_COMBO", "NEVER_TRIED", "WANT_TO_TRY", "SUNDAY_LUNCH_VIBES", "GOES_WITH_COFFEE", "DANGEROUSLY_GOOD", "NEED_RECIPE"})
         @NotBlank String reactionCode
 ) {
 }

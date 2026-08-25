@@ -7,7 +7,8 @@
  */
 
 /**
- * Novo nome público único.
- * @pattern [a-zA-Z0-9_]{3,30}
+ * Texto de origem do novo @usuário. Passa pela mesma normalização e resolução de colisão da criação de conta (impl10.md v10 §19.4): minúsculas, sem acento, espaço vira underscore, caracteres inválidos somem, e um sufixo numérico é acrescentado automaticamente se o resultado colidir com alguém.
+ * @minLength 1
+ * @maxLength 100
  */
 export type UpdateUserRequestUsername = string | null;

@@ -12,7 +12,7 @@ import java.util.List;
 @Schema(name = "CreateMyVersionUploadRequest", description = "Dados textuais da versão própria; a imagem é enviada em multipart.")
 public record CreateMyVersionUploadRequest(
         @io.swagger.v3.oas.annotations.media.Schema(hidden = true) java.util.UUID authorId,
-        @NotBlank @Pattern(regexp = "PUBLIC|INTERNAL") String visibility,
+        @NotBlank @Pattern(regexp = "PUBLIC|INTERNAL|PRIVATE") String visibility,
         @NotBlank @Size(max = 100) String titleSuffix,
         @Size(max = 2000) String changeSummary,
         @NotNull @Valid CreateRecipeRequest recipe,

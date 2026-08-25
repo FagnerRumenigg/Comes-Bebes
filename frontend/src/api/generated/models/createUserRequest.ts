@@ -11,19 +11,19 @@
  */
 export interface CreateUserRequest {
   /**
+   * E-mail da conta — é a credencial de login (produto5.md v5 §5.1).
+   * @minLength 0
+   * @maxLength 254
+   */
+  email: string;
+  /**
    * Senha da conta. Deve possuir entre 8 e 72 caracteres.
    * @minLength 8
    * @maxLength 72
    */
   password: string;
   /**
-   * Nome público único, usando letras, números e underscore.
-   * @minLength 1
-   * @pattern [a-zA-Z0-9_]{3,30}
-   */
-  username: string;
-  /**
-   * Nome exibido no perfil.
+   * Nome exibido no perfil. O @usuário é gerado automaticamente a partir dele (impl10.md v10 §19.4), editável depois em Configurações.
    * @minLength 0
    * @maxLength 100
    */

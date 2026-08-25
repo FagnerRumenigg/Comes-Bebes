@@ -50,10 +50,6 @@ public class PublicationCollection {
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
 
-    public boolean isPublic() {
-        return visibility == CollectionVisibility.PUBLIC;
-    }
-
     public void update(String name, String description, CollectionVisibility visibility) {
         this.name = name;
         this.description = description;

@@ -127,16 +127,16 @@ class UserControllerTest {
     }
 
     @Test
-    void shouldExposeFollowCountsWhenFindingUser() throws Exception {
+    void shouldNotExposeFollowCountsWhenFindingUser() throws Exception {
+        // Nenhum contador público em lugar nenhum do produto (produto5.md v5 §3.1) —
+        // seguidores/seguindo nunca aparecem na resposta, nem para o próprio dono.
         UUID profileId = UUID.randomUUID();
         when(userService.findActive(profileId)).thenReturn(user(profileId));
-        when(followService.countFollowers(profileId)).thenReturn(3L);
-        when(followService.countFollowing(profileId)).thenReturn(7L);
 
         mockMvc.perform(get("/users/{id}", profileId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.followersCount").value(3))
-                .andExpect(jsonPath("$.followingCount").value(7))
+                .andExpect(jsonPath("$.followersCount").doesNotExist())
+                .andExpect(jsonPath("$.followingCount").doesNotExist())
                 .andExpect(jsonPath("$.followedByCurrentUser").doesNotExist());
     }
 

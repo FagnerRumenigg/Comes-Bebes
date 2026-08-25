@@ -12,7 +12,10 @@ import App from '@/App.vue'
 import { setAccessTokenProvider, setUnauthorizedHandler } from '@/api/client'
 import { installApplicationPlugins, pinia, queryClient } from '@/app/plugins'
 import { setRouteSessionResolver } from '@/app/router/guards'
+import { reportAppCrash } from '@/composables/useAppCrash'
+import { initializeOnlineStatus } from '@/composables/useOnlineStatus'
 import { useAuthStore } from '@/stores/auth.store'
+import { useReducedMotionStore } from '@/stores/reducedMotion.store'
 import { useThemeStore } from '@/stores/theme.store'
 import '@/styles/global.css'
 
@@ -25,6 +28,8 @@ async function bootstrap(): Promise<void> {
 
   const app = createApp(App)
   installApplicationPlugins(app)
+  app.config.errorHandler = (error, _instance, info) => reportAppCrash(error, info)
+  initializeOnlineStatus()
 
   const authStore = useAuthStore(pinia)
   let activeUserId: string | null = null
@@ -45,10 +50,12 @@ async function bootstrap(): Promise<void> {
       authenticated: authStore.authenticated,
       role: authStore.identity?.role ?? null,
       onboardingCompleted: authStore.identity?.onboardingCompleted ?? true,
+      emailRequired: authStore.identity?.emailRequired ?? false,
     }
   })
 
   useThemeStore(pinia).initialize()
+  useReducedMotionStore(pinia).initialize()
   await authStore.initialize()
   app.mount('#app')
   // Aviso estático de index.html (cobre o tempo de boot antes da Vue
