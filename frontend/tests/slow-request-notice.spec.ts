@@ -41,7 +41,12 @@ function mountApp() {
   })
 }
 
-describe('aviso de requisição lenta', () => {
+// SlowRequestNotice não é mais renderizado em App.vue (desativado por
+// enquanto — a tela de carregando nova, com a animação do bule
+// (BackendOfflineScreen.vue), cobre o caso de servidor fora do ar; um
+// popup à parte pra qualquer requisição lenta ficou redundante).
+// Componente mantido no código pra religar depois se precisar.
+describe.skip('aviso de requisição lenta', () => {
   it('mostra o modal só depois do limiar, some quando a requisição termina', async () => {
     mockServer.use(
       http.get('*/ping-slow', async () => {
