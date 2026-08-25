@@ -1,9 +1,8 @@
 name: Deploy Comes-Bebes frontend to Azure Static Web Apps
 
-# Substitui o GitHub Pages (deploy-pages.yml) aos poucos — os dois ficam
-# ativos em paralelo até confirmar que o Static Web App está bom; depois
-# disso, remover deploy-pages.yml e a origem antiga da CORS/allowed
-# origins da API (ver infra/terraform/main/main.tf).
+# Substitui o GitHub Pages (deploy-pages.yml, removido) - domínio novo é
+# gerado pela Azure na criação do recurso (não é previsível pelo nome),
+# ver infra/terraform/main/outputs.tf, static_web_app_default_hostname.
 
 on:
   push:
