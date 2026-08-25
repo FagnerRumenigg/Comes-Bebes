@@ -19,8 +19,8 @@ watch(
 <template>
   <BaseDialog
     :open="backendStatus.slowRequest && !dismissed"
-    title="😴 Isso está demorando mais que o normal"
-    description="Pra economizar enquanto estamos testando, o servidor desliga sozinho depois de alguns minutos sem uso e acorda de novo assim que alguém tenta acessar. Isso costuma levar até 2 minutos na primeira tentativa - já já volta ao normal."
+    title="Isso está demorando mais que o normal"
+    description="Pode ser o processamento da imagem ou o servidor ligando depois de um tempo parado. Continue aguardando - já já volta ao normal."
     @update:open="dismissed = true"
   />
 </template>
