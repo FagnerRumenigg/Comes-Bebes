@@ -12,14 +12,24 @@ import { mockAccounts } from '@/mocks/fixtures/auth'
 
 type MockAccount = (typeof mockAccounts)[number]
 
-const accounts: Array<{
+export const accounts: Array<{
   userId: string
   displayName: string
   username: string
+  email: string | null
   password: string
   role: MockAccount['role']
   onboardingCompleted: boolean
 }> = mockAccounts.map((account) => ({ ...account, onboardingCompleted: true }))
+
+function findByIdentifier(identifier: string): (typeof accounts)[number] | undefined {
+  const normalized = identifier.toLowerCase()
+  return accounts.find(
+    (candidate) =>
+      candidate.username.toLowerCase() === normalized ||
+      candidate.email?.toLowerCase() === normalized,
+  )
+}
 
 const refreshSessions = new Map<string, string>()
 
@@ -57,6 +67,7 @@ function createSession(account: (typeof accounts)[number]): LoginResponse {
     role: account.role,
     onboardingCompleted: account.onboardingCompleted,
     hasUnseenPatchNotes: false,
+    emailRequired: account.email == null,
     expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
     sessionId: crypto.randomUUID(),
     deviceId: crypto.randomUUID(),
@@ -74,8 +85,8 @@ export const authMockHandlers = [
     } else if (body.displayName.trim().length > 100) {
       fieldErrors.displayName = 'Use no máximo 100 caracteres.'
     }
-    if (!/^[a-zA-Z0-9_]{3,30}$/.test(body.username ?? '')) {
-      fieldErrors.username = 'Use de 3 a 30 letras, números ou underscore.'
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email ?? '')) {
+      fieldErrors.email = 'Informe um e-mail válido.'
     }
     if ((body.password?.length ?? 0) < 8 || body.password.length > 72) {
       fieldErrors.password = 'A senha deve ter entre 8 e 72 caracteres.'
@@ -83,18 +94,29 @@ export const authMockHandlers = [
     if (Object.keys(fieldErrors).length > 0) {
       return apiError(400, 'VALIDATION_ERROR', 'Revise os campos informados.', fieldErrors)
     }
-    if (
-      accounts.some((account) => account.username.toLowerCase() === body.username.toLowerCase())
-    ) {
-      return apiError(409, 'USERNAME_ALREADY_EXISTS', 'Este nome de usuário já está em uso.', {
-        username: 'Escolha outro nome de usuário.',
+    if (accounts.some((account) => account.email?.toLowerCase() === body.email.toLowerCase())) {
+      return apiError(409, 'EMAIL_ALREADY_EXISTS', 'Este e-mail já está em uso.', {
+        email: 'Escolha outro e-mail.',
       })
     }
+
+    // @usuário gerado a partir do nome de exibição (impl10.md v10 §19.4) — versão
+    // simplificada do gerador real do backend, só para o mock ter algo plausível.
+    const generatedUsername = body.displayName
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_]/g, '')
+      .slice(0, 20)
+      .padEnd(3, '0')
 
     const account = {
       userId: crypto.randomUUID(),
       displayName: body.displayName.trim(),
-      username: body.username,
+      username: generatedUsername,
+      email: body.email,
       password: body.password,
       role: 'USER' as const,
       onboardingCompleted: false,
@@ -103,10 +125,10 @@ export const authMockHandlers = [
 
     const response: CreatedUserResponse = {
       id: account.userId,
+      email: account.email,
       displayName: account.displayName,
       username: account.username,
       role: account.role,
-      showReactionCounts: true,
     }
     return HttpResponse.json(response, { status: 201 })
   }),
@@ -114,14 +136,10 @@ export const authMockHandlers = [
   http.post('*/auth/login', async ({ request }) => {
     await delay(250)
     const body = (await request.json()) as LoginRequest
-    const account = accounts.find(
-      (candidate) =>
-        candidate.username.toLowerCase() === body.username.toLowerCase() &&
-        candidate.password === body.password,
-    )
+    const account = findByIdentifier(body.identifier)
 
-    if (!account) {
-      return apiError(401, 'INVALID_CREDENTIALS', 'Usuário ou senha inválidos.')
+    if (!account || account.password !== body.password) {
+      return apiError(401, 'INVALID_CREDENTIALS', 'E-mail, usuário ou senha inválidos.')
     }
 
     return HttpResponse.json(createSession(account))

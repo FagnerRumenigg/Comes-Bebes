@@ -1,27 +1,36 @@
 import { expect, test } from '@playwright/test'
 
 test('feed público exibe somente publicações públicas', async ({ page }) => {
+  await page.addInitScript(() =>
+    window.localStorage.setItem('comes-e-bebes:welcome-seen', 'true'),
+  )
   await page.goto('/')
 
-  await expect(page.getByRole('heading', { name: 'Seu feed' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'O que andaram cozinhando' })).toBeVisible()
   await expect(page.locator('article')).toHaveCount(3)
-  await expect(page.getByText('Somente comunidade')).toHaveCount(0)
+  await expect(page.getByText('Só para quem tem conta')).toHaveCount(0)
   await expect(page.getByText('Você chegou ao fim por hoje.')).toBeVisible()
 })
 
 test('feed autenticado inclui publicações internas', async ({ page }) => {
+  // Depois do logout o app cai no feed como visitante; sem esta flag, o
+  // gate de primeira visita (routeAccessGuard) redireciona para /bem-vindo.
+  await page.addInitScript(() =>
+    window.localStorage.setItem('comes-e-bebes:welcome-seen', 'true'),
+  )
   await page.goto('/login')
-  await page.getByLabel('Nome de usuário').fill('fagner')
+  await page.getByLabel('E-mail ou usuário').fill('fagner')
   await page.locator('#login-password').fill('MinhaSenha123!')
   await page.getByRole('button', { name: 'Entrar na conta' }).click()
 
   await expect(page).toHaveURL('/')
   await expect(page.locator('article')).toHaveCount(4)
-  await expect(page.getByText('Somente comunidade')).toBeVisible()
+  await expect(page.getByText('Só para quem tem conta')).toBeVisible()
 
-  await page.getByRole('button', { name: 'Sair' }).click()
+  await page.locator('.account-menu__trigger--web').click()
+  await page.getByRole('button', { name: 'Sair da conta' }).click()
   await expect(page.locator('article')).toHaveCount(3)
-  await expect(page.getByText('Somente comunidade')).toHaveCount(0)
+  await expect(page.getByText('Só para quem tem conta')).toHaveCount(0)
 })
 
 for (const theme of ['light', 'dark'] as const) {
@@ -30,6 +39,9 @@ for (const theme of ['light', 'dark'] as const) {
     await page.addInitScript((selectedTheme) => {
       window.localStorage.setItem('comes-e-bebes:theme', selectedTheme)
     }, theme)
+    await page.addInitScript(() =>
+      window.localStorage.setItem('comes-e-bebes:welcome-seen', 'true'),
+    )
     await page.goto('/')
     await expect(page.locator('article')).toHaveCount(3)
 
@@ -44,7 +56,7 @@ for (const theme of ['light', 'dark'] as const) {
           ),
       )
       .toBe(true)
-    await page.getByRole('heading', { name: 'Seu feed' }).scrollIntoViewIfNeeded()
+    await page.getByRole('heading', { name: 'O que andaram cozinhando' }).scrollIntoViewIfNeeded()
 
     await expect(page).toHaveScreenshot(`feed-${theme}.png`, {
       animations: 'disabled',

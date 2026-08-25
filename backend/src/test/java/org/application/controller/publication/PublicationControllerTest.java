@@ -51,6 +51,7 @@ class PublicationControllerTest {
     @Mock private SavedPublicationService savedPublicationService;
     @Mock private PublicationViewService publicationViewService;
     @Mock private ReportService reportService;
+    @Mock private org.application.service.PhotoValidationFeedbackService photoValidationFeedbackService;
     @Mock private PublicationResponseFactory responseFactory;
     @Mock private ImageStorage imageStorage;
 
@@ -68,6 +69,7 @@ class PublicationControllerTest {
                         savedPublicationService,
                         publicationViewService,
                         reportService,
+                        photoValidationFeedbackService,
                         responseFactory,
                         imageStorage,
                         ZoneId.of("America/Sao_Paulo"),
@@ -197,6 +199,20 @@ class PublicationControllerTest {
                         .contentType("application/json")
                         .content("{\"reporterId\":\"" + userId + "\",\"reasonCode\":\"NOT_FOOD\"}"))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void shouldReportPhotoValidationFeedback() throws Exception {
+        UUID userId = UUID.randomUUID();
+        when(currentUser.id(any())).thenReturn(userId);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/publications/photo-feedback")
+                        .contentType("application/json")
+                        .content("{\"reasonCode\":\"IMAGE_NOT_FOOD\",\"comment\":\"É um doce de leite.\"}"))
+                .andExpect(status().isNoContent());
+
+        org.mockito.Mockito.verify(photoValidationFeedbackService).create(org.mockito.ArgumentMatchers.eq(userId),
+                org.mockito.ArgumentMatchers.any(org.application.controller.publication.request.CreatePhotoValidationFeedbackRequest.class));
     }
 
     @Test

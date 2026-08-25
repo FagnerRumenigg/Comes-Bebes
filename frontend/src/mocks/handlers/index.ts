@@ -8,6 +8,7 @@ import { moderationMockHandlers } from './moderation'
 import { notificationPreferencesMockHandlers } from './notification-preferences'
 import { patchNotesMockHandlers } from './patch-notes'
 import { tagsMockHandlers } from './tags'
+import { usersMockHandlers } from './users'
 import { getDevicesMock } from '@/api/generated/devices/devices.msw'
 import { getPublicationsMock } from '@/api/generated/publications/publications.msw'
 
@@ -22,6 +23,7 @@ export const mockHandlers = [
   ...feedMockHandlers,
   ...patchNotesMockHandlers,
   ...tagsMockHandlers,
+  ...usersMockHandlers,
   ...getDevicesMock(),
   ...getPublicationsMock(),
 ]

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
+import { resolveImageUrl } from '@/utils/resolveImageUrl'
+
 const props = defineProps<{
   src: string
   alt: string
@@ -8,23 +10,8 @@ const props = defineProps<{
 
 const failed = ref(false)
 const reloadKey = ref(0)
-const backendBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8082'
 
-function resolveBackendAsset(path: string): string {
-  const joinedPath = `${backendBaseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
-  return new URL(joinedPath, window.location.origin).toString()
-}
-
-const resolvedSrc = computed(() => {
-  if (
-    /^(?:https?:\/\/|data:|blob:)/i.test(props.src) ||
-    props.src.startsWith('/src/') ||
-    props.src.startsWith('/assets/')
-  ) {
-    return props.src
-  }
-  return resolveBackendAsset(props.src)
-})
+const resolvedSrc = computed(() => resolveImageUrl(props.src))
 
 watch(
   () => props.src,

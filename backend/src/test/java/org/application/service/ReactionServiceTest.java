@@ -120,7 +120,9 @@ class ReactionServiceTest {
         when(publicationRepository.findByIdAndStatus(publicationId, PublicationStatus.ACTIVE)).thenReturn(Optional.of(publication));
         when(publicationRepository.findById(publicationId)).thenReturn(Optional.of(publication));
         when(userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)).thenReturn(Optional.of(User.builder().id(userId).build()));
-        when(reactionTypeRepository.findByCodeAndActiveTrue("WOULD_EAT")).thenReturn(Optional.of(type));
+        // remove() busca por findByCode (sem exigir active=true): quem reagiu antes de um
+        // tipo ser retirado do catálogo continua podendo tirar a própria reação.
+        when(reactionTypeRepository.findByCode("WOULD_EAT")).thenReturn(Optional.of(type));
         when(reactionRepository.findById(any())).thenReturn(Optional.of(reaction));
         when(clock.instant()).thenReturn(Instant.parse("2026-08-08T15:00:00Z"));
         when(clock.getZone()).thenReturn(ZoneOffset.UTC);

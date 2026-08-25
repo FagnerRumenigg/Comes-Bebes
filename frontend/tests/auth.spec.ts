@@ -1,9 +1,9 @@
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createPinia, setActivePinia } from 'pinia'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { delay, http, HttpResponse } from 'msw'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { LoginResponse } from '@/api/generated/models'
 import PasswordInput from '@/features/auth/components/PasswordInput.vue'
@@ -22,6 +22,7 @@ const session: LoginResponse = {
   role: 'USER',
   onboardingCompleted: true,
   hasUnseenPatchNotes: false,
+  emailRequired: false,
   expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
   sessionId: 'a4f0f2b0-df43-4b40-9df1-4f6da3e6f36e',
   deviceId: 'e1f0f2b0-df43-4b40-9df1-4f6da3e6f36e',
@@ -60,6 +61,7 @@ describe('store de sessão', () => {
         role: session.role,
         onboardingCompleted: true,
         hasUnseenPatchNotes: false,
+        emailRequired: false,
         remember: true,
       }),
     )
@@ -104,6 +106,7 @@ describe('store de sessão', () => {
         role: session.role,
         onboardingCompleted: true,
         hasUnseenPatchNotes: false,
+        emailRequired: false,
         remember: true,
       }),
     )
@@ -208,7 +211,7 @@ describe('formulários de autenticação', () => {
     await wrapper.get('form').trigger('submit')
 
     expect(wrapper.findAll('[role="alert"]').map((item) => item.text())).toEqual([
-      'Informe seu nome de usuário.',
+      'Informe seu e-mail ou usuário.',
       'Informe sua senha.',
     ])
   })
@@ -229,12 +232,45 @@ describe('formulários de autenticação', () => {
     })
 
     await wrapper.get('#register-display-name').setValue('Cozinha de Teste')
-    await wrapper.get('#register-username').setValue('cozinha_teste')
+    await wrapper.get('#register-email').setValue('cozinha@exemplo.com')
     await wrapper.get('#register-password').setValue('MinhaSenha123!')
     await wrapper.get('#register-confirm-password').setValue('OutraSenha123!')
     await wrapper.get('form').trigger('submit')
 
-    expect(wrapper.get('#register-username').element).toHaveProperty('value', 'cozinha_teste')
+    expect(wrapper.get('#register-email').element).toHaveProperty('value', 'cozinha@exemplo.com')
     expect(wrapper.get('[role="alert"]').text()).toBe('As senhas precisam ser iguais.')
+  })
+
+  it('mostra a tela de sucesso ao criar a conta e vai para o feed ao continuar', async () => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/cadastro', component: RegisterView },
+        { path: '/login', component: LoginView },
+        { path: '/', component: { template: '<p>Feed</p>' } },
+      ],
+    })
+    await router.push('/cadastro')
+    const wrapper = mount(RegisterView, {
+      global: {
+        plugins: [createPinia(), router, [VueQueryPlugin, { queryClient: new QueryClient() }]],
+      },
+    })
+
+    await wrapper.get('#register-display-name').setValue('Cozinha de Teste')
+    await wrapper.get('#register-email').setValue('cozinha-nova@exemplo.com')
+    await wrapper.get('#register-password').setValue('MinhaSenha123!')
+    await wrapper.get('#register-confirm-password').setValue('MinhaSenha123!')
+    await wrapper.get('form').trigger('submit')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Pronto, Cozinha de Teste!'))
+
+    expect(wrapper.text()).toContain('Pronto, Cozinha de Teste!')
+    expect(wrapper.text()).toContain('cozinha-nova@exemplo.com')
+    expect(wrapper.find('form').exists()).toBe(false)
+
+    await wrapper.get('button').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/')
   })
 })

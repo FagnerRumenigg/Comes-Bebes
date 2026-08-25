@@ -20,9 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.ZoneId;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -47,18 +45,23 @@ public class PublicationResponseFactory {
         var types = reactionTypeRepository.findAllById(reactions.stream()
                 .map(reaction -> reaction.getReactionTypeId()).toList()).stream()
                 .collect(Collectors.toMap(type -> type.getId(), type -> type.getCode()));
-        Map<ReactionCode, Long> totals = new LinkedHashMap<>();
-        reactions.forEach(reaction -> {
-            String code = types.get(reaction.getReactionTypeId());
-            if (code != null) {
-                totals.merge(ReactionCode.valueOf(code), 1L, Long::sum);
-            }
-        });
+        // Presença, sem contagem: nenhum contador público em lugar nenhum do produto
+        // (produto5.md v5 §3.1). A ordem canônica vem da própria ordem de ReactionCode.
+        // parseReactionCode ignora tipos retirados do catálogo (ex.: WOULD_EAT) — reações
+        // aplicadas antes da retirada continuam gravadas no banco, mas somem da resposta.
+        java.util.Set<ReactionCode> usedCodes = reactions.stream()
+                .map(reaction -> types.get(reaction.getReactionTypeId()))
+                .map(PublicationResponseFactory::parseReactionCode)
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toSet());
+        List<ReactionCode> usedReactions = java.util.Arrays.stream(ReactionCode.values())
+                .filter(usedCodes::contains)
+                .toList();
         List<ReactionCode> selected = reactions.stream()
                 .filter(reaction -> reaction.getUserId().equals(viewerId))
                 .map(reaction -> types.get(reaction.getReactionTypeId()))
+                .map(PublicationResponseFactory::parseReactionCode)
                 .filter(java.util.Objects::nonNull)
-                .map(ReactionCode::valueOf)
                 .toList();
         var origin = publicationOriginRepository.findById(publication.getId()).orElse(null);
         RecipeResponse preview = null;
@@ -86,17 +89,25 @@ public class PublicationResponseFactory {
                 .imageUrl("/images/" + publication.getGcsObjectName())
                 .authorUsername(author.map(org.application.model.User::getUsername).orElse(null))
                 .authorDisplayName(author.map(org.application.model.User::getDisplayName).orElse(null))
-                .showReactionCounts(author.map(org.application.model.User::isShowReactionCounts).orElse(true))
-                .reactionTotals(totals)
+                .usedReactions(usedReactions)
                 .selectedReactions(selected)
                 .saved(viewerId != null && savedPublicationRepository.existsByUserIdAndPublicationIdAndDeletedAtIsNull(viewerId, publication.getId()))
                 .viewedByCurrentUser(viewerId != null && publicationViewRepository.existsByUserIdAndPublicationId(viewerId, publication.getId()))
-                .versionsCount(publicationOriginRepository.countBySourceRecipeId(publication.getId()))
+                .hasVersions(publicationOriginRepository.existsBySourceRecipeId(publication.getId()))
                 .originalPublicationId(origin == null ? null : origin.getSourceRecipeId())
                 .reportedByCurrentUser(viewerId != null && reportRepository.existsByPublicationIdAndReporterIdAndResolution(publication.getId(), viewerId, "PENDING"))
                 .recipePreview(preview)
                 .editedByAdmin(publication.getEditedByAdminId() != null)
                 .tags(tagService.findByPublicationId(publication.getId()).stream().map(TagResponse::of).toList())
                 .build();
+    }
+
+    private static ReactionCode parseReactionCode(String code) {
+        if (code == null) return null;
+        try {
+            return ReactionCode.valueOf(code);
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
     }
 }

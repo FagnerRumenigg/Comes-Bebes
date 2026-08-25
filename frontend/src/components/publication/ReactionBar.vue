@@ -2,7 +2,9 @@
 import { computed, ref, watch } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 
+import BaseButton from '@/components/base/BaseButton.vue'
 import BaseDialog from '@/components/base/BaseDialog.vue'
+import AppIcon from '@/components/icons/AppIcon.vue'
 import { applyReaction, removeReaction } from '@/api/generated/publications/publications'
 import type { PublicationResponse, ReactionRequestReactionCode } from '@/api/generated/models'
 import { normalizeHttpError } from '@/api/errors'
@@ -13,13 +15,8 @@ const props = defineProps<{ publication: PublicationResponse }>()
 
 const MAX_REACTIONS = 3
 
-const PRIMARY_REACTIONS: Array<{ code: ReactionRequestReactionCode; label: string }> = [
-  { code: 'WOULD_EAT', label: 'Eu comeria' },
-  { code: 'WANT_TO_MAKE', label: 'Quero fazer' },
-  { code: 'COMFORT_FOOD', label: 'Comida afetiva' },
-]
-
-const SECONDARY_REACTIONS: Array<{ code: ReactionRequestReactionCode; label: string }> = [
+// Catálogo fechado de 9, na ordem canônica — nunca reordenar (impl10.md v10 §15.1).
+const REACTIONS: Array<{ code: ReactionRequestReactionCode; label: string }> = [
   { code: 'HUNGRY', label: 'Me deu fome' },
   { code: 'BEAUTIFUL', label: 'Ficou lindo' },
   { code: 'PERFECT_COMBO', label: 'Combinação perfeita' },
@@ -35,11 +32,15 @@ const authStore = useAuthStore()
 const queryClient = useQueryClient()
 const selected = ref<ReactionRequestReactionCode[]>([...props.publication.selectedReactions])
 const errorMessage = ref<string | null>(null)
-const moreOpen = ref(false)
+const limitMessage = ref<string | null>(null)
+const pickerOpen = ref(false)
 const isOwnPublication = computed(() => authStore.identity?.userId === props.publication.authorId)
 const atLimit = computed(() => selected.value.length >= MAX_REACTIONS)
-const activeSecondary = computed(() =>
-  SECONDARY_REACTIONS.filter((reaction) => selected.value.includes(reaction.code)),
+
+// Reação com zero uso não aparece; nenhum número em lugar nenhum, só presença
+// na ordem canônica (produto5.md v5 §3.1, impl10.md v10 §15.2).
+const usedReactions = computed(() =>
+  REACTIONS.filter((reaction) => props.publication.usedReactions.includes(reaction.code)),
 )
 
 watch(
@@ -66,19 +67,19 @@ const mutation = useMutation({
   },
 })
 
-const total = (code: ReactionRequestReactionCode): number =>
-  props.publication.reactionTotals?.[code] ?? 0
-
 function isSelected(code: ReactionRequestReactionCode): boolean {
   return selected.value.includes(code)
 }
 
-function isDisabled(code: ReactionRequestReactionCode): boolean {
-  return mutation.isPending.value || (atLimit.value && !isSelected(code))
-}
-
 function toggle(code: ReactionRequestReactionCode): void {
-  if (isOwnPublication.value || isDisabled(code)) return
+  if (isOwnPublication.value || mutation.isPending.value) return
+  if (atLimit.value && !isSelected(code)) {
+    // Toque que não faz nada é o pior retorno para quem tem pouca familiaridade
+    // com tecnologia — sempre explicar, nunca ignorar (impl10.md v10 §15.3).
+    limitMessage.value = 'Você já escolheu 3. Tire uma para poder escolher outra.'
+    return
+  }
+  limitMessage.value = null
   errorMessage.value = null
   const active = !isSelected(code)
   selected.value = active
@@ -87,86 +88,58 @@ function toggle(code: ReactionRequestReactionCode): void {
   mutation.mutate({ code, active })
 }
 
-function openMore(): void {
+function openPicker(): void {
   if (isOwnPublication.value) return
-  moreOpen.value = true
+  if (!authStore.authenticated) {
+    showAuthNotice()
+    return
+  }
+  limitMessage.value = null
+  pickerOpen.value = true
 }
 </script>
 
 <template>
   <div class="reaction-bar" aria-label="Reações">
-    <template v-if="authStore.authenticated">
-      <button
-        v-for="reaction in [...PRIMARY_REACTIONS, ...activeSecondary]"
-        :key="reaction.code"
-        type="button"
-        class="reaction-bar__button"
-        :class="{ 'reaction-bar__button--selected': isSelected(reaction.code) }"
-        :aria-pressed="isSelected(reaction.code)"
-        :disabled="isOwnPublication || isDisabled(reaction.code)"
-        @click="toggle(reaction.code)"
-      >
-        <span>{{ reaction.label }}</span>
-        <span v-if="publication.showReactionCounts" class="reaction-bar__count">
-          {{ total(reaction.code) }}
-        </span>
-      </button>
-      <button
-        type="button"
-        class="reaction-bar__button reaction-bar__more"
-        :disabled="isOwnPublication"
-        @click="openMore"
-      >
-        + Reagir
-      </button>
-    </template>
-    <template v-else>
-      <button
-        v-for="reaction in PRIMARY_REACTIONS"
-        :key="reaction.code"
-        type="button"
-        class="reaction-bar__button"
-        @click="showAuthNotice"
-      >
-        <span>{{ reaction.label }}</span>
-        <span v-if="publication.showReactionCounts" class="reaction-bar__count">
-          {{ total(reaction.code) }}
-        </span>
-      </button>
-      <button type="button" class="reaction-bar__button reaction-bar__more" @click="showAuthNotice">
-        + Reagir
-      </button>
-    </template>
+    <span
+      v-for="reaction in usedReactions"
+      :key="reaction.code"
+      class="reaction-bar__badge"
+      :class="{ 'reaction-bar__badge--selected': isSelected(reaction.code) }"
+    >
+      <AppIcon v-if="isSelected(reaction.code)" name="check" :size="13" :stroke-width="2.4" />
+      {{ reaction.label }}
+    </span>
+    <button type="button" class="reaction-bar__reagir" :disabled="isOwnPublication" @click="openPicker">
+      <AppIcon name="react" :size="17" :stroke-width="1.8" />
+      Reagir
+    </button>
     <span v-if="isOwnPublication" class="reaction-bar__hint">
       Você não pode reagir à própria publicação.
     </span>
-    <span v-else-if="atLimit && authStore.authenticated" class="reaction-bar__hint">
-      Você pode escolher até 3 reações para esta publicação.
-    </span>
     <span v-if="errorMessage" class="reaction-bar__error" role="alert">{{ errorMessage }}</span>
 
-    <BaseDialog
-      v-model:open="moreOpen"
-      title="Mais reações"
-      description="Escolha até 3 reações no total para esta publicação."
-    >
-      <div class="reaction-bar__more-grid">
+    <BaseDialog v-model:open="pickerOpen" title="Como você reagiu?" description="Escolha até 3. Toque de novo para tirar.">
+      <p class="reaction-bar__picker-count">{{ selected.length }} de 3 escolhidas</p>
+      <div class="reaction-bar__picker-grid">
         <button
-          v-for="reaction in SECONDARY_REACTIONS"
+          v-for="reaction in REACTIONS"
           :key="reaction.code"
           type="button"
           class="reaction-bar__button"
           :class="{ 'reaction-bar__button--selected': isSelected(reaction.code) }"
           :aria-pressed="isSelected(reaction.code)"
-          :disabled="isDisabled(reaction.code)"
+          :disabled="mutation.isPending.value"
           @click="toggle(reaction.code)"
         >
-          <span>{{ reaction.label }}</span>
-          <span v-if="publication.showReactionCounts" class="reaction-bar__count">
-            {{ total(reaction.code) }}
-          </span>
+          {{ reaction.label }}
         </button>
       </div>
+      <span v-if="limitMessage" class="reaction-bar__hint" role="alert">{{ limitMessage }}</span>
+
+      <template #actions>
+        <BaseButton @click="pickerOpen = false">Pronto</BaseButton>
+      </template>
     </BaseDialog>
   </div>
 </template>
@@ -181,18 +154,53 @@ function openMore(): void {
   border-top: 1px solid var(--color-border);
 }
 
-.reaction-bar__button {
+.reaction-bar__badge {
   display: inline-flex;
   min-height: 2.25rem;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
   padding: var(--space-2) var(--space-3);
   color: var(--color-text-secondary);
   font-size: var(--font-size-xs);
   background: transparent;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
-  text-decoration: none;
+}
+
+.reaction-bar__badge--selected {
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+  border-color: var(--color-primary);
+}
+
+.reaction-bar__reagir {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  border-style: dashed;
+}
+
+.reaction-bar__reagir:disabled {
+  opacity: 0.6;
+}
+
+.reaction-bar__button {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
 }
 
 .reaction-bar__button:hover:not(:disabled),
@@ -209,15 +217,6 @@ function openMore(): void {
   opacity: 0.6;
 }
 
-.reaction-bar__more {
-  font-weight: var(--font-weight-semibold);
-  border-style: dashed;
-}
-
-.reaction-bar__count {
-  font-weight: var(--font-weight-bold);
-}
-
 .reaction-bar__error,
 .reaction-bar__hint {
   flex-basis: 100%;
@@ -232,7 +231,13 @@ function openMore(): void {
   color: var(--color-text-secondary);
 }
 
-.reaction-bar__more-grid {
+.reaction-bar__picker-count {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.reaction-bar__picker-grid {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);

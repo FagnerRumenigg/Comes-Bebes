@@ -36,6 +36,9 @@ public class UserNotification {
     @Column(name = "publication_id")
     private UUID publicationId;
 
+    @Column(name = "collection_id")
+    private UUID collectionId;
+
     @Column(name = "actor_id")
     private UUID actorId;
 
@@ -47,6 +50,14 @@ public class UserNotification {
 
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
+
+    public void markRead(OffsetDateTime readAt) {
+        if (this.readAt == null) this.readAt = readAt;
+    }
+
+    public void markDeleted(OffsetDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+    }
 
     @jakarta.persistence.PrePersist
     void onCreate() {

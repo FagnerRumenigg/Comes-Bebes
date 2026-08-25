@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import { http, HttpResponse } from 'msw'
 import { createPinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { httpClient } from '@/api/client'
 import App from '@/App.vue'
@@ -18,6 +18,10 @@ beforeAll(() => {
     this.open = false
     this.dispatchEvent(new Event('close'))
   }
+})
+
+afterEach(() => {
+  vi.useRealTimers()
 })
 
 describe('detecção de backend indisponível', () => {
@@ -78,16 +82,18 @@ describe('detecção de backend indisponível', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('O Comes&Bebes está dormindo')
+    // Estágio inicial (0-10s): só a mensagem, sem botão de retry ainda —
+    // é intencional (docs/telas/03-carregando.html), espera curta não
+    // merece oferecer saída.
+    expect(wrapper.text()).toContain('Preparando tudo para você')
     expect(wrapper.text()).not.toContain('Feed')
-
-    await wrapper.get('button').trigger('click')
-    expect(backendStatus.offline).toBe(true)
+    expect(wrapper.find('button').exists()).toBe(false)
 
     wrapper.unmount()
   })
 
   it('a tela de fallback some sozinha quando o health check volta a responder', async () => {
+    vi.useFakeTimers()
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [{ path: '/', component: { template: '<div>Feed</div>' } }],
@@ -106,11 +112,14 @@ describe('detecção de backend indisponível', () => {
       },
     })
 
-    await wrapper.get('button').trigger('click')
-    await vi.waitUntil(() => !backendStatus.offline)
+    // Sobe o polling automático (a cada 5s) até ele bater no health check
+    // já respondendo — some sozinha, sem precisar de clique manual.
+    await vi.advanceTimersByTimeAsync(5_000)
+
+    expect(backendStatus.offline).toBe(false)
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.text()).not.toContain('O Comes&Bebes está dormindo')
+    expect(wrapper.text()).not.toContain('Preparando tudo para você')
     expect(wrapper.text()).toContain('Feed')
 
     wrapper.unmount()

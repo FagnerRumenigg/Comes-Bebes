@@ -7,7 +7,7 @@ export interface PublicationDraft {
   createdAt: string
   updatedAt: string
   type: 'DISH' | 'RECIPE'
-  visibility: 'PUBLIC' | 'INTERNAL'
+  visibility: 'PUBLIC' | 'INTERNAL' | 'PRIVATE'
   title: string
   description: string
   titleSuffix: string

@@ -13,6 +13,7 @@ const props = withDefaults(
     type?: string
     hint?: string
     error?: string
+    invalid?: boolean
     disabled?: boolean
     required?: boolean
   }>(),
@@ -22,6 +23,7 @@ const props = withDefaults(
     type: 'text',
     hint: undefined,
     error: undefined,
+    invalid: false,
     disabled: false,
     required: false,
   },
@@ -53,16 +55,19 @@ function updateValue(event: Event): void {
       <span v-if="required" class="base-field__required" aria-hidden="true">*</span>
     </label>
     <div class="base-field__control-wrapper">
+      <div v-if="$slots.lead" class="base-field__lead" aria-hidden="true">
+        <slot name="lead" />
+      </div>
       <input
         v-bind="$attrs"
         :id="inputId"
         class="base-field__control"
-        :class="{ 'base-field__control--error': error }"
+        :class="{ 'base-field__control--error': error || invalid, 'base-field__control--lead': $slots.lead }"
         :value="modelValue"
         :type="type"
         :disabled="disabled"
         :required="required"
-        :aria-invalid="error ? 'true' : undefined"
+        :aria-invalid="error || invalid ? 'true' : undefined"
         :aria-describedby="describedBy"
         @input="updateValue"
       />
@@ -112,7 +117,19 @@ function updateValue(event: Event): void {
 }
 
 .base-field__control-wrapper:has(.base-field__trailing) .base-field__control {
-  padding-inline-end: 5.5rem;
+  padding-inline-end: 3rem;
+}
+
+.base-field__control--lead {
+  padding-inline-start: 2.875rem;
+}
+
+.base-field__lead {
+  position: absolute;
+  top: 50%;
+  left: var(--space-3);
+  color: var(--color-text-secondary);
+  transform: translateY(-50%);
 }
 
 .base-field__trailing {

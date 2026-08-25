@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppIcon from '@/components/icons/AppIcon.vue'
+
 import BaseIconButton from './BaseIconButton.vue'
 
 type ToastKind = 'info' | 'success' | 'warning' | 'error'
@@ -30,6 +32,12 @@ defineEmits<{
     :aria-live="kind === 'error' ? 'assertive' : 'polite'"
     aria-atomic="true"
   >
+    <AppIcon
+      v-if="kind === 'error' || kind === 'warning'"
+      name="alert"
+      :size="20"
+      class="base-toast__icon"
+    />
     <div class="base-toast__content">
       <strong class="base-toast__title">{{ title }}</strong>
       <div v-if="$slots.default" class="base-toast__message"><slot /></div>
@@ -68,8 +76,19 @@ defineEmits<{
   border-color: var(--color-danger);
 }
 
+.base-toast__icon {
+  flex: none;
+  margin-top: 0.125rem;
+  color: var(--color-danger);
+}
+
+.base-toast--warning .base-toast__icon {
+  color: var(--color-accent);
+}
+
 .base-toast__content {
   display: grid;
+  flex: 1;
   gap: var(--space-1);
 }
 

@@ -10,7 +10,7 @@ import type { PublicationResponseVisibility } from './publicationResponseVisibil
 import type { PublicationResponseTitle } from './publicationResponseTitle';
 import type { PublicationResponseDescription } from './publicationResponseDescription';
 import type { PublicationResponseStatus } from './publicationResponseStatus';
-import type { PublicationResponseReactionTotals } from './publicationResponseReactionTotals';
+import type { PublicationResponseUsedReactionsItem } from './publicationResponseUsedReactionsItem';
 import type { PublicationResponseSelectedReactionsItem } from './publicationResponseSelectedReactionsItem';
 import type { PublicationResponseOriginalPublicationId } from './publicationResponseOriginalPublicationId';
 import type { PublicationResponseRecipePreview } from './publicationResponseRecipePreview';
@@ -40,13 +40,14 @@ export interface PublicationResponse {
   imageUrl: string;
   authorUsername: string;
   authorDisplayName: string;
-  showReactionCounts: boolean;
-  reactionTotals: PublicationResponseReactionTotals;
+  /** Tipos de reação com pelo menos um uso, na ordem canônica. Sem contagem: nenhum contador público em lugar nenhum do produto (produto5.md v5 §3.1, impl10.md v10 §15.4). */
+  usedReactions: PublicationResponseUsedReactionsItem[];
   selectedReactions: PublicationResponseSelectedReactionsItem[];
   saved: boolean;
   /** Indica se o usuário autenticado já visualizou esta publicação. Sempre falso para visitantes. */
   viewedByCurrentUser: boolean;
-  versionsCount: number;
+  /** Indica se existe pelo menos uma "Minha versão" derivada desta publicação. Sem número (impl10.md v10 §21.6: "Tem outras versões", sem contagem). */
+  hasVersions: boolean;
   /** Publicação de origem; preenchido somente para MY_VERSION. */
   originalPublicationId: PublicationResponseOriginalPublicationId;
   reportedByCurrentUser: boolean;

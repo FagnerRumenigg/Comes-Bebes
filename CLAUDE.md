@@ -2,6 +2,10 @@
 
 Guidance for Claude Code when working in this repository.
 
+## Idioma
+
+Responda sempre em português (pt-BR), em qualquer mensagem para o usuário, mesmo que este arquivo esteja em inglês.
+
 ## Compress Tool Output
 
 When executing tools, compress outputs to save tokens:

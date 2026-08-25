@@ -47,7 +47,6 @@ public class ProfileController {
                 ? null : currentUser.id(authentication);
         Boolean followedByCurrentUser = viewerId == null || viewerId.equals(user.getId())
                 ? null : followService.isFollowing(viewerId, user.getId());
-        return UserResponse.of(user, applicationZoneId, followService.countFollowers(user.getId()),
-                followService.countFollowing(user.getId()), followedByCurrentUser);
+        return UserResponse.of(user, applicationZoneId, followedByCurrentUser);
     }
 }

@@ -11,9 +11,6 @@ export type PublicationResponseSelectedReactionsItem = typeof PublicationRespons
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const PublicationResponseSelectedReactionsItem = {
-  WOULD_EAT: 'WOULD_EAT',
-  WANT_TO_MAKE: 'WANT_TO_MAKE',
-  COMFORT_FOOD: 'COMFORT_FOOD',
   HUNGRY: 'HUNGRY',
   BEAUTIFUL: 'BEAUTIFUL',
   PERFECT_COMBO: 'PERFECT_COMBO',

@@ -10,10 +10,15 @@ h2,
 h3,
 h4 {
   font-family: var(--font-editorial);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-regular);
   line-height: var(--line-height-heading);
   letter-spacing: var(--letter-spacing-tight);
   text-wrap: balance;
+}
+
+h1 em {
+  color: var(--color-primary);
+  font-style: italic;
 }
 
 h1 {

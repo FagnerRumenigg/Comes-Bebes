@@ -10,6 +10,7 @@ import java.util.UUID;
 
 public interface CollectionFollowRepository extends JpaRepository<CollectionFollow, CollectionFollowId> {
     Page<CollectionFollow> findByFollowerIdAndDeletedAtIsNullOrderByCreatedAtDesc(UUID followerId, Pageable pageable);
+    Page<CollectionFollow> findByCollectionIdAndDeletedAtIsNullOrderByCreatedAtDesc(UUID collectionId, Pageable pageable);
     long countByCollectionIdAndDeletedAtIsNull(UUID collectionId);
     boolean existsByFollowerIdAndCollectionIdAndDeletedAtIsNull(UUID followerId, UUID collectionId);
 }

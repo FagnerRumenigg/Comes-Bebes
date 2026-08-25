@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, useId } from 'vue'
 
+import AppIcon from '@/components/icons/AppIcon.vue'
+
 import BaseFieldError from './BaseFieldError.vue'
 
 const props = withDefaults(
@@ -56,8 +58,11 @@ function updateValue(event: Event): void {
         :aria-describedby="describedBy"
         @change="updateValue"
       />
+      <span class="base-checkbox__box" aria-hidden="true">
+        <AppIcon name="check" :size="14" :stroke-width="3.2" />
+      </span>
       <label class="base-checkbox__label" :for="checkboxId">
-        {{ label }}
+        <slot>{{ label }}</slot>
         <span v-if="required" class="base-checkbox__required" aria-hidden="true">*</span>
       </label>
     </div>
@@ -81,11 +86,48 @@ function updateValue(event: Event): void {
 }
 
 .base-checkbox__control {
-  width: 1.125rem;
-  height: 1.125rem;
-  flex: 0 0 auto;
-  margin: 0.15em 0 0;
-  accent-color: var(--color-primary);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.base-checkbox__box {
+  display: grid;
+  width: 1.4375rem;
+  height: 1.4375rem;
+  flex: none;
+  margin-top: 0.0625rem;
+  color: var(--color-primary-contrast);
+  place-items: center;
+  background: var(--color-surface);
+  border: 1.8px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+
+.base-checkbox__box :deep(svg) {
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-standard);
+}
+
+.base-checkbox__control:checked + .base-checkbox__box {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.base-checkbox__control:checked + .base-checkbox__box :deep(svg) {
+  opacity: 1;
+}
+
+.base-checkbox__control:focus-visible + .base-checkbox__box {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--space-1);
+}
+
+.base-checkbox__control[aria-invalid='true'] + .base-checkbox__box {
+  border-color: var(--color-danger);
 }
 
 .base-checkbox__label {
@@ -97,7 +139,7 @@ function updateValue(event: Event): void {
 }
 
 .base-checkbox__description {
-  padding-inline-start: calc(1.125rem + var(--space-3));
+  padding-inline-start: calc(1.4375rem + var(--space-3));
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   line-height: var(--line-height-ui);

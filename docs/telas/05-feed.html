@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comes&Bebes — Feed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fff6e3; --surface:#f3f8f5; --surface-alt:#eef4f0;
+  --text:#17281f; --text-muted:#4f6157;
+  --primary:#285943; --primary-hover:#1c4131; --primary-soft:#dfe9e4; --on-primary:#ffffff;
+  --secondary:#35758a; --accent:#d5a62e; --on-accent:#17281f;
+  --danger:#9b2c2c; --danger-soft:#f7e6e6;
+  --border:#6d8074; --border-subtle:#d7e0da;
+  --shadow:rgba(23,40,31,.16); --ph-a:#cfe0d4; --ph-b:#e6d9bd;
+}
+[data-theme="dark"]{
+  --bg:#2d1a11; --surface:#341e14; --surface-alt:#3d2419;
+  --text:#fef5f1; --text-muted:#bfa899;
+  --primary:#e99d7a; --primary-hover:#f2b193; --primary-soft:#4a2c1e; --on-primary:#2d1a11;
+  --secondary:#b5cc79; --accent:#b5cc79; --on-accent:#2d1a11;
+  --danger:#ff8a8a; --danger-soft:#4a2020;
+  --border:#8a7365; --border-subtle:#4a3227;
+  --shadow:rgba(0,0,0,.45); --ph-a:#4a3227; --ph-b:#5a3d2a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;color:var(--text);background:var(--surface-alt);line-height:1.5}
+
+.harness{position:sticky;top:0;z-index:300;background:#17281f;color:#eef4f0;padding:10px 16px;
+  display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-size:13px}
+.harness strong{font-size:12px;letter-spacing:.1em;text-transform:uppercase;opacity:.55;font-weight:600}
+.harness .grp{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.harness button{font:inherit;font-weight:500;cursor:pointer;background:transparent;color:#eef4f0;
+  border:1px solid rgba(238,244,240,.3);border-radius:99px;padding:5px 13px}
+.harness button:hover{background:rgba(238,244,240,.12)}
+.harness button[aria-pressed="true"]{background:#d5a62e;border-color:#d5a62e;color:#17281f;font-weight:600}
+.harness .note{margin-left:auto;opacity:.5;font-size:12px}
+
+.stage{padding:24px 16px 60px;display:flex;justify-content:center}
+.device{background:var(--bg);border:1.5px solid var(--border-subtle);border-radius:14px;overflow:hidden;
+  box-shadow:0 16px 44px var(--shadow);width:100%}
+.stage[data-view="web"] .device{max-width:1100px}
+.stage[data-view="mobile"] .device{max-width:400px}
+.stage[data-view="web"] .only-mobile{display:none !important}
+.stage[data-view="mobile"] .only-web{display:none !important}
+
+/* cabeçalho */
+.hd{display:flex;align-items:center;gap:24px;padding:0 26px;height:70px;background:var(--bg);
+  border-bottom:1.5px solid var(--border-subtle)}
+.hd-m{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:58px;
+  background:var(--bg);border-bottom:1.5px solid var(--border-subtle)}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text)}
+.brand .mark{width:36px;height:36px;border-radius:0;background:none;display:block;flex:none}
+.hd-m .brand .mark{width:31px;height:31px}
+.hd-m .brand .mark svg{width:31px;height:31px}
+.brand .mark svg{width:36px;height:36px;display:block}
+.brand .mark .tile{fill:var(--primary)}
+.brand .mark .book{fill:var(--accent)}
+.brand .mark .spine{fill:var(--accent);opacity:.45}
+.brand .mark .ribbon{fill:var(--primary)}
+.brand .name{font-family:'Instrument Serif',Georgia,serif;font-size:24px}
+.hd-m .brand .name{font-size:20px}
+.nav{display:flex;gap:4px}
+.nav a{position:relative;display:flex;align-items:center;gap:8px;min-height:48px;padding:0 14px;border-radius:9px;
+  text-decoration:none;color:var(--text-muted);font-size:16px;font-weight:500}
+.nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8}
+.nav a.on{color:var(--text);font-weight:700}
+.nav a.on::after{content:"";position:absolute;left:14px;right:14px;bottom:-12px;height:3px;border-radius:3px;background:var(--primary)}
+.spacer{flex:1}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--primary);color:var(--on-primary);
+  display:grid;place-items:center;font-size:15px;font-weight:700;flex:none}
+.acct{display:flex;align-items:center;gap:10px;min-height:48px;padding:4px 12px 4px 4px;background:none;
+  border:1.5px solid var(--border-subtle);border-radius:99px;cursor:pointer;font:inherit;font-size:15px;font-weight:600;color:var(--text)}
+.mini{width:44px;height:44px;border-radius:50%;border:1.5px solid var(--border-subtle);background:none;cursor:pointer;display:grid;place-items:center}
+.mini .avatar{width:32px;height:32px;font-size:13px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:48px;padding:0 20px;
+  border:1.5px solid transparent;border-radius:10px;font:inherit;font-size:16px;font-weight:600;cursor:pointer}
+.btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2}
+.btn-primary{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-outline{background:transparent;color:var(--primary);border-color:var(--primary)}
+.btn-outline:hover{background:var(--primary-soft)}
+.btn-quiet{background:transparent;color:var(--text);border-color:var(--border-subtle)}
+.btn-quiet:hover{background:var(--surface)}
+
+/* coluna do feed */
+.wrap{max-width:620px;margin:0 auto;padding:28px 24px 44px}
+.stage[data-view="mobile"] .wrap{padding:18px 16px 26px}
+h1{font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:40px;line-height:1.06;
+  letter-spacing:-.02em;margin-bottom:6px}
+.stage[data-view="mobile"] h1{font-size:31px}
+.sub{color:var(--text-muted);font-size:16px;margin-bottom:22px}
+
+/* busca — sempre visível, com palavra escrita */
+.searchbar{display:flex;gap:10px;margin-bottom:12px}
+.sfield{position:relative;flex:1;display:flex;align-items:center}
+.sfield svg{position:absolute;left:15px;width:20px;height:20px;stroke:var(--text-muted);fill:none;stroke-width:2;pointer-events:none}
+.sfield input{width:100%;min-height:50px;font:inherit;font-size:16px;color:var(--text);background:var(--surface);
+  border:1.5px solid var(--border);border-radius:10px;padding:0 15px 0 46px}
+.sfield input::placeholder{color:#5f7168}
+[data-theme="dark"] .sfield input::placeholder{color:#a68d7e}
+.sfield input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.filter-btn{flex:none;min-height:50px;padding:0 18px;border:1.5px solid var(--border-subtle);border-radius:10px;
+  background:var(--surface);cursor:pointer;font:inherit;font-size:16px;font-weight:600;color:var(--text);
+  display:flex;align-items:center;gap:9px}
+.filter-btn:hover{background:var(--surface-alt)}
+.filter-btn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2}
+.filter-btn .dot{width:9px;height:9px;border-radius:50%;background:var(--primary);display:none}
+.filter-btn.active .dot{display:block}
+
+/* painel de filtro */
+.panel{display:none;background:var(--surface);border:1.5px solid var(--border-subtle);border-radius:13px;
+  padding:20px;margin-bottom:16px}
+.panel.open{display:block}
+.frow{margin-bottom:18px}
+.frow > b{display:block;font-size:15px;font-weight:600;margin-bottom:9px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{min-height:44px;padding:0 16px;border-radius:99px;border:1.5px solid var(--border-subtle);
+  background:var(--bg);cursor:pointer;font:inherit;font-size:15px;font-weight:500;color:var(--text)}
+.chip:hover{border-color:var(--border)}
+.chip[aria-pressed="true"]{background:var(--primary);color:var(--on-primary);border-color:var(--primary);font-weight:600}
+.panel-foot{display:flex;gap:10px;border-top:1px solid var(--border-subtle);padding-top:16px}
+.panel-foot .btn{flex:1;min-height:46px}
+
+/* resumo do filtro aplicado */
+.summary{display:none;align-items:center;gap:12px;background:var(--primary-soft);
+  border:1.5px solid var(--primary);border-radius:11px;padding:12px 16px;margin-bottom:18px;font-size:15px}
+.summary.show{display:flex}
+.summary b{font-weight:600}
+.summary button{margin-left:auto;background:none;border:0;cursor:pointer;font:inherit;font-size:15px;
+  font-weight:600;color:var(--primary);min-height:44px;padding:0 4px;text-decoration:underline}
+
+/* cartão */
+.card{background:var(--surface);border:1.5px solid var(--border-subtle);border-radius:15px;
+  overflow:hidden;margin-bottom:18px}
+.card-top{display:flex;align-items:center;gap:11px;padding:14px 16px}
+.card-top .avatar{width:42px;height:42px;font-size:16px;background:var(--secondary)}
+.card-top .who{flex:1;min-width:0}
+.card-top b{display:block;font-size:16px;font-weight:600;line-height:1.25}
+.card-top span{font-size:14px;color:var(--text-muted)}
+.card-top .mine{font-size:13px;font-weight:600;color:var(--text-muted);border:1.5px solid var(--border-subtle);
+  border-radius:99px;padding:4px 11px;display:none}
+.card.own .card-top .mine{display:inline-block}
+.card .photo{aspect-ratio:4/3;background:linear-gradient(150deg,var(--ph-a),var(--ph-b));position:relative}
+.card .tag{position:absolute;left:12px;top:12px;background:var(--accent);color:var(--on-accent);
+  font-size:13px;font-weight:700;border-radius:99px;padding:5px 12px;display:none}
+.card.recipe .tag{display:block}
+.card-body{padding:15px 16px 4px}
+.card-body h2{font-size:19px;font-weight:600;letter-spacing:-.01em;margin-bottom:4px}
+.card-body p{font-size:15px;color:var(--text-muted);line-height:1.5}
+/* reações recebidas — sem número, sem quem, ordem sempre igual */
+.reacts{display:flex;flex-wrap:wrap;gap:7px;padding:14px 16px 0}
+.reacts:empty{display:none}
+.rchip{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 12px;border-radius:99px;
+  font-size:14px;font-weight:600;border:1.5px solid transparent;background:var(--surface-alt);color:var(--text)}
+.rchip.mine{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.rchip.mine svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:3.2}
+
+.acts{display:flex;gap:4px;padding:8px 10px 10px;border-top:1px solid var(--border-subtle);margin-top:14px}
+.act{flex:1;min-height:52px;display:flex;align-items:center;justify-content:center;gap:8px;background:none;
+  border:0;border-radius:10px;cursor:pointer;font:inherit;font-size:15px;font-weight:600;color:var(--text-muted)}
+.act:hover{background:var(--bg);color:var(--text)}
+.act svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.9}
+.act[aria-pressed="true"]{color:var(--primary)}
+.act[aria-pressed="true"] svg{fill:var(--primary);stroke:var(--primary)}
+.act.saved{color:var(--primary)}
+.act.saved svg{fill:var(--primary);stroke:var(--primary)}
+.act{white-space:nowrap}
+.stage[data-view="mobile"] .act{font-size:14px;gap:6px;padding:0 2px}
+.stage[data-view="mobile"] .act svg{width:19px;height:19px}
+
+/* vazios */
+.empty{text-align:center;padding:40px 20px;max-width:420px;margin:0 auto}
+.empty .art{width:96px;height:96px;margin:0 auto 18px;display:block;stroke:var(--primary);fill:none;stroke-width:5;stroke-linecap:round}
+.empty h2{font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:29px;margin-bottom:9px}
+.empty p{color:var(--text-muted);font-size:16px;margin-bottom:20px}
+
+.tabs{display:flex;background:var(--bg);border-top:1.5px solid var(--border-subtle);padding:6px 4px 10px}
+.tabs a{flex:1;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  text-decoration:none;color:var(--text-muted);position:relative}
+.tabs a svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8}
+.tabs a span{font-size:13px;font-weight:500}
+.tabs a.on{color:var(--primary)} .tabs a.on span{font-weight:700}
+.tabs a.on::before{content:"";position:absolute;top:-6px;width:26px;height:3px;border-radius:3px;background:var(--primary)}
+.tabs .pub{flex:none;width:78px}
+.tabs .pub .circ{width:50px;height:50px;border-radius:16px;background:var(--primary);color:var(--on-primary);display:grid;place-items:center}
+.tabs .pub .circ svg{width:25px;height:25px;stroke-width:2.4}
+.tabs .pub span{color:var(--text);font-weight:600}
+/* ── seletor de reações ── */
+.veil{position:fixed;inset:0;background:rgba(20,12,8,.5);z-index:400;display:none}
+.veil.open{display:block}
+.rmodal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(500px,calc(100% - 28px));
+  background:var(--bg);border:1.5px solid var(--border-subtle);border-radius:16px;z-index:410;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);padding:24px;display:none;max-height:86vh;overflow:auto}
+.rmodal.open{display:block}
+.rhead{display:flex;align-items:flex-start;gap:16px;margin-bottom:4px}
+.rhead h3{font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:29px;flex:1}
+.rclose{width:48px;height:48px;flex:none;margin:-8px -8px 0 0;border:0;background:none;cursor:pointer;
+  border-radius:10px;display:grid;place-items:center;color:var(--text)}
+.rclose:hover{background:var(--surface)}
+.rclose svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.2}
+.rmodal .mp{color:var(--text-muted);font-size:15px;margin-bottom:6px}
+.rcount{font-size:14px;font-weight:600;color:var(--primary);margin-bottom:16px}
+.rlist{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:6px}
+.ropt{display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 16px;border-radius:99px;
+  border:1.5px solid var(--border-subtle);background:var(--surface);cursor:pointer;font:inherit;
+  font-size:15px;font-weight:500;color:var(--text);white-space:normal;text-align:left}
+.ropt:hover{border-color:var(--border)}
+.ropt[aria-pressed="true"]{background:var(--primary);color:var(--on-primary);border-color:var(--primary);font-weight:600}
+.ropt svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:3;display:none}
+.ropt[aria-pressed="true"] svg{display:block}
+.rmodal.full .ropt:not([aria-pressed="true"]){opacity:.5}
+.rlimit{display:none;gap:10px;align-items:flex-start;background:var(--surface);border:1.5px solid var(--border);
+  border-radius:11px;padding:12px 15px;font-size:15px;line-height:1.45;margin-top:12px}
+.rlimit.show{display:flex}
+.rfoot{margin-top:20px}
+.rfoot .btn{width:100%}
+
+/* ── aviso flutuante ── */
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(120%);
+  z-index:500;background:var(--text);color:var(--bg);border-radius:12px;padding:13px 16px;
+  display:flex;align-items:center;gap:14px;box-shadow:0 12px 34px rgba(0,0,0,.35);
+  font-size:15px;font-weight:500;max-width:calc(100% - 32px);transition:transform .22s ease}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast svg{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:2.4}
+.toast button{background:none;border:0;cursor:pointer;font:inherit;font-size:15px;font-weight:700;
+  color:var(--bg);text-decoration:underline;min-height:44px;padding:0 4px;white-space:nowrap}
+@media (prefers-reduced-motion: reduce){ .toast{transition:none} }
+
+/* ── folha de guardar ── */
+.sveil{position:fixed;inset:0;background:rgba(20,12,8,.5);z-index:400;display:none}
+.sveil.open{display:block}
+.ssheet{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(460px,calc(100% - 28px));
+  background:var(--bg);border:1.5px solid var(--border-subtle);border-radius:16px;z-index:410;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);padding:24px;display:none;max-height:86vh;overflow:auto}
+.ssheet.open{display:block}
+.ssheet h3{font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:29px;margin-bottom:4px}
+.ssheet .mp{color:var(--text-muted);font-size:15px;margin-bottom:18px}
+.crow{display:flex;align-items:center;gap:13px;width:100%;min-height:56px;padding:8px 12px;border:0;
+  border-radius:11px;background:none;cursor:pointer;font:inherit;text-align:left;color:var(--text)}
+.crow:hover{background:var(--surface)}
+.cbox{width:24px;height:24px;flex:none;border:2px solid var(--border);border-radius:7px;
+  display:grid;place-items:center;background:var(--surface)}
+.cbox svg{width:15px;height:15px;stroke:var(--on-primary);fill:none;stroke-width:3.2;opacity:0}
+.crow[aria-checked="true"] .cbox{background:var(--primary);border-color:var(--primary)}
+.crow[aria-checked="true"] .cbox svg{opacity:1}
+.crow .cinfo{flex:1;min-width:0}
+.crow b{display:block;font-size:16px;font-weight:600}
+.crow span{font-size:14px;color:var(--text-muted)}
+.newcol{display:flex;align-items:center;gap:13px;width:100%;min-height:56px;padding:8px 12px;
+  border:0;border-radius:11px;background:none;cursor:pointer;font:inherit;color:var(--primary);
+  font-size:16px;font-weight:600;text-align:left}
+.newcol:hover{background:var(--primary-soft)}
+.newcol .plus{width:24px;height:24px;flex:none;display:grid;place-items:center}
+.newcol svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.4}
+.newform{display:none;background:var(--surface);border:1.5px solid var(--border-subtle);
+  border-radius:12px;padding:16px;margin:8px 0}
+.newform.open{display:block}
+.newform label{display:block;font-size:15px;font-weight:600;margin-bottom:7px}
+.newform input{width:100%;min-height:48px;font:inherit;font-size:16px;color:var(--text);
+  background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:0 14px;margin-bottom:8px}
+.newform input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.newform .hint{font-size:14px;color:var(--text-muted);margin-bottom:14px}
+.newform .nf{display:flex;gap:8px}
+.newform .btn{flex:1;min-height:46px;font-size:15px}
+.ssep{border:0;border-top:1px solid var(--border-subtle);margin:14px 0}
+.remove{display:flex;align-items:center;gap:11px;width:100%;min-height:52px;padding:0 12px;border:0;
+  border-radius:11px;background:none;cursor:pointer;font:inherit;font-size:16px;font-weight:600;
+  color:var(--danger);text-align:left}
+.remove:hover{background:var(--danger-soft)}
+.remove svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2}
+.sfoot{margin-top:16px}
+.sfoot .btn{width:100%}
+
+.hide{display:none !important}
+</style>
+</head>
+<body>
+
+<div class="harness">
+  <div class="grp"><strong>Estado</strong>
+    <button data-state="normal" aria-pressed="true">Feed</button>
+    <button data-state="filtrado" aria-pressed="false">Com filtro</button>
+    <button data-state="semres" aria-pressed="false">Busca sem resultado</button>
+    <button data-state="vazio" aria-pressed="false">Feed vazio</button>
+  </div>
+  <div class="grp"><strong>Plataforma</strong>
+    <button data-view="web" aria-pressed="true">Web</button>
+    <button data-view="mobile" aria-pressed="false">Celular</button>
+  </div>
+  <div class="grp"><strong>Tema</strong>
+    <button data-theme-btn="light" aria-pressed="true">Claro</button>
+    <button data-theme-btn="dark" aria-pressed="false">Escuro</button>
+  </div>
+  <span class="note">O botão Filtros abre de verdade.</span>
+</div>
+
+<div class="stage" id="stage" data-view="web">
+<div class="device">
+
+  <header class="hd only-web">
+    <a class="brand" href="#"><span class="mark"><svg viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg></span><span class="name">Comes&amp;Bebes</span></a>
+    <nav class="nav">
+      <a href="#" class="on" aria-current="page"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22v-8h6v8"/></svg>Início</a>
+      <a href="#"><svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg>Salvos</a>
+      <a href="#"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 6-3 7-3 7h18s-3-1-3-7"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></svg>Avisos</a>
+    </nav>
+    <span class="spacer"></span>
+    <button class="btn btn-primary"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Publicar</button>
+    <button class="acct"><span class="avatar">F</span>Fagner</button>
+  </header>
+
+  <header class="hd-m only-mobile">
+    <a class="brand" href="#"><span class="mark"><svg viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg></span><span class="name">Comes&amp;Bebes</span></a>
+    <button class="mini"><span class="avatar">F</span></button>
+  </header>
+
+  <div class="wrap">
+    <h1>O que andaram cozinhando</h1>
+    <p class="sub" id="sub">Publicações recentes de quem você segue e da comunidade.</p>
+
+    <div class="searchbar">
+      <label class="sfield">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" id="q" placeholder="Buscar receitas" aria-label="Buscar receitas">
+      </label>
+      <button class="filter-btn" id="fbtn" aria-expanded="false">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+        Filtros <span class="dot"></span>
+      </button>
+    </div>
+
+    <div class="panel" id="panel">
+      <div class="frow"><b>Mostrar</b>
+        <div class="chips" data-group="tipo">
+          <button class="chip" aria-pressed="true">Tudo</button>
+          <button class="chip" aria-pressed="false">Só pratos</button>
+          <button class="chip" aria-pressed="false">Só receitas</button>
+        </div>
+      </div>
+      <div class="frow"><b>De quem</b>
+        <div class="chips" data-group="quem">
+          <button class="chip" aria-pressed="true">Todo mundo</button>
+          <button class="chip" aria-pressed="false">Quem eu sigo</button>
+          <button class="chip" aria-pressed="false">Minhas coleções</button>
+        </div>
+      </div>
+      <div class="frow"><b>Ordenar por</b>
+        <div class="chips" data-group="ordem">
+          <button class="chip" aria-pressed="true">Mais recentes</button>
+          <button class="chip" aria-pressed="false">Mais antigas</button>
+        </div>
+      </div>
+      <div class="panel-foot">
+        <button class="btn btn-quiet" id="limpar">Limpar tudo</button>
+        <button class="btn btn-primary" id="aplicar">Ver resultados</button>
+      </div>
+    </div>
+
+    <div class="summary" id="summary">
+      <span>Mostrando <b>só receitas</b> de <b>quem você segue</b></span>
+      <button id="limpar2">Limpar</button>
+    </div>
+
+    <div id="lista"></div>
+
+    <div class="empty hide" id="e-semres">
+      <svg class="art" viewBox="0 0 100 100" aria-hidden="true"><circle cx="44" cy="44" r="26"/><path d="m64 64 18 18"/><path d="M35 44h18"/></svg>
+      <h2>Nada encontrado</h2>
+      <p>Não achamos nada para <b>“bolo de rapadura”</b>. Tente uma palavra mais simples, como “bolo”.</p>
+      <button class="btn btn-quiet">Limpar a busca</button>
+    </div>
+
+    <div class="empty hide" id="e-vazio">
+      <svg class="art" viewBox="0 0 100 100" aria-hidden="true"><path d="M18 58h64a32 32 0 0 0-64 0z"/><path d="M12 70h76"/><path d="M50 26v-8"/></svg>
+      <h2>A mesa ainda está posta</h2>
+      <p>Ninguém publicou nada por aqui ainda. Que tal ser a primeira pessoa?</p>
+      <button class="btn btn-primary">Publicar algo que você fez</button>
+    </div>
+  </div>
+
+  <nav class="tabs only-mobile">
+    <a href="#" class="on" aria-current="page"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22v-8h6v8"/></svg><span>Início</span></a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg><span>Salvos</span></a>
+    <a href="#" class="pub"><span class="circ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></span><span>Publicar</span></a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 6-3 7-3 7h18s-3-1-3-7"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></svg><span>Avisos</span></a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg><span>Perfil</span></a>
+  </nav>
+
+</div>
+</div>
+
+<div class="toast" id="toast" role="status">
+  <svg viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11"/></svg>
+  <span id="toast-msg">Guardado nos seus salvos.</span>
+  <button id="toast-act">Escolher coleção</button>
+</div>
+
+<div class="sveil" id="sveil"></div>
+<div class="ssheet" id="ssheet" role="dialog" aria-labelledby="st">
+  <h3 id="st">Guardar em</h3>
+  <p class="mp">Já está nos seus salvos. Escolher uma coleção é opcional.</p>
+
+  <div id="collist"></div>
+
+  <button class="newcol" id="newcolbtn">
+    <span class="plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
+    Nova coleção
+  </button>
+
+  <div class="newform" id="newform">
+    <label for="ncname">Nome da coleção</label>
+    <input id="ncname" placeholder="Ex.: Doces de fim de semana">
+    <p class="hint">Ela começa como <b>Só minha</b>. Você pode abrir depois, quando quiser.</p>
+    <div class="nf">
+      <button class="btn btn-quiet" id="nccancel">Cancelar</button>
+      <button class="btn btn-primary" id="nccreate">Criar</button>
+    </div>
+  </div>
+
+  <hr class="ssep">
+  <button class="remove" id="unsave">
+    <svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/><path d="m8 8 8 8M16 8l-8 8"/></svg>
+    Tirar dos salvos
+  </button>
+
+  <div class="sfoot"><button class="btn btn-primary" id="sdone">Pronto</button></div>
+</div>
+
+<div class="veil" id="rveil"></div>
+<div class="rmodal" id="rmodal" role="dialog" aria-labelledby="rt">
+  <div class="rhead">
+    <h3 id="rt">Como você reagiu?</h3>
+    <button class="rclose" id="rclose" aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <p class="mp">Escolha até 3. Toque de novo para tirar.</p>
+  <p class="rcount" id="rcount">Nenhuma escolhida ainda</p>
+  <div class="rlist" id="rlist"></div>
+  <div class="rlimit" id="rlimit">
+    <span>Você já escolheu 3. Tire uma para poder escolher outra.</span>
+  </div>
+  <div class="rfoot"><button class="btn btn-primary" id="rdone">Pronto</button></div>
+</div>
+
+<script>
+const stage=document.getElementById('stage');
+// ordem canônica — nunca reordenar por popularidade
+const REACOES=['Me deu fome','Ficou lindo','Combinação perfeita','Nunca provei','Quero tentar',
+  'Cara de almoço de domingo','Isso com café','Perigoso de bom','Preciso da receita!'];
+const POSTS=[
+  {n:'Maria',u:'maria_cozinha',q:'há 2 horas',t:'Bolo de fubá cremoso',d:'Fiz com o fubá do moinho aqui de casa. Aquele ponto molhadinho que a gente só acerta na terceira tentativa.',r:true,
+   re:[{t:'Me deu fome'},{t:'Ficou lindo',mine:true},{t:'Preciso da receita!'}]},
+  {n:'Fagner',u:'fagner',q:'ontem',t:'Feijoada de sábado',d:'Demorou seis horas e valeu cada uma. A laranja não é enfeite, é obrigação.',r:false,own:true,
+   re:[{t:'Me deu fome'},{t:'Cara de almoço de domingo'},{t:'Perigoso de bom'}]},
+  {n:'João',u:'joaopadeiro',q:'há 3 dias',t:'Pão sovado na mão',d:'Sem batedeira, sem pressa. A massa avisa quando está pronta.',r:true,
+   re:[{t:'Quero tentar'}]},
+  {n:'Ana',u:'ana',q:'há 5 dias',t:'Sopa de mandioquinha',d:'Comida de dia frio e de dia ruim também.',r:false,re:[]}
+];
+function card(p){
+  return `<article class="card ${p.r?'recipe':''} ${p.own?'own':''}">
+    <div class="card-top">
+      <span class="avatar">${p.n[0]}</span>
+      <span class="who"><b>${p.n}</b><span>@${p.u} · ${p.q}</span></span>
+      <span class="mine">Sua publicação</span>
+    </div>
+    <div class="photo"><span class="tag">Receita</span></div>
+    <div class="card-body"><h2>${p.t}</h2><p>${p.d}</p></div>
+    <div class="reacts">${(p.re||[]).map(r=>
+      `<span class="rchip ${r.mine?'mine':''}">${r.mine?'<svg viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11"/></svg>':''}${r.t}</span>`).join('')}</div>
+    <div class="acts">
+      <button class="act btn-react"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5v.01M15 9.5v.01"/></svg>Reagir</button>
+      <button class="act btn-save" data-i="${p.i}"><svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg><span class="lbl">Salvar</span></button>
+      <button class="act"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 13.7-5.7L20 8"/><path d="M20 4v4h-4"/><path d="M20 12a8 8 0 0 1-13.7 5.7L4 16"/><path d="M4 20v-4h4"/></svg>Minha versão</button>
+    </div>
+  </article>`;
+}
+document.getElementById('lista').innerHTML=POSTS.map((p,i)=>card({...p,i})).join('');
+document.querySelectorAll('.act[aria-pressed]').forEach(b=>b.onclick=()=>
+  b.setAttribute('aria-pressed', b.getAttribute('aria-pressed')==='true'?'false':'true'));
+
+const panel=document.getElementById('panel'), fbtn=document.getElementById('fbtn'),
+      summ=document.getElementById('summary'), lista=document.getElementById('lista'),
+      eSem=document.getElementById('e-semres'), eVaz=document.getElementById('e-vazio'),
+      q=document.getElementById('q'), sub=document.getElementById('sub');
+
+fbtn.onclick=()=>{const o=panel.classList.toggle('open');fbtn.setAttribute('aria-expanded',o);};
+document.querySelectorAll('.chips').forEach(g=>g.querySelectorAll('.chip').forEach(c=>c.onclick=()=>
+  g.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x===c))));
+
+function setState(k){
+  document.querySelectorAll('[data-state]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.state===k));
+  panel.classList.remove('open'); fbtn.setAttribute('aria-expanded','false');
+  lista.classList.add('hide'); eSem.classList.add('hide'); eVaz.classList.add('hide');
+  summ.classList.remove('show'); fbtn.classList.remove('active'); q.value='';
+  sub.textContent='Publicações recentes de quem você segue e da comunidade.';
+  if(k==='normal') lista.classList.remove('hide');
+  if(k==='filtrado'){ lista.classList.remove('hide'); summ.classList.add('show'); fbtn.classList.add('active');
+    sub.textContent='Publicações recentes de quem você segue e da comunidade.'; }
+  if(k==='semres'){ eSem.classList.remove('hide'); q.value='bolo de rapadura'; }
+  if(k==='vazio') eVaz.classList.remove('hide');
+}
+document.querySelectorAll('[data-state]').forEach(b=>b.onclick=()=>setState(b.dataset.state));
+document.getElementById('aplicar').onclick=()=>setState('filtrado');
+document.getElementById('limpar').onclick=()=>setState('normal');
+document.getElementById('limpar2').onclick=()=>setState('normal');
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{stage.dataset.view=b.dataset.view;
+  document.querySelectorAll('[data-view]').forEach(x=>x.setAttribute('aria-pressed',x===b));});
+document.querySelectorAll('[data-theme-btn]').forEach(b=>b.onclick=()=>{
+  document.documentElement.setAttribute('data-theme',b.dataset.themeBtn);
+  document.querySelectorAll('[data-theme-btn]').forEach(x=>x.setAttribute('aria-pressed',x===b));});
+// ── seletor de reações ──
+const rveil=document.getElementById('rveil'), rmodal=document.getElementById('rmodal'),
+      rlist=document.getElementById('rlist'), rcount=document.getElementById('rcount'),
+      rlimit=document.getElementById('rlimit');
+const MAX=3; let escolhidas=new Set();
+
+rlist.innerHTML=REACOES.map(r=>
+  `<button class="ropt" aria-pressed="false" data-r="${r}"><svg viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11"/></svg>${r}</button>`).join('');
+
+function pintar(){
+  rlist.querySelectorAll('.ropt').forEach(o=>o.setAttribute('aria-pressed',escolhidas.has(o.dataset.r)));
+  rmodal.classList.toggle('full',escolhidas.size>=MAX);
+  rcount.textContent = escolhidas.size===0 ? 'Nenhuma escolhida ainda' : `${escolhidas.size} de ${MAX} escolhidas`;
+  if(escolhidas.size<MAX) rlimit.classList.remove('show');
+}
+rlist.querySelectorAll('.ropt').forEach(o=>o.onclick=()=>{
+  const r=o.dataset.r;
+  if(escolhidas.has(r)) escolhidas.delete(r);
+  else if(escolhidas.size>=MAX){ rlimit.classList.add('show'); return; }  // explica, nao ignora
+  else escolhidas.add(r);
+  pintar();
+});
+function abrirReacoes(){ rveil.classList.add('open'); rmodal.classList.add('open'); pintar(); }
+function fecharReacoes(){ rveil.classList.remove('open'); rmodal.classList.remove('open'); }
+document.querySelectorAll('.btn-react').forEach(b=>b.onclick=abrirReacoes);
+rveil.onclick=fecharReacoes;
+document.getElementById('rclose').onclick=fecharReacoes;
+document.getElementById('rdone').onclick=fecharReacoes;
+document.addEventListener('keydown',e=>{if(e.key==='Escape')fecharReacoes();});
+
+// ══════════ GESTO DE SALVAR ══════════
+// Regra: salvar é UM toque e acontece na hora. Organizar é opcional e vem depois.
+const COLECOES=[{n:'Doces de festa',q:'12 receitas · Pública'},
+                {n:'Almoço rápido',q:'7 receitas · Só minha'},
+                {n:'Testar um dia',q:'4 receitas · Compartilhada'}];
+const salvos=new Set(); const emColecao={};   // indice -> Set de coleções
+let atual=null;
+
+const toast=document.getElementById('toast'), sveil=document.getElementById('sveil'),
+      ssheet=document.getElementById('ssheet'), collist=document.getElementById('collist'),
+      newform=document.getElementById('newform');
+let toastTimer=null;
+
+function mostrarToast(msg,acao){
+  document.getElementById('toast-msg').textContent=msg;
+  document.getElementById('toast-act').classList.toggle('hide',!acao);
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  // 8s: quem lê devagar precisa de tempo para alcançar a ação
+  toastTimer=setTimeout(()=>toast.classList.remove('show'),8000);
+}
+document.getElementById('toast-act').onclick=()=>{toast.classList.remove('show');abrirFolha(atual);};
+
+function pintarBotao(i){
+  const b=document.querySelector(`.btn-save[data-i="${i}"]`); if(!b) return;
+  const on=salvos.has(i);
+  b.classList.toggle('saved',on);
+  const c=(emColecao[i]&&emColecao[i].size)||0;
+  b.querySelector('.lbl').textContent = on ? (c ? 'Guardado' : 'Salvo') : 'Salvar';
+}
+function desenharLista(){
+  const meus=emColecao[atual]||new Set();
+  collist.innerHTML=COLECOES.map((c,k)=>
+    `<button class="crow" role="checkbox" aria-checked="${meus.has(c.n)}" data-c="${c.n}">
+       <span class="cbox"><svg viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11"/></svg></span>
+       <span class="cinfo"><b>${c.n}</b><span>${c.q}</span></span>
+     </button>`).join('');
+  collist.querySelectorAll('.crow').forEach(r=>r.onclick=()=>{
+    const set=emColecao[atual]||(emColecao[atual]=new Set());
+    const n=r.dataset.c;
+    set.has(n)?set.delete(n):set.add(n);
+    r.setAttribute('aria-checked',set.has(n));
+    pintarBotao(atual);
+  });
+}
+function abrirFolha(i){atual=i;desenharLista();newform.classList.remove('open');
+  sveil.classList.add('open');ssheet.classList.add('open');}
+function fecharFolha(){sveil.classList.remove('open');ssheet.classList.remove('open');}
+
+document.querySelectorAll('.btn-save').forEach(b=>b.onclick=()=>{
+  const i=+b.dataset.i;
+  if(!salvos.has(i)){
+    salvos.add(i); atual=i; pintarBotao(i);      // salva de imediato
+    mostrarToast('Guardado nos seus salvos.',true);
+  } else {
+    abrirFolha(i);   // já salvo: abre a folha. Nunca desfaz num toque solto.
+  }
+});
+sveil.onclick=fecharFolha;
+document.getElementById('sdone').onclick=fecharFolha;
+document.addEventListener('keydown',e=>{if(e.key==='Escape')fecharFolha();});
+document.getElementById('newcolbtn').onclick=()=>{newform.classList.add('open');
+  setTimeout(()=>document.getElementById('ncname').focus(),50);};
+document.getElementById('nccancel').onclick=()=>newform.classList.remove('open');
+document.getElementById('nccreate').onclick=()=>{
+  const v=document.getElementById('ncname').value.trim(); if(!v) return;
+  COLECOES.push({n:v,q:'1 receita · Só minha'});
+  (emColecao[atual]||(emColecao[atual]=new Set())).add(v);
+  document.getElementById('ncname').value=''; newform.classList.remove('open');
+  desenharLista(); pintarBotao(atual);
+};
+document.getElementById('unsave').onclick=()=>{
+  salvos.delete(atual); delete emColecao[atual]; pintarBotao(atual); fecharFolha();
+  mostrarToast('Tirado dos seus salvos.',false);
+};
+
+setState('normal');
+</script>
+</body>
+</html>

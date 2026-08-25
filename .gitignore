@@ -34,7 +34,6 @@ frontend/*.local
 frontend/docs/design/
 
 # Internal development documentation
-/docs/
 /backend/docs/
 /frontend/docs/
 

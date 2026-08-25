@@ -27,10 +27,7 @@ const targetProfile: UserResponse = {
   displayName: 'Cozinha Alvo',
   role: 'USER',
   status: 'ACTIVE',
-  showReactionCounts: true,
   onboardingCompleted: true,
-  followersCount: 0,
-  followingCount: 0,
   followedByCurrentUser: false,
 }
 
@@ -84,6 +81,7 @@ const adminSession = (adminId: string): LoginResponse => ({
   role: 'ADMIN',
   onboardingCompleted: true,
   hasUnseenPatchNotes: false,
+  emailRequired: false,
   sessionId: 'f2c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f66',
   deviceId: 'd2c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f66',
 })
@@ -99,6 +97,7 @@ const userSession = (userId: string): LoginResponse => ({
   role: 'USER',
   onboardingCompleted: true,
   hasUnseenPatchNotes: false,
+  emailRequired: false,
   sessionId: 'a1c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f77',
   deviceId: 'd1c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f77',
 })
@@ -167,14 +166,14 @@ describe('perfil público', () => {
 })
 
 describe('seguir usuário', () => {
-  it('mostra os contadores de seguidores e seguindo', async () => {
+  it('não mostra contador de seguidores nem de seguindo', async () => {
+    // Nenhum contador público em lugar nenhum do produto (produto5.md v5 §3.1).
     const { wrapper } = await setup(
-      { ...targetProfile, followersCount: 12, followingCount: 5 },
+      targetProfile,
       userSession('b2c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f22'),
     )
 
-    expect(wrapper.find('.profile-view__counts').text()).toContain('12')
-    expect(wrapper.find('.profile-view__counts').text()).toContain('5')
+    expect(wrapper.find('.profile-view__counts').exists()).toBe(false)
   })
 
   it('mostra "Seguir" no perfil de outro usuário quando ainda não segue', async () => {

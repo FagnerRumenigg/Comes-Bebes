@@ -16,13 +16,13 @@ describe('estado personalizado das publicações', () => {
     const secondUser = 'isolated_user_two'
 
     setPublicationSaved(firstUser, publication.id, true)
-    setPublicationReaction(firstUser, publication.id, 'COMFORT_FOOD', true)
+    setPublicationReaction(firstUser, publication.id, 'HUNGRY', true)
     expect(reportPublication(firstUser, publication.id)).toBe(true)
     expect(reportPublication(firstUser, publication.id)).toBe(false)
 
     expect(personalizePublication(publication, firstUser)).toMatchObject({
       saved: true,
-      selectedReactions: ['COMFORT_FOOD'],
+      selectedReactions: ['HUNGRY'],
       reportedByCurrentUser: true,
     })
     expect(personalizePublication(publication, secondUser)).toMatchObject({

@@ -7,6 +7,7 @@
  */
 import type { CollectionResponseDescription } from './collectionResponseDescription';
 import type { CollectionResponseVisibility } from './collectionResponseVisibility';
+import type { CollectionResponseFollowersCount } from './collectionResponseFollowersCount';
 import type { CollectionResponseFollowedByCurrentUser } from './collectionResponseFollowedByCurrentUser';
 
 /**
@@ -27,10 +28,10 @@ export interface CollectionResponse {
   description: CollectionResponseDescription;
   /** Visibilidade da coleção. */
   visibility: CollectionResponseVisibility;
-  /** Quantidade de publicações na coleção. */
+  /** Quantidade de publicações na coleção. Não é contador de aprovação, é inventário — fica visível para todo mundo (produto5.md v5 §14.5). */
   publicationsCount: number;
-  /** Quantidade de seguidores da coleção. */
-  followersCount: number;
+  /** Quantidade de seguidores da coleção. Só preenchido para o próprio autor: visitante nunca vê contador de seguidores (produto5.md v5 §3.1, impl10.md v10 §13.8). */
+  followersCount: CollectionResponseFollowersCount;
   /** Indica se a conta autenticada segue esta coleção. Nulo para visitantes ou para o próprio autor. */
   followedByCurrentUser: CollectionResponseFollowedByCurrentUser;
   /** Data de criação. */

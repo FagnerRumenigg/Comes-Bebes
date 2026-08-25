@@ -8,6 +8,8 @@ import org.application.controller.publication.request.UpdatePublicationRequest;
 import org.application.controller.publication.request.CreateMyVersionRequest;
 import org.application.controller.publication.request.CreatePublicationUploadRequest;
 import org.application.dto.StoredImage;
+import org.application.model.FeedScope;
+import org.application.model.FeedSort;
 import org.application.model.Follow;
 import org.application.model.Publication;
 import org.application.model.PublicationStatus;
@@ -15,6 +17,7 @@ import org.application.model.PublicationType;
 import org.application.model.Recipe;
 import org.application.model.RecipeIngredient;
 import org.application.model.PublicationOrigin;
+import org.application.model.User;
 import org.application.model.UserNotification;
 import org.application.model.UserStatus;
 import org.application.repository.FollowRepository;
@@ -57,6 +60,7 @@ import org.application.model.PublicationVisibility;
 public class PublicationService {
     private static final Logger log = LoggerFactory.getLogger(PublicationService.class);
     private static final String FOLLOWED_USER_PUBLISHED = "FOLLOWED_USER_PUBLISHED";
+    private static final String MADE_YOUR_VERSION = "MADE_YOUR_VERSION";
 
     private final PublicationRepository publicationRepository;
     private final RecipeRepository recipeRepository;
@@ -128,6 +132,7 @@ public class PublicationService {
                 .build());
         tagService.attachToPublication(saved.getId(), tagService.resolveOrCreate(request.tags(), authorId));
         notifyFollowers(saved);
+        notifyMyVersion(source, saved, authorId);
         return saved;
     }
 
@@ -191,6 +196,9 @@ public class PublicationService {
      * ad hoc entre Follow e User configurado; aceitável no volume atual de seguidores.
      */
     private void notifyFollowers(Publication publication) {
+        // "Só para mim" não pode vazar nem como aviso — ninguém além do autor sabe que
+        // ela existe (produto5.md v5 §6.4).
+        if (publication.getVisibility() == PublicationVisibility.PRIVATE) return;
         List<Follow> followerRows = followRepository
                 .findByFollowedIdAndDeletedAtIsNullOrderByCreatedAtDesc(publication.getAuthorId(), org.springframework.data.domain.Pageable.unpaged())
                 .getContent();
@@ -210,6 +218,23 @@ public class PublicationService {
         if (!notifications.isEmpty()) {
             notificationRepository.saveAll(notifications);
         }
+    }
+
+    /**
+     * Dispara ao criar "minha versão" — avisa o autor da receita original,
+     * exceto quando ele mesmo fez a própria versão.
+     */
+    private void notifyMyVersion(Publication source, Publication derived, UUID authorId) {
+        if (source.getAuthorId().equals(authorId)) return;
+        userRepository.findByIdAndStatus(source.getAuthorId(), UserStatus.ACTIVE)
+                .filter(User::isNotifyOnMyVersion)
+                .ifPresent(sourceAuthor -> notificationRepository.save(UserNotification.builder()
+                        .id(UUID.randomUUID())
+                        .userId(sourceAuthor.getId())
+                        .type(MADE_YOUR_VERSION)
+                        .actorId(authorId)
+                        .publicationId(derived.getId())
+                        .build()));
     }
 
     @Transactional
@@ -283,11 +308,17 @@ public class PublicationService {
 
     @Transactional(readOnly = true)
     public Publication findAccessible(UUID id, UUID viewerId) {
-        if (viewerId != null) {
-            return findActive(id);
+        if (viewerId == null) {
+            return publicationRepository.findByIdAndStatusAndVisibility(id, PublicationStatus.ACTIVE, PublicationVisibility.PUBLIC)
+                    .orElseThrow(() -> new ResourceNotFoundException("PUBLICATION_NOT_FOUND", "Publicação não encontrada."));
         }
-        return publicationRepository.findByIdAndStatusAndVisibility(id, PublicationStatus.ACTIVE, PublicationVisibility.PUBLIC)
-                .orElseThrow(() -> new ResourceNotFoundException("PUBLICATION_NOT_FOUND", "Publicação não encontrada."));
+        Publication publication = findActive(id);
+        // "Só para mim": ninguém além do autor, nem autenticado (produto5.md v5 §6.4).
+        // 404 em vez de 403 para não revelar que a publicação existe.
+        if (publication.getVisibility() == PublicationVisibility.PRIVATE && !publication.getAuthorId().equals(viewerId)) {
+            throw new ResourceNotFoundException("PUBLICATION_NOT_FOUND", "Publicação não encontrada.");
+        }
+        return publication;
     }
 
     private static final Set<PublicationType> ALL_PUBLICATION_TYPES = EnumSet.allOf(PublicationType.class);
@@ -304,12 +335,43 @@ public class PublicationService {
 
     @Transactional(readOnly = true)
     public Page<Publication> feed(Pageable pageable, UUID viewerId, Set<PublicationType> types) {
+        return feed(pageable, viewerId, types, null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Publication> feed(Pageable pageable, UUID viewerId, Set<PublicationType> types, FeedScope scope, FeedSort sort) {
         Set<PublicationType> effectiveTypes = types == null || types.isEmpty() ? ALL_PUBLICATION_TYPES : types;
-        return viewerId == null
-                ? publicationRepository.findByStatusAndVisibilityAndTypeInOrderByPublishedAtDescIdDesc(
-                        PublicationStatus.ACTIVE, PublicationVisibility.PUBLIC, effectiveTypes, pageable)
-                : publicationRepository.findFeedForAuthenticatedViewerOrderByUnseenFirst(
+        FeedSort effectiveSort = sort == null ? FeedSort.RECENT : sort;
+        // FOLLOWING/MY_COLLECTIONS exigem sessão — sem viewerId não há "quem eu
+        // sigo" nem coleções seguidas pra filtrar, então cai pra EVERYONE.
+        FeedScope effectiveScope = scope == null || (scope != FeedScope.EVERYONE && viewerId == null)
+                ? FeedScope.EVERYONE : scope;
+
+        if (effectiveSort == FeedSort.OLDEST) {
+            return switch (effectiveScope) {
+                case FOLLOWING -> publicationRepository.findFeedByFollowedAuthorsOrderByPublishedAtAsc(
                         PublicationStatus.ACTIVE, effectiveTypes, viewerId, pageable);
+                case MY_COLLECTIONS -> publicationRepository.findFeedByFollowedCollectionsOrderByPublishedAtAsc(
+                        PublicationStatus.ACTIVE, effectiveTypes, viewerId, pageable);
+                case EVERYONE -> viewerId == null
+                        ? publicationRepository.findByStatusAndVisibilityAndTypeInOrderByPublishedAtAscIdAsc(
+                                PublicationStatus.ACTIVE, PublicationVisibility.PUBLIC, effectiveTypes, pageable)
+                        : publicationRepository.findByStatusAndVisibilityNotAndTypeInOrderByPublishedAtAscIdAsc(
+                                PublicationStatus.ACTIVE, PublicationVisibility.PRIVATE, effectiveTypes, pageable);
+            };
+        }
+
+        return switch (effectiveScope) {
+            case FOLLOWING -> publicationRepository.findFeedByFollowedAuthorsOrderByUnseenFirst(
+                    PublicationStatus.ACTIVE, effectiveTypes, viewerId, pageable);
+            case MY_COLLECTIONS -> publicationRepository.findFeedByFollowedCollectionsOrderByUnseenFirst(
+                    PublicationStatus.ACTIVE, effectiveTypes, viewerId, pageable);
+            case EVERYONE -> viewerId == null
+                    ? publicationRepository.findByStatusAndVisibilityAndTypeInOrderByPublishedAtDescIdDesc(
+                            PublicationStatus.ACTIVE, PublicationVisibility.PUBLIC, effectiveTypes, pageable)
+                    : publicationRepository.findFeedForAuthenticatedViewerOrderByUnseenFirst(
+                            PublicationStatus.ACTIVE, effectiveTypes, viewerId, pageable);
+        };
     }
 
     @Transactional(readOnly = true)
@@ -338,9 +400,12 @@ public class PublicationService {
         if (viewerId == null) {
             return search(title, ingredient, pageable);
         }
-        return publicationRepository.searchByTitleOrIngredient(
-                PublicationStatus.ACTIVE, null, normalizedTitle, normalizedIngredient, pageable);
+        return publicationRepository.searchByTitleOrIngredientForAuthenticatedViewer(
+                PublicationStatus.ACTIVE, normalizedTitle, normalizedIngredient, pageable);
     }
+
+    private static final Set<PublicationVisibility> NON_PRIVATE_VISIBILITIES =
+            EnumSet.of(PublicationVisibility.PUBLIC, PublicationVisibility.INTERNAL);
 
     @Transactional(readOnly = true)
     public Page<Publication> profile(UUID authorId, Pageable pageable) {
@@ -349,9 +414,16 @@ public class PublicationService {
 
     @Transactional(readOnly = true)
     public Page<Publication> profile(UUID authorId, Pageable pageable, UUID viewerId) {
-        return viewerId == null
-                ? publicationRepository.findByAuthorIdAndStatusAndVisibilityOrderByPublishedAtDescIdDesc(authorId, PublicationStatus.ACTIVE, PublicationVisibility.PUBLIC, pageable)
-                : profile(authorId, pageable);
+        if (viewerId == null) {
+            return publicationRepository.findByAuthorIdAndStatusAndVisibilityOrderByPublishedAtDescIdDesc(authorId, PublicationStatus.ACTIVE, PublicationVisibility.PUBLIC, pageable);
+        }
+        if (viewerId.equals(authorId)) {
+            return profile(authorId, pageable);
+        }
+        // Autenticado, mas não é o dono: vê Público e Só para quem tem conta, nunca
+        // Só para mim (produto5.md v5 §6.4).
+        return publicationRepository.findByAuthorIdAndStatusAndVisibilityInOrderByPublishedAtDescIdDesc(
+                authorId, PublicationStatus.ACTIVE, NON_PRIVATE_VISIBILITIES, pageable);
     }
 
     @Transactional

@@ -46,6 +46,7 @@ function viewerIdFor(request: Request): string | null {
 
 function toResponse(collection: MockCollection, viewerId: string | null): CollectionResponse {
   const author = accountByUserId(collection.authorId)
+  const isOwner = Boolean(viewerId) && viewerId === collection.authorId
   return {
     id: collection.id,
     authorId: collection.authorId,
@@ -55,11 +56,10 @@ function toResponse(collection: MockCollection, viewerId: string | null): Collec
     description: collection.description,
     visibility: collection.visibility,
     publicationsCount: mockCollectionPublicationIds(collection.id).length,
-    followersCount: mockCollectionFollowersCount(collection.id),
+    // Contador de seguidores só para o dono: visitante nunca vê (produto5.md v5 §3.1, impl10.md v10 §13.8).
+    followersCount: isOwner ? mockCollectionFollowersCount(collection.id) : null,
     followedByCurrentUser:
-      !viewerId || viewerId === collection.authorId
-        ? null
-        : isMockCollectionFollowing(viewerId, collection.id),
+      !viewerId || isOwner ? null : isMockCollectionFollowing(viewerId, collection.id),
     createdAt: collection.createdAt,
     updatedAt: collection.updatedAt,
   }

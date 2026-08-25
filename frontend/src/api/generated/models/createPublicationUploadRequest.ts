@@ -19,7 +19,7 @@ export interface CreatePublicationUploadRequest {
   type: string;
   /**
    * @minLength 1
-   * @pattern PUBLIC|INTERNAL
+   * @pattern PUBLIC|INTERNAL|PRIVATE
    */
   visibility: string;
   /**

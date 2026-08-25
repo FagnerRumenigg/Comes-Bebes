@@ -61,6 +61,8 @@ describe('mapa de rotas', () => {
     expect(router.resolve('/').matched[0]?.components?.default).toBe(AppLayout)
     expect(router.resolve('/login').matched[0]?.components?.default).toBe(AuthLayout)
     expect(router.resolve('/admin/moderacao').matched[0]?.components?.default).toBe(AdminLayout)
+    // Boas-vindas não usa nenhum layout (sem header/nav do site, ver docs/telas/01).
+    expect(router.resolve('/bem-vindo').matched).toHaveLength(1)
   })
 
   it('protege visitante, usuário e administrador', () => {
@@ -82,17 +84,17 @@ describe('mapa de rotas', () => {
     expect(resolveRouteAccess(moderation, { authenticated: true, role: 'ADMIN' })).toBe(true)
   })
 
-  it('redireciona para onboarding enquanto pendente', () => {
+  it('redireciona para as boas-vindas enquanto o onboarding está pendente', () => {
     const router = createTestRouter()
     const feed = router.resolve('/') as RouteLocationNormalized
-    const onboarding = router.resolve('/onboarding') as RouteLocationNormalized
+    const welcome = router.resolve('/bem-vindo') as RouteLocationNormalized
 
     expect(
       resolveRouteAccess(feed, { authenticated: true, role: 'USER', onboardingCompleted: false }),
-    ).toEqual({ name: 'onboarding' })
+    ).toEqual({ name: 'welcome' })
 
     expect(
-      resolveRouteAccess(onboarding, {
+      resolveRouteAccess(welcome, {
         authenticated: true,
         role: 'USER',
         onboardingCompleted: false,
@@ -139,13 +141,12 @@ describe('layouts e navegação', () => {
         .get('nav')
         .findAll('a, button')
         .map((item) => item.text()),
-    ).toEqual(['Buscar', 'Publicar', 'Salvos', 'Notificações'])
+    ).toEqual(['Início', 'Buscar', 'Salvos', 'Avisos'])
     expect(mobile.findAll('a, button').map((item) => item.text())).toEqual([
       'Início',
-      'Buscar',
-      'Publicar',
       'Salvos',
-      'Notificações',
+      'Publicar',
+      'Avisos',
       'Entrar',
     ])
 
@@ -153,7 +154,7 @@ describe('layouts e navegação', () => {
     expect(authNotice.visible).toBe(true)
   })
 
-  it('oferece a ação de sair na navegação mobile quando autenticado', async () => {
+  it('oferece o menu de conta (com sair) na navegação quando autenticado', async () => {
     const router = createTestRouter()
     await router.push('/')
     await router.isReady()
@@ -167,21 +168,25 @@ describe('layouts e navegação', () => {
       role: 'USER',
       onboardingCompleted: true,
       hasUnseenPatchNotes: false,
+      emailRequired: false,
     }
 
-    const mobile = mount(MobileNavigation, { global: { plugins: [pinia, router] } })
+    const global: GlobalMountOptions = {
+      plugins: [pinia, router, [VueQueryPlugin, { queryClient: new QueryClient() }]],
+    }
+    const mobile = mount(MobileNavigation, { global })
 
     expect(mobile.findAll('a, button').map((item) => item.text())).toEqual([
       'Início',
-      'Buscar',
-      'Publicar',
       'Salvos',
-      'Notificações',
+      'Publicar',
+      'Avisos',
       'Perfil',
-      'Sair',
     ])
 
-    await mobile.get('.mobile-navigation__logout').trigger('click')
+    const header = mount(AppHeader, { global })
+    await header.get('.account-menu__trigger--web').trigger('click')
+    await header.get('.account-menu-content__item--danger').trigger('click')
     await flushPromises()
 
     expect(authStore.authenticated).toBe(false)

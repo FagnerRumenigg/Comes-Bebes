@@ -16,7 +16,7 @@ const savedAtByUser = new Map<string, Map<string, string>>([
 const reactionsByUser = new Map<string, Map<string, Set<ReactionRequestReactionCode>>>([
   [
     'fagner',
-    new Map([[mockPublications[1]!.id, new Set<ReactionRequestReactionCode>(['WANT_TO_MAKE'])]]),
+    new Map([[mockPublications[1]!.id, new Set<ReactionRequestReactionCode>(['HUNGRY'])]]),
   ],
 ])
 
@@ -175,10 +175,11 @@ export function setPublicationReaction(
   reactions.set(publicationId, selected)
   if (!publication || wasActive === active) return
 
-  const currentTotal = publication.reactionTotals?.[reactionCode] ?? 0
-  publication.reactionTotals = {
-    ...publication.reactionTotals,
-    [reactionCode]: Math.max(currentTotal + (active ? 1 : -1), 0),
+  // Presença, sem contagem (produto5.md v5 §3.1): uma vez usada, a reação fica marcada
+  // como presente. Não removemos do conjunto ao desmarcar — não há como saber, neste
+  // mock, se outra pessoa ainda mantém a mesma reação.
+  if (active && !publication.usedReactions.includes(reactionCode)) {
+    publication.usedReactions = [...publication.usedReactions, reactionCode]
   }
   persistState()
 }

@@ -13,7 +13,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.UUID;
 import java.util.List;
-import java.util.Map;
 import org.application.model.ReactionCode;
 
 @Builder
@@ -38,13 +37,14 @@ public record PublicationResponse(
         String imageUrl,
         String authorUsername,
         String authorDisplayName,
-        boolean showReactionCounts,
-        Map<ReactionCode, Long> reactionTotals,
+        @Schema(description = "Tipos de reação com pelo menos um uso, na ordem canônica. Sem contagem: nenhum contador público em lugar nenhum do produto (produto5.md v5 §3.1, impl10.md v10 §15.4).")
+        List<ReactionCode> usedReactions,
         List<ReactionCode> selectedReactions,
         boolean saved,
         @Schema(description = "Indica se o usuário autenticado já visualizou esta publicação. Sempre falso para visitantes.")
         boolean viewedByCurrentUser,
-        long versionsCount,
+        @Schema(description = "Indica se existe pelo menos uma \"Minha versão\" derivada desta publicação. Sem número (impl10.md v10 §21.6: \"Tem outras versões\", sem contagem).")
+        boolean hasVersions,
         @Schema(description = "Publicação de origem; preenchido somente para MY_VERSION.", nullable = true)
         UUID originalPublicationId,
         boolean reportedByCurrentUser,

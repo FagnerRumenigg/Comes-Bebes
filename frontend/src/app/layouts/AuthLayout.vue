@@ -1,8 +1,26 @@
 <script setup lang="ts">
-import AppFooter from '@/components/layout/AppFooter.vue'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
 import PageContainer from '@/components/layout/PageContainer.vue'
 import BrandMark from '@/components/layout/BrandMark.vue'
 import ThemeSwitch from '@/components/layout/ThemeSwitch.vue'
+
+const route = useRoute()
+
+// Texto do painel muda por tela (docs/telas/02) — cada uma fala com quem
+// está nela: quem já conhece o produto vs. quem está chegando agora.
+const manifesto = computed(() =>
+  route.name === 'register'
+    ? {
+        eyebrow: 'Cozinha, memória e descoberta',
+        statement: 'Descubra o sabor da autenticidade brasileira.',
+      }
+    : {
+        eyebrow: 'Que bom ter você de volta',
+        statement: 'A arte de saborear histórias.',
+      },
+)
 </script>
 
 <template>
@@ -13,8 +31,8 @@ import ThemeSwitch from '@/components/layout/ThemeSwitch.vue'
         Comes&amp;Bebes
       </RouterLink>
       <div class="auth-layout__manifesto">
-        <p class="auth-layout__eyebrow">Cozinha, memória e descoberta</p>
-        <p class="auth-layout__statement">A arte de saborear histórias.</p>
+        <p class="auth-layout__eyebrow">{{ manifesto.eyebrow }}</p>
+        <p class="auth-layout__statement">{{ manifesto.statement }}</p>
       </div>
     </aside>
 
@@ -23,9 +41,14 @@ import ThemeSwitch from '@/components/layout/ThemeSwitch.vue'
       <div class="auth-layout__content">
         <PageContainer size="narrow">
           <RouterView />
+          <nav class="auth-layout__legal" aria-label="Links institucionais">
+            <RouterLink to="/privacidade">Privacidade</RouterLink>
+            <RouterLink to="/termos">Termos</RouterLink>
+            <RouterLink to="/faq">Ajuda</RouterLink>
+          </nav>
+          <small class="auth-layout__copyright">© 2026 Comes&amp;Bebes Publicações Ltda.</small>
         </PageContainer>
       </div>
-      <AppFooter />
     </main>
   </div>
 </template>
@@ -55,7 +78,6 @@ import ThemeSwitch from '@/components/layout/ThemeSwitch.vue'
   color: inherit;
   font-family: var(--font-editorial);
   font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-bold);
   text-decoration: none;
 }
 
@@ -74,7 +96,6 @@ import ThemeSwitch from '@/components/layout/ThemeSwitch.vue'
 .auth-layout__statement {
   font-family: var(--font-editorial);
   font-size: var(--font-size-4xl);
-  font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
 }
 
@@ -97,6 +118,35 @@ import ThemeSwitch from '@/components/layout/ThemeSwitch.vue'
   position: absolute;
   top: var(--space-4);
   right: var(--space-4);
+}
+
+.auth-layout__legal {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-5);
+  margin-block-start: var(--space-8);
+}
+
+.auth-layout__legal a {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+}
+
+.auth-layout__legal a:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.auth-layout__copyright {
+  display: block;
+  margin-block-start: var(--space-3);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  text-align: center;
+  opacity: 0.8;
 }
 
 @media (max-width: 56rem) {

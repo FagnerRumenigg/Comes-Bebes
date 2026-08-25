@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comes&Bebes — Carregando</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fff6e3; --surface:#f3f8f5; --surface-alt:#eef4f0;
+  --text:#17281f; --text-muted:#4f6157;
+  --primary:#285943; --primary-hover:#1c4131; --primary-soft:#dfe9e4; --on-primary:#ffffff;
+  --secondary:#35758a; --accent:#d5a62e; --on-accent:#17281f;
+  --danger:#9b2c2c; --danger-soft:#f7e6e6;
+  --border:#6d8074; --border-subtle:#d7e0da;
+  --shadow:rgba(23,40,31,.16);
+}
+[data-theme="dark"]{
+  --bg:#2d1a11; --surface:#341e14; --surface-alt:#3d2419;
+  --text:#fef5f1; --text-muted:#bfa899;
+  --primary:#e99d7a; --primary-hover:#f2b193; --primary-soft:#4a2c1e; --on-primary:#2d1a11;
+  --secondary:#b5cc79; --accent:#b5cc79; --on-accent:#2d1a11;
+  --danger:#ff8a8a; --danger-soft:#4a2020;
+  --border:#8a7365; --border-subtle:#4a3227;
+  --shadow:rgba(0,0,0,.45);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;color:var(--text);background:var(--surface-alt);
+  line-height:1.55;transition:background .2s}
+
+/* ---------- harness ---------- */
+.harness{position:sticky;top:0;z-index:50;background:#17281f;color:#eef4f0;padding:10px 16px;
+  display:flex;flex-wrap:wrap;gap:18px;align-items:center;font-size:13px}
+.harness strong{font-size:12px;letter-spacing:.1em;text-transform:uppercase;opacity:.55;font-weight:600}
+.harness .grp{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.harness button{font:inherit;font-weight:500;cursor:pointer;background:transparent;color:#eef4f0;
+  border:1px solid rgba(238,244,240,.3);border-radius:99px;padding:5px 13px}
+.harness button:hover{background:rgba(238,244,240,.12)}
+.harness button[aria-pressed="true"]{background:#d5a62e;border-color:#d5a62e;color:#17281f;font-weight:600}
+.harness .note{margin-left:auto;opacity:.5;font-size:12px}
+
+.stage{padding:40px 16px 70px;display:flex;justify-content:center}
+.card{width:100%;max-width:440px;background:var(--bg);border:1.5px solid var(--border-subtle);
+  border-radius:16px;padding:44px 32px 36px;text-align:center;box-shadow:0 16px 44px var(--shadow)}
+
+/* ---------- a cafeteira ---------- */
+.pot{width:132px;height:190px;margin:0 auto 6px;display:block}
+.pot .body{fill:var(--primary)}
+.pot .band{fill:var(--accent)}
+.pot .knob{fill:var(--accent)}
+.pot .shine{fill:var(--on-primary);opacity:.16}
+.pot .steam{stroke:var(--text-muted);stroke-width:5;stroke-linecap:round;fill:none;opacity:0}
+
+/* a fumaça sobe, esmaece e reinicia — escalonada */
+@keyframes rise{
+  0%   {opacity:0;   transform:translateY(12px) scaleY(.8)}
+  22%  {opacity:.75}
+  60%  {opacity:.45}
+  100% {opacity:0;   transform:translateY(-16px) scaleY(1.15)}
+}
+@keyframes warm{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.015)}}
+.is-running .steam{animation:rise 2.9s ease-out infinite;transform-origin:50% 100%}
+.is-running .s2{animation-delay:.45s}
+.is-running .s3{animation-delay:.95s}
+.is-running .pot-shape{animation:warm 2.9s ease-in-out infinite;transform-origin:50% 100%}
+
+/* quem pediu menos movimento vê a cafeteira parada e só o texto muda */
+@media (prefers-reduced-motion: reduce){
+  .is-running .steam,.is-running .pot-shape{animation:none}
+  .is-running .steam{opacity:.5}
+}
+.calm .steam,.calm .pot-shape{animation:none !important}
+.calm .steam{opacity:.5}
+
+/* ---------- textos ---------- */
+.msg{font-family:'Instrument Serif',Georgia,serif;font-size:27px;line-height:1.25;margin-bottom:8px}
+.sub{font-size:15px;color:var(--text-muted);min-height:44px}
+.elapsed{font-size:13px;color:var(--text-muted);opacity:.7;margin-top:4px;font-variant-numeric:tabular-nums}
+
+.actions{margin-top:22px;display:flex;flex-direction:column;gap:10px}
+.btn{width:100%;min-height:48px;font:inherit;font-size:16px;font-weight:600;border-radius:10px;
+  cursor:pointer;border:1.5px solid transparent;display:flex;align-items:center;justify-content:center}
+.btn-primary{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.btn-primary:hover{background:var(--primary-hover);border-color:var(--primary-hover)}
+.btn-text{background:none;border:0;color:var(--primary);font-weight:600;min-height:48px;cursor:pointer;font-size:16px}
+.btn-text:hover{text-decoration:underline}
+.hidden{display:none}
+
+.fail .msg{color:var(--danger)}
+.fail .pot .body{fill:var(--border)}
+.fail .pot .band,.fail .pot .knob{fill:var(--border)}
+
+.legend{max-width:440px;margin:26px auto 0;font-size:13px;color:var(--text-muted);
+  background:var(--bg);border:1px solid var(--border-subtle);border-radius:12px;padding:14px 18px}
+.legend b{color:var(--text)}
+.legend ul{margin:8px 0 0 18px;display:grid;gap:4px}
+</style>
+</head>
+<body>
+
+<div class="harness">
+  <div class="grp"><strong>Tema</strong>
+    <button data-theme-btn="light" aria-pressed="true">Claro</button>
+    <button data-theme-btn="dark" aria-pressed="false">Escuro</button>
+  </div>
+  <div class="grp"><strong>Velocidade</strong>
+    <button data-speed="1" aria-pressed="true">Tempo real</button>
+    <button data-speed="6" aria-pressed="false">6× mais rápido</button>
+  </div>
+  <div class="grp"><strong>Movimento</strong>
+    <button data-motion="full" aria-pressed="true">Normal</button>
+    <button data-motion="calm" aria-pressed="false">Reduzido</button>
+  </div>
+  <div class="grp"><button id="restart">Reiniciar</button></div>
+  <span class="note">Barra de revisão — não faz parte do produto.</span>
+</div>
+
+<div class="stage">
+  <div class="card is-running" id="card">
+
+    <svg class="pot" viewBox="0 0 140 200" role="img" aria-label="Cafeteira preparando café">
+      <!-- fumaça -->
+      <path class="steam s1" d="M56 74 C50 62 62 56 56 44 C51 34 60 28 56 18"/>
+      <path class="steam s2" d="M70 70 C64 57 76 51 70 38 C65 27 74 21 70 10"/>
+      <path class="steam s3" d="M84 74 C78 62 90 56 84 44 C79 34 88 28 84 18"/>
+
+      <g class="pot-shape">
+        <!-- bico -->
+        <path class="body" d="M47 103 L28 113 L33 126 L50 119 Z"/>
+        <!-- câmara superior -->
+        <path class="body" d="M53 97 L87 97 L94 143 L46 143 Z"/>
+        <!-- tampa e pegador -->
+        <rect class="body" x="51" y="86" width="38" height="12" rx="5"/>
+        <circle class="knob" cx="70" cy="80" r="7"/>
+        <!-- alça -->
+        <path class="body" d="M94 110 C117 110 121 132 101 144 L95 137 C110 128 108 118 94 118 Z"/>
+        <!-- faixa central -->
+        <rect class="band" x="44" y="141" width="52" height="7" rx="3"/>
+        <!-- base -->
+        <path class="body" d="M46 147 L94 147 L101 188 L39 188 Z"/>
+        <!-- brilho -->
+        <path class="shine" d="M58 100 L64 100 L57 141 L51 141 Z"/>
+        <path class="shine" d="M51 151 L57 151 L51 185 L45 185 Z"/>
+      </g>
+    </svg>
+
+    <p class="msg" id="msg">Preparando tudo para você</p>
+    <p class="sub" id="sub" aria-live="polite">Estamos ligando nossos servidores. Leva alguns segundos.</p>
+    <p class="elapsed" id="elapsed">0s</p>
+
+    <div class="actions">
+      <button class="btn btn-primary hidden" id="retry">Tentar de novo</button>
+      <button class="btn-text hidden" id="cancel">Voltar</button>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <b>Os quatro estágios</b>
+  <ul>
+    <li><b>0–3s</b> — nada aparece. Só o botão em "Entrando…". Espera curta não merece tela cheia.</li>
+    <li><b>3s</b> — a cafeteira entra. "Preparando tudo para você."</li>
+    <li><b>10s</b> — o texto muda. Provar que o sistema está vivo é o que segura a pessoa.</li>
+    <li><b>25s</b> — assume que está devagar e oferece saída.</li>
+    <li><b>45s</b> — falha honesta, com o caminho de volta.</li>
+  </ul>
+</div>
+
+<script>
+const card=document.getElementById('card'), msg=document.getElementById('msg'),
+      sub=document.getElementById('sub'), el=document.getElementById('elapsed'),
+      retry=document.getElementById('retry'), cancel=document.getElementById('cancel');
+
+// Os estágios. Cada um só troca o texto — nada de barra de progresso falsa.
+const STAGES=[
+  {at:0,  msg:'Preparando tudo para você', sub:'Estamos ligando nossos servidores. Leva alguns segundos.'},
+  {at:10, msg:'Ainda estamos aquecendo',   sub:'Só mais um pouquinho. Pode deixar a tela aberta.'},
+  {at:25, msg:'Está demorando mais que o normal', sub:'Você pode esperar mais um pouco ou tentar de novo.', retry:true},
+  {at:45, msg:'Não conseguimos conectar',  sub:'Pode ser a nossa conexão ou a sua. Tente de novo em instantes.', retry:true, cancel:true, fail:true}
+];
+
+let speed=1, t0=0, timer=null;
+
+function render(secs){
+  el.textContent=Math.floor(secs)+'s';
+  let s=STAGES[0];
+  for(const st of STAGES) if(secs>=st.at) s=st;
+  if(msg.textContent!==s.msg){ msg.textContent=s.msg; sub.textContent=s.sub; }
+  retry.classList.toggle('hidden',!s.retry);
+  cancel.classList.toggle('hidden',!s.cancel);
+  card.classList.toggle('fail',!!s.fail);
+  card.classList.toggle('is-running',!s.fail);
+}
+
+function start(){
+  clearInterval(timer); t0=performance.now();
+  render(0);
+  timer=setInterval(()=>{
+    const secs=(performance.now()-t0)/1000*speed;
+    render(secs);
+    if(secs>60) clearInterval(timer);
+  },100);
+}
+
+document.querySelectorAll('[data-theme-btn]').forEach(b=>b.onclick=()=>{
+  document.documentElement.setAttribute('data-theme',b.dataset.themeBtn);
+  document.querySelectorAll('[data-theme-btn]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+});
+document.querySelectorAll('[data-speed]').forEach(b=>b.onclick=()=>{
+  speed=+b.dataset.speed;
+  document.querySelectorAll('[data-speed]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  start();
+});
+document.querySelectorAll('[data-motion]').forEach(b=>b.onclick=()=>{
+  card.classList.toggle('calm',b.dataset.motion==='calm');
+  document.querySelectorAll('[data-motion]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+});
+document.getElementById('restart').onclick=start;
+retry.onclick=start;
+start();
+</script>
+</body>
+</html>

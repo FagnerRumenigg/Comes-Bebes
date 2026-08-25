@@ -311,7 +311,7 @@ export const useDeleteCurrentUser = <TError = ApiErrorResponse,
       return useMutation(mutationOptions, queryClient);
     }
     /**
- * Atualiza o username e/ou o nome exibido do usuário.
+ * Atualiza o username e/ou o nome exibido do usuário. O username informado passa por normalização e resolução automática de colisão (impl10.md v10 §19.4) — nunca falha por já estar em uso, um sufixo numérico é acrescentado quando necessário.
  * @summary Atualizar usuário
  */
 export const updateCurrentUser = (

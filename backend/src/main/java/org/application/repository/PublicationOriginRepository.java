@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.UUID;
 
 public interface PublicationOriginRepository extends JpaRepository<PublicationOrigin, UUID> {
-    long countBySourceRecipeId(UUID sourceRecipeId);
+    boolean existsBySourceRecipeId(UUID sourceRecipeId);
 }

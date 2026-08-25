@@ -23,14 +23,8 @@ export interface UserResponse {
   role: UserResponseRole;
   /** Estado atual da conta. */
   status: UserResponseStatus;
-  /** Indica se os totais das reações ficam visíveis. */
-  showReactionCounts: boolean;
   /** Indica se o onboarding do primeiro login já foi concluído. */
   onboardingCompleted: boolean;
-  /** Quantidade de seguidores. */
-  followersCount: number;
-  /** Quantidade de perfis que este usuário segue. */
-  followingCount: number;
   /** Indica se a conta autenticada segue este usuário. Nulo para visitantes ou ao consultar o próprio perfil. */
   followedByCurrentUser: UserResponseFollowedByCurrentUser;
 }

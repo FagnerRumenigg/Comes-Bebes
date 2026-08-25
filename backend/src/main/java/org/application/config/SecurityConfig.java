@@ -133,6 +133,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/collections/followed").authenticated()
                         .requestMatchers(HttpMethod.GET, "/collections/*", "/collections/*/publications", "/users/*/collections").permitAll()
                         .requestMatchers("/u/**").permitAll()
+                        // Termos/Privacidade/FAQ precisam ser lidos sem estar logado (rodapé de
+                        // login/cadastro em AuthLayout.vue) — GET só, sem endpoint de escrita.
+                        .requestMatchers(HttpMethod.GET, "/documents/*").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/images/**").permitAll()
                         .requestMatchers("/actuator/health/**").permitAll()
                         .anyRequest().authenticated())

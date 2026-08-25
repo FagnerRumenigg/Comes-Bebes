@@ -25,7 +25,7 @@ export interface CreateCollectionRequest {
   description?: CreateCollectionRequestDescription;
   /**
    * Visibilidade da coleção.
-   * @pattern PUBLIC|PRIVATE
+   * @pattern PUBLIC|SHARED|PRIVATE
    */
   visibility: string;
 }

@@ -6,33 +6,38 @@ import { normalizeHttpError } from '@/api/errors'
 import { useRegister } from '@/api/generated/authentication/authentication'
 import type { CreateUserRequest } from '@/api/generated/models'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseCheckbox from '@/components/base/BaseCheckbox.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import BaseToast from '@/components/base/BaseToast.vue'
+import StatusRing from '@/components/base/StatusRing.vue'
+import AppIcon from '@/components/icons/AppIcon.vue'
 import PasswordInput from '@/features/auth/components/PasswordInput.vue'
+import { WELCOME_SEEN_STORAGE_KEY } from '@/utils/storageKeys'
 
 const router = useRouter()
 const form = reactive<CreateUserRequest & { confirmPassword: string }>({
   displayName: '',
-  username: '',
+  email: '',
   password: '',
   confirmPassword: '',
 })
 const fieldErrors = reactive<Record<string, string>>({})
 const generalError = ref<string | null>(null)
+const registeredEmail = ref<string | null>(null)
+const termsAccepted = ref(false)
+const emailAlreadyExists = ref(false)
 const passwordLengthValid = computed(() => form.password.length >= 8 && form.password.length <= 72)
 
 const registerMutation = useRegister({
   mutation: {
     onSuccess(response) {
-      void router.push({
-        name: 'login',
-        query: { registered: 'true', username: response.username },
-      })
+      registeredEmail.value = response.email
     },
     onError(error) {
       const normalizedError = normalizeHttpError(error)
       Object.assign(fieldErrors, normalizedError.fieldErrors)
-      generalError.value = normalizedError.message
+      emailAlreadyExists.value = normalizedError.code === 'EMAIL_ALREADY_EXISTS'
+      generalError.value = emailAlreadyExists.value ? null : normalizedError.message
     },
   },
 })
@@ -40,26 +45,30 @@ const registerMutation = useRegister({
 function clearErrors(): void {
   for (const key of Object.keys(fieldErrors)) delete fieldErrors[key]
   generalError.value = null
+  emailAlreadyExists.value = false
 }
 
 function validate(): boolean {
   const displayName = form.displayName.trim()
-  const username = form.username.trim()
+  const email = form.email.trim()
   if (!displayName) {
     fieldErrors.displayName = 'Informe seu nome de exibição.'
   } else if (displayName.length > 100) {
     fieldErrors.displayName = 'Use no máximo 100 caracteres.'
   }
-  if (!username) {
-    fieldErrors.username = 'Informe um nome de usuário.'
-  } else if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
-    fieldErrors.username = 'Use de 3 a 30 letras, números ou underscore.'
+  if (!email) {
+    fieldErrors.email = 'Informe seu e-mail.'
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    fieldErrors.email = 'Informe um e-mail válido.'
   }
   if (form.password.length < 8 || form.password.length > 72) {
     fieldErrors.password = 'A senha deve ter entre 8 e 72 caracteres.'
   }
   if (form.confirmPassword !== form.password) {
     fieldErrors.confirmPassword = 'As senhas precisam ser iguais.'
+  }
+  if (!termsAccepted.value) {
+    fieldErrors.terms = 'Para criar sua conta, você precisa aceitar os termos.'
   }
   return Object.keys(fieldErrors).length === 0
 }
@@ -72,16 +81,44 @@ function submit(): void {
   registerMutation.mutate({
     data: {
       displayName: form.displayName.trim(),
-      username: form.username.trim(),
+      email: form.email.trim(),
       password: form.password,
     },
   })
 }
+
+function goToFeed(): void {
+  // Quem acabou de criar conta já se engajou o bastante — não faz sentido
+  // mostrar a tela de boas-vindas de visitante logo em seguida.
+  try {
+    window.localStorage.setItem(WELCOME_SEEN_STORAGE_KEY, 'true')
+  } catch {
+    // Sem storage disponível, tudo bem — a pior consequência é ver a
+    // tela de boas-vindas uma vez a mais.
+  }
+  void router.push('/')
+}
 </script>
 
 <template>
-  <section class="auth-view" aria-labelledby="register-title">
-    <RouterLink class="auth-view__back" to="/login">← Voltar para entrar</RouterLink>
+  <section v-if="registeredEmail" class="auth-view auth-view--done" aria-labelledby="done-title">
+    <StatusRing variant="success" />
+    <h1 id="done-title">Pronto, {{ form.displayName.trim() }}!</h1>
+    <p class="auth-view__done-text">
+      Sua conta está criada. Enviamos um e-mail para <strong>{{ registeredEmail }}</strong> —
+      confirme quando quiser publicar sua primeira receita.
+    </p>
+    <BaseButton class="auth-form__submit" @click="goToFeed">Começar a explorar</BaseButton>
+    <p class="auth-view__done-note">
+      Você já pode navegar. A confirmação só é necessária para publicar.
+    </p>
+  </section>
+
+  <section v-else class="auth-view" aria-labelledby="register-title">
+    <RouterLink class="auth-view__back" to="/login">
+      <AppIcon name="back" :size="18" :stroke-width="2" />
+      Já tenho uma conta
+    </RouterLink>
 
     <div class="auth-view__heading">
       <p class="auth-view__eyebrow">Sua cozinha começa aqui</p>
@@ -102,26 +139,42 @@ function submit(): void {
       <BaseInput
         id="register-display-name"
         v-model="form.displayName"
-        label="Nome de exibição"
+        label="Como você quer ser chamado?"
         autocomplete="name"
-        placeholder="Como devemos chamar você?"
-        hint="Você poderá alterar este nome depois."
+        placeholder="Ex.: Maria"
+        hint="Esse é o nome que outras pessoas verão nas suas publicações."
         maxlength="100"
         :error="fieldErrors.displayName"
         :disabled="registerMutation.isPending.value"
         required
-      />
+      >
+        <template #lead>
+          <AppIcon name="person" :size="20" />
+        </template>
+      </BaseInput>
       <BaseInput
-        id="register-username"
-        v-model="form.username"
-        label="Nome de usuário"
-        autocomplete="username"
-        placeholder="Ex.: maria_cozinha"
-        hint="Use de 3 a 30 letras, números ou underscore."
-        :error="fieldErrors.username"
+        id="register-email"
+        v-model="form.email"
+        label="E-mail"
+        type="email"
+        autocomplete="email"
+        placeholder="seu@email.com"
+        :hint="emailAlreadyExists ? undefined : 'Você vai usar este e-mail para entrar na sua conta.'"
+        :error="fieldErrors.email"
+        :invalid="emailAlreadyExists"
         :disabled="registerMutation.isPending.value"
         required
-      />
+      >
+        <template #lead>
+          <AppIcon name="envelope" :size="20" />
+        </template>
+      </BaseInput>
+      <p v-if="emailAlreadyExists" class="auth-form__inline-error" role="alert">
+        Este e-mail já tem uma conta.
+        <RouterLink :to="{ path: '/login', query: { email: form.email.trim() } }">
+          Entrar com este e-mail
+        </RouterLink>
+      </p>
       <PasswordInput
         id="register-password"
         v-model="form.password"
@@ -138,7 +191,12 @@ function submit(): void {
         :class="{ 'password-requirement--valid': passwordLengthValid }"
         aria-live="polite"
       >
-        <span aria-hidden="true">{{ passwordLengthValid ? '✓' : '○' }}</span>
+        <AppIcon
+          :name="passwordLengthValid ? 'check' : 'alert'"
+          :size="16"
+          :stroke-width="2.4"
+          aria-hidden="true"
+        />
         Entre 8 e 72 caracteres
       </p>
       <PasswordInput
@@ -152,6 +210,18 @@ function submit(): void {
         :disabled="registerMutation.isPending.value"
         required
       />
+      <BaseCheckbox
+        id="register-terms"
+        v-model="termsAccepted"
+        class="auth-form__terms"
+        label="Aceito os termos"
+        :error="fieldErrors.terms"
+        :disabled="registerMutation.isPending.value"
+        required
+      >
+        Eu aceito os <a href="#">Termos de Serviço</a> e a
+        <a href="#">Política de Privacidade</a> do Comes&amp;Bebes.
+      </BaseCheckbox>
       <BaseButton
         class="auth-form__submit"
         type="submit"
@@ -175,8 +245,29 @@ function submit(): void {
   padding-block: var(--space-6);
 }
 
+.auth-view--done {
+  text-align: center;
+}
+
+.auth-view--done h1 {
+  margin-block-start: var(--space-2);
+}
+
+.auth-view__done-text {
+  margin-block-end: var(--space-2);
+  color: var(--color-text-secondary);
+}
+
+.auth-view__done-note {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
 .auth-view__back {
+  display: inline-flex;
   width: fit-content;
+  align-items: center;
+  gap: var(--space-2);
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   text-decoration: none;
@@ -211,6 +302,22 @@ function submit(): void {
 .auth-form__submit {
   width: 100%;
   margin-block-start: var(--space-2);
+}
+
+.auth-form__terms :deep(a) {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.auth-form__inline-error {
+  margin-block-start: calc(var(--space-3) * -1);
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+}
+
+.auth-form__inline-error a {
+  color: inherit;
+  font-weight: var(--font-weight-semibold);
 }
 
 .password-requirement {

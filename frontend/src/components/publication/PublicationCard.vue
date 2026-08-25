@@ -2,10 +2,10 @@
 import { computed } from 'vue'
 
 import type { PublicationResponse } from '@/api/generated/models'
+import AppIcon from '@/components/icons/AppIcon.vue'
 import { showAuthNotice } from '@/composables/useAuthNotice'
 import { useAuthStore } from '@/stores/auth.store'
 
-import AddToCollectionButton from './AddToCollectionButton.vue'
 import PublicationHeader from './PublicationHeader.vue'
 import PublicationImage from './PublicationImage.vue'
 import ReactionBar from './ReactionBar.vue'
@@ -47,6 +47,7 @@ const imageAlt = computed(
   <article class="publication-card">
     <PublicationHeader
       :publication-id="publication.id"
+      :author-id="publication.authorId"
       :author-display-name="publication.authorDisplayName"
       :author-username="publication.authorUsername"
       :published-at="publication.publishedAt"
@@ -58,8 +59,16 @@ const imageAlt = computed(
       <span class="publication-card__status-label">{{ typeLabel }}</span>
       <strong>{{ statusMessage }}</strong>
     </div>
-    <RecipeFlipCard v-else-if="publication.recipePreview" :publication="publication" />
-    <PublicationImage v-else :src="publication.imageUrl" :alt="imageAlt" />
+    <div v-else class="publication-card__media">
+      <span
+        v-if="publication.type === 'RECIPE' || publication.type === 'MY_VERSION'"
+        class="publication-card__tag"
+      >
+        Receita
+      </span>
+      <RecipeFlipCard v-if="publication.recipePreview" :publication="publication" />
+      <PublicationImage v-else :src="publication.imageUrl" :alt="imageAlt" />
+    </div>
 
     <div class="publication-card__body">
       <span class="publication-card__type">{{ typeLabel }}</span>
@@ -76,10 +85,6 @@ const imageAlt = computed(
         Editar
       </RouterLink>
       <SaveButton :publication-id="publication.id" :saved="publication.saved" />
-      <AddToCollectionButton
-        v-if="authStore.authenticated"
-        :publication-id="publication.id"
-      />
       <ReportDialog
         :publication-id="publication.id"
         :author-id="publication.authorId"
@@ -93,7 +98,8 @@ const imageAlt = computed(
         class="publication-card__versions"
         :to="`/publicar/minha-versao/${publication.id}`"
       >
-        Publicar minha versão ({{ publication.versionsCount }})
+        <AppIcon name="my-version" :size="18" :stroke-width="1.9" />
+        Minha versão
       </RouterLink>
       <button
         v-else-if="publication.type === 'RECIPE' || publication.type === 'MY_VERSION'"
@@ -101,7 +107,8 @@ const imageAlt = computed(
         class="publication-card__versions"
         @click="showAuthNotice"
       >
-        Publicar minha versão ({{ publication.versionsCount }})
+        <AppIcon name="my-version" :size="18" :stroke-width="1.9" />
+        Minha versão
       </button>
     </div>
   </article>
@@ -114,6 +121,23 @@ const imageAlt = computed(
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
+}
+
+.publication-card__media {
+  position: relative;
+}
+
+.publication-card__tag {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: 1;
+  padding: var(--space-1) var(--space-3);
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  background: var(--color-accent);
+  border-radius: var(--radius-pill);
 }
 
 .publication-card__body {
@@ -181,6 +205,9 @@ const imageAlt = computed(
 
 .publication-card__versions,
 .publication-card__edit {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   padding: 0;
   color: var(--color-primary);
   font-size: var(--font-size-sm);

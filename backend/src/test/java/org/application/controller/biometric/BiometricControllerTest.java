@@ -106,7 +106,7 @@ class BiometricControllerTest {
         UUID deviceId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         when(biometricService.completeAuthentication(any())).thenReturn(
-                new LoginResponse("token", "refresh", "Bearer", 3600, userId, "fagner", UserRole.USER, true, false, OffsetDateTime.now(), UUID.randomUUID(), deviceId));
+                new LoginResponse("token", "refresh", "Bearer", 3600, userId, "fagner", UserRole.USER, true, false, false, OffsetDateTime.now(), UUID.randomUUID(), deviceId));
 
         mockMvc.perform(post("/auth/biometric/authenticate/complete")
                         .contentType(MediaType.APPLICATION_JSON)

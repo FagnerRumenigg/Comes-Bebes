@@ -148,7 +148,7 @@ function confirmDelete(): void {
           variant="secondary"
           @click="startMyVersion"
         >
-          Publicar minha versão ({{ publicationQuery.data.value.versionsCount }})
+          Publicar minha versão
         </BaseButton>
       </div>
 

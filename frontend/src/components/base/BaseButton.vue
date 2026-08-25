@@ -37,7 +37,8 @@ function handleClick(event: MouseEvent): void {
     class="base-button"
     :class="[`base-button--${variant}`, { 'base-button--pressed': pressed }]"
     :type="type"
-    :disabled="disabled || loading"
+    :disabled="disabled"
+    :aria-disabled="loading || undefined"
     :aria-busy="loading || undefined"
     :aria-pressed="pressed"
     @click="handleClick"
@@ -95,8 +96,10 @@ function handleClick(event: MouseEvent): void {
 }
 
 .base-button--danger {
-  color: var(--color-primary-contrast);
-  background: var(--color-danger);
+  color: var(--color-danger);
+  background: transparent;
+  border-color: var(--color-danger);
+  box-shadow: none;
 }
 
 .base-button--pressed {
@@ -105,7 +108,8 @@ function handleClick(event: MouseEvent): void {
   color: var(--color-primary);
 }
 
-.base-button:disabled {
+.base-button:disabled,
+.base-button[aria-busy='true'] {
   opacity: 0.55;
 }
 

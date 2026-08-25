@@ -13,6 +13,6 @@ public record UpdateCollectionRequest(
         @Schema(description = "Nova descrição.", example = "Pratos para reunir a família", nullable = true)
         @Size(max = 280) String description,
         @Schema(description = "Nova visibilidade.", example = "PUBLIC")
-        @NotNull @Pattern(regexp = "PUBLIC|PRIVATE") String visibility
+        @NotNull @Pattern(regexp = "PUBLIC|SHARED|PRIVATE") String visibility
 ) {
 }

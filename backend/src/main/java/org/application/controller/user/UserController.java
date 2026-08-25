@@ -23,6 +23,7 @@ import org.application.controller.user.response.NotificationResponse;
 import org.application.dto.PageResponse;
 import org.application.service.PublicationService;
 import org.application.service.PublicationResponseFactory;
+import org.application.service.NotificationResponseFactory;
 import org.application.service.CollectionService;
 import org.application.service.UserService;
 import org.application.service.AccountSecurityService;
@@ -60,6 +61,7 @@ public class UserController {
     private final CollectionService collectionService;
     private final CurrentUser currentUser;
     private final PublicationResponseFactory responseFactory;
+    private final NotificationResponseFactory notificationResponseFactory;
 
     @DeleteMapping("/{id}/account")
     @PreAuthorize("isAuthenticated()")
@@ -99,8 +101,7 @@ public class UserController {
             Authentication authentication
     ) {
         var user = userService.findActive(id);
-        return UserResponse.of(user, applicationZoneId, followService.countFollowers(id), followService.countFollowing(id),
-                followedByCurrentUser(id, authentication));
+        return UserResponse.of(user, applicationZoneId, followedByCurrentUser(id, authentication));
     }
 
     @PutMapping("/{id}/follow")
@@ -168,8 +169,7 @@ public class UserController {
     }
 
     private UserResponse summaryOf(org.application.model.User item, Authentication authentication) {
-        return UserResponse.of(item, applicationZoneId, followService.countFollowers(item.getId()),
-                followService.countFollowing(item.getId()), followedByCurrentUser(item.getId(), authentication));
+        return UserResponse.of(item, applicationZoneId, followedByCurrentUser(item.getId(), authentication));
     }
 
     private Boolean followedByCurrentUser(UUID profileId, Authentication authentication) {
@@ -214,10 +214,14 @@ public class UserController {
         UUID viewerId = authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())
                 ? null : currentUser.id(authentication);
         var author = userService.findActive(id);
-        return PageResponse.of(collectionService.listByAuthor(id, viewerId, pageable), item -> CollectionResponse.of(
-                item, applicationZoneId, author, collectionService.countPublications(item.getId()),
-                collectionService.countFollowers(item.getId()),
-                viewerId == null || viewerId.equals(item.getAuthorId()) ? null : collectionService.isFollowing(viewerId, item.getId())));
+        return PageResponse.of(collectionService.listByAuthor(id, viewerId, pageable), item -> {
+            boolean isOwner = viewerId != null && viewerId.equals(item.getAuthorId());
+            // Contador de seguidores só para o dono: visitante nunca vê (produto5.md v5 §3.1, impl10.md v10 §13.8).
+            Long followersCount = isOwner ? collectionService.countFollowers(item.getId()) : null;
+            Boolean followedByCurrentUser = isOwner ? null : viewerId == null ? null : collectionService.isFollowing(viewerId, item.getId());
+            return CollectionResponse.of(item, applicationZoneId, author, collectionService.countPublications(item.getId()),
+                    collectionService.coverImageUrls(item.getId()), followersCount, followedByCurrentUser);
+        });
     }
 
     @GetMapping("/{id}/notifications")
@@ -236,7 +240,47 @@ public class UserController {
             Authentication authentication
     ) {
         ensureCurrentUser(id, authentication);
-        return PageResponse.of(userService.notifications(id, pageable), NotificationResponse::of);
+        return notificationResponseFactory.of(userService.notifications(id, pageable), applicationZoneId);
+    }
+
+    @PatchMapping("/{id}/notifications/read")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Marcar avisos como lidos", description = "Marca todos os avisos ativos do usuário como lidos (docs/telas/12-avisos.html — chamado ao abrir a tela).")
+    @ApiResponse(responseCode = "204", description = "Avisos marcados como lidos.")
+    public ResponseEntity<Void> markNotificationsRead(@PathVariable UUID id, Authentication authentication) {
+        ensureCurrentUser(id, authentication);
+        userService.markNotificationsRead(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/notifications")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Limpar todos os avisos", description = "Exclusão lógica de todos os avisos ativos do usuário (\"Limpar tudo\" — docs/telas/12-avisos.html).")
+    @ApiResponse(responseCode = "204", description = "Avisos apagados.")
+    public ResponseEntity<Void> clearNotifications(@PathVariable UUID id, Authentication authentication) {
+        ensureCurrentUser(id, authentication);
+        userService.clearNotifications(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/notifications/{notificationId}")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Apagar um aviso", description = "Exclusão lógica de um aviso específico (\"Apagar este aviso\" — docs/telas/12-avisos.html).")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Aviso apagado."),
+            @ApiResponse(responseCode = "404", description = "Aviso não encontrado.", content = @Content(schema = @Schema(implementation = org.application.controller.response.ApiErrorResponse.class)))
+    })
+    public ResponseEntity<Void> deleteNotification(
+            @PathVariable UUID id,
+            @PathVariable UUID notificationId,
+            Authentication authentication
+    ) {
+        ensureCurrentUser(id, authentication);
+        userService.deleteNotification(id, notificationId);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}/notification-preferences")
@@ -263,19 +307,18 @@ public class UserController {
             Authentication authentication
     ) {
         ensureCurrentUser(id, authentication);
-        userService.updateNotifyOnFollowedPublish(id, request.notifyOnFollowedPublish());
+        userService.updateNotificationPreferences(id, request);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     @SecurityRequirement(name = "bearerAuth")
-    @Operation(operationId = "updateCurrentUser", summary = "Atualizar usuário", description = "Atualiza o username e/ou o nome exibido do usuário.")
+    @Operation(operationId = "updateCurrentUser", summary = "Atualizar usuário", description = "Atualiza o username e/ou o nome exibido do usuário. O username informado passa por normalização e resolução automática de colisão (impl10.md v10 §19.4) — nunca falha por já estar em uso, um sufixo numérico é acrescentado quando necessário.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Usuário atualizado com sucesso."),
             @ApiResponse(responseCode = "400", description = "Dados inválidos ou nenhum campo informado.", content = @Content(schema = @Schema(implementation = org.application.controller.response.ApiErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Usuário não encontrado.", content = @Content(schema = @Schema(implementation = org.application.controller.response.ApiErrorResponse.class))),
-            @ApiResponse(responseCode = "409", description = "Username já cadastrado.", content = @Content(schema = @Schema(implementation = org.application.controller.response.ApiErrorResponse.class)))
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado.", content = @Content(schema = @Schema(implementation = org.application.controller.response.ApiErrorResponse.class)))
     })
     public UserResponse update(
             @Parameter(description = "UUID do usuário.", example = "71131447-a2a0-4996-a336-a8c3555bb327")
@@ -285,7 +328,7 @@ public class UserController {
     ) {
         ensureCurrentUser(id, authentication);
         var user = userService.update(id, request);
-        return UserResponse.of(user, applicationZoneId, followService.countFollowers(id), followService.countFollowing(id), null);
+        return UserResponse.of(user, applicationZoneId, null);
     }
 
     @PatchMapping("/{id}/onboarding")

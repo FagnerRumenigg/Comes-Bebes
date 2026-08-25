@@ -46,6 +46,7 @@ describe('edição de publicação', () => {
       role: 'USER',
       onboardingCompleted: true,
       hasUnseenPatchNotes: false,
+      emailRequired: false,
       sessionId: 'a4f0f2b0-df43-4b40-9df1-4f6da3e6f36e',
       deviceId: 'e1f0f2b0-df43-4b40-9df1-4f6da3e6f36e',
     })
@@ -110,6 +111,7 @@ describe('edição de publicação', () => {
       role: 'ADMIN',
       onboardingCompleted: true,
       hasUnseenPatchNotes: false,
+      emailRequired: false,
       sessionId: 'b2c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f22',
       deviceId: 'f2c6d9d0-4d3a-4a63-9f0e-9a3f5f0a1f22',
     })

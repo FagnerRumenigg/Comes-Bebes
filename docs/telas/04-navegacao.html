@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comes&Bebes — Navegação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fff6e3; --surface:#f3f8f5; --surface-alt:#eef4f0;
+  --text:#17281f; --text-muted:#4f6157;
+  --primary:#285943; --primary-hover:#1c4131; --primary-soft:#dfe9e4; --on-primary:#ffffff;
+  --secondary:#35758a; --accent:#d5a62e; --on-accent:#17281f;
+  --danger:#9b2c2c; --danger-soft:#f7e6e6;
+  --border:#6d8074; --border-subtle:#d7e0da;
+  --shadow:rgba(23,40,31,.16);
+}
+[data-theme="dark"]{
+  --bg:#2d1a11; --surface:#341e14; --surface-alt:#3d2419;
+  --text:#fef5f1; --text-muted:#bfa899;
+  --primary:#e99d7a; --primary-hover:#f2b193; --primary-soft:#4a2c1e; --on-primary:#2d1a11;
+  --secondary:#b5cc79; --accent:#b5cc79; --on-accent:#2d1a11;
+  --danger:#ff8a8a; --danger-soft:#4a2020;
+  --border:#8a7365; --border-subtle:#4a3227;
+  --shadow:rgba(0,0,0,.45);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;color:var(--text);background:var(--surface-alt);line-height:1.5}
+
+/* ───── harness ───── */
+.harness{position:sticky;top:0;z-index:200;background:#17281f;color:#eef4f0;padding:10px 16px;
+  display:flex;flex-wrap:wrap;gap:18px;align-items:center;font-size:13px}
+.harness strong{font-size:12px;letter-spacing:.1em;text-transform:uppercase;opacity:.55;font-weight:600}
+.harness .grp{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.harness button{font:inherit;font-weight:500;cursor:pointer;background:transparent;color:#eef4f0;
+  border:1px solid rgba(238,244,240,.3);border-radius:99px;padding:5px 13px}
+.harness button:hover{background:rgba(238,244,240,.12)}
+.harness button[aria-pressed="true"]{background:#d5a62e;border-color:#d5a62e;color:#17281f;font-weight:600}
+.harness .note{margin-left:auto;opacity:.5;font-size:12px}
+
+.stage{padding:26px 16px 60px;display:flex;justify-content:center}
+.device{background:var(--bg);border:1.5px solid var(--border-subtle);border-radius:14px;
+  overflow:hidden;box-shadow:0 16px 44px var(--shadow);width:100%}
+.stage[data-view="web"] .device{max-width:1180px}
+.stage[data-view="mobile"] .device{max-width:400px}
+.stage[data-view="web"] .only-mobile{display:none !important}
+.stage[data-view="mobile"] .only-web{display:none !important}
+
+/* ═══════════ HEADER WEB ═══════════ */
+.hd{display:flex;align-items:center;gap:26px;padding:0 26px;height:70px;
+  background:var(--bg);border-bottom:1.5px solid var(--border-subtle);position:relative;z-index:20}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text);flex:none;
+  min-height:48px;padding-right:4px}
+.brand .mark{width:36px;height:36px;border-radius:0;background:none;display:block;flex:none}
+.brand .mark svg{width:36px;height:36px;display:block}
+.brand .mark .tile{fill:var(--primary)}
+.brand .mark .book{fill:var(--accent)}
+.brand .mark .spine{fill:var(--accent);opacity:.45}
+.brand .mark .ribbon{fill:var(--primary)}
+.brand .name{font-family:'Instrument Serif',Georgia,serif;font-size:24px;letter-spacing:-.01em}
+
+.nav{display:flex;gap:4px;align-items:center}
+.nav a{position:relative;display:flex;align-items:center;gap:8px;min-height:48px;padding:0 14px;
+  border-radius:9px;text-decoration:none;color:var(--text-muted);font-size:16px;font-weight:500}
+.nav a:hover{background:var(--primary-soft);color:var(--text)}
+.nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8}
+/* ativo: peso + traço. Nunca só cor. */
+.nav a.on{color:var(--text);font-weight:700}
+.nav a.on::after{content:"";position:absolute;left:14px;right:14px;bottom:-12px;height:3px;
+  border-radius:3px;background:var(--primary)}
+
+.badge{min-width:21px;height:21px;padding:0 6px;border-radius:99px;background:var(--danger);
+  color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;line-height:1}
+[data-theme="dark"] .badge{color:#2d1a11}
+
+.spacer{flex:1}
+
+.btn-pub{display:flex;align-items:center;gap:9px;min-height:48px;padding:0 20px;border:0;
+  border-radius:10px;background:var(--primary);color:var(--on-primary);
+  font:inherit;font-size:16px;font-weight:600;cursor:pointer;flex:none}
+.btn-pub:hover{background:var(--primary-hover)}
+.btn-pub svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2}
+
+/* conta */
+.acct{position:relative;flex:none}
+.acct-btn{display:flex;align-items:center;gap:10px;min-height:48px;padding:4px 12px 4px 4px;
+  background:none;border:1.5px solid var(--border-subtle);border-radius:99px;cursor:pointer;
+  font:inherit;font-size:15px;font-weight:600;color:var(--text)}
+.acct-btn:hover{background:var(--surface)}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--primary);color:var(--on-primary);
+  display:grid;place-items:center;font-size:15px;font-weight:700;flex:none}
+.acct-btn .chev{width:16px;height:16px;stroke:var(--text-muted);fill:none;stroke-width:2.2}
+
+.menu{position:absolute;right:0;top:calc(100% + 10px);width:272px;background:var(--bg);
+  border:1.5px solid var(--border-subtle);border-radius:13px;box-shadow:0 14px 38px var(--shadow);
+  padding:8px;display:none;z-index:30}
+.menu.open{display:block}
+.menu-head{padding:10px 12px 12px;border-bottom:1px solid var(--border-subtle);margin-bottom:6px}
+.menu-head b{display:block;font-size:16px}
+.menu-head span{font-size:14px;color:var(--text-muted)}
+.menu a,.menu button.item{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;
+  padding:0 12px;border:0;border-radius:9px;background:none;cursor:pointer;text-decoration:none;
+  font:inherit;font-size:16px;color:var(--text);text-align:left}
+.menu a:hover,.menu button.item:hover{background:var(--primary-soft)}
+.menu svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;flex:none}
+.menu hr{border:0;border-top:1px solid var(--border-subtle);margin:6px 0}
+.menu .out{color:var(--danger)}
+.menu .out:hover{background:var(--danger-soft)}
+
+.theme-row{padding:10px 12px 6px}
+.theme-row .lbl{font-size:14px;color:var(--text-muted);margin-bottom:8px;display:block}
+.seg{display:flex;gap:4px;background:var(--surface);border:1.5px solid var(--border-subtle);
+  border-radius:9px;padding:4px}
+.seg button{flex:1;min-height:40px;border:0;border-radius:6px;background:none;cursor:pointer;
+  font:inherit;font-size:15px;font-weight:600;color:var(--text-muted);display:flex;
+  align-items:center;justify-content:center;gap:7px}
+.seg button svg{width:17px;height:17px}
+.seg button[aria-pressed="true"]{background:var(--primary);color:var(--on-primary)}
+
+/* ═══════════ MOBILE ═══════════ */
+.hd-m{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:58px;
+  background:var(--bg);border-bottom:1.5px solid var(--border-subtle)}
+.hd-m .brand .name{font-size:21px}
+.hd-m .mini{width:44px;height:44px;border-radius:50%;border:1.5px solid var(--border-subtle);
+  background:none;cursor:pointer;display:grid;place-items:center}
+.hd-m .mini .avatar{width:32px;height:32px;font-size:13px}
+
+.body{padding:22px 20px 26px;min-height:250px}
+.body h2{font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:30px;margin-bottom:6px}
+.body p{color:var(--text-muted);font-size:15px}
+.ghost{margin-top:18px;display:grid;gap:12px}
+.ghost div{height:74px;border-radius:12px;background:var(--surface);border:1.5px solid var(--border-subtle)}
+
+/* barra inferior */
+.tabs{display:flex;align-items:stretch;background:var(--bg);border-top:1.5px solid var(--border-subtle);
+  padding:6px 4px 10px}
+.tabs a{flex:1;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;text-decoration:none;color:var(--text-muted);border-radius:10px;position:relative}
+.tabs a svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8}
+/* 13px é exceção documentada: rótulo sempre acompanhado de ícone e alvo de 56px */
+.tabs a span{font-size:13px;font-weight:500;letter-spacing:-.01em}
+.tabs a.on{color:var(--primary);font-weight:700}
+.tabs a.on span{font-weight:700}
+.tabs a.on::before{content:"";position:absolute;top:-6px;width:26px;height:3px;border-radius:3px;background:var(--primary)}
+.tabs .pub{flex:none;width:78px}
+.tabs .pub .circ{width:50px;height:50px;border-radius:16px;background:var(--primary);
+  color:var(--on-primary);display:grid;place-items:center;margin-bottom:1px}
+.tabs .pub .circ svg{width:25px;height:25px;stroke:currentColor;stroke-width:2.4}
+.tabs .pub span{color:var(--text);font-weight:600}
+.tabs .tbadge{position:absolute;top:4px;right:50%;margin-right:-22px;min-width:19px;height:19px;
+  padding:0 5px;border-radius:99px;background:var(--danger);color:#fff;font-size:11px;font-weight:700;
+  display:grid;place-items:center;line-height:1}
+[data-theme="dark"] .tabs .tbadge{color:#2d1a11}
+
+/* folha do perfil no celular */
+.sheet-bg{position:fixed;inset:0;background:rgba(20,12,8,.45);z-index:150;display:none}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:160;background:var(--bg);
+  border-top-left-radius:20px;border-top-right-radius:20px;padding:10px 14px 26px;
+  max-width:400px;margin:0 auto;display:none;box-shadow:0 -10px 40px rgba(0,0,0,.3)}
+.sheet.open{display:block}
+.sheet .grab{width:44px;height:4px;border-radius:4px;background:var(--border-subtle);margin:6px auto 14px}
+
+.legend{max-width:1180px;margin:22px auto 0;font-size:14px;color:var(--text-muted);
+  background:var(--bg);border:1.5px solid var(--border-subtle);border-radius:12px;padding:16px 20px}
+.legend b{color:var(--text)}
+.legend ul{margin:8px 0 0 18px;display:grid;gap:5px}
+</style>
+</head>
+<body>
+
+<div class="harness">
+  <div class="grp"><strong>Plataforma</strong>
+    <button data-view="web" aria-pressed="true">Web</button>
+    <button data-view="mobile" aria-pressed="false">Celular</button>
+  </div>
+  <div class="grp"><strong>Tema</strong>
+    <button data-theme-btn="light" aria-pressed="true">Claro</button>
+    <button data-theme-btn="dark" aria-pressed="false">Escuro</button>
+  </div>
+  <div class="grp"><button id="openmenu">Abrir menu da conta</button></div>
+  <span class="note">Barra de revisão — não faz parte do produto.</span>
+</div>
+
+<div class="stage" id="stage" data-view="web">
+<div class="device">
+
+  <!-- ═════════ HEADER WEB ═════════ -->
+  <header class="hd only-web">
+    <a class="brand" href="#" aria-label="Comes&Bebes, ir para o início">
+      <span class="mark"><svg viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg></span>
+      <span class="name">Comes&amp;Bebes</span>
+    </a>
+
+    <nav class="nav" aria-label="Principal">
+      <a href="#" class="on" aria-current="page">
+        <svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22v-8h6v8"/></svg>
+        Início
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg>
+        Salvos
+      </a>
+      <a href="#" aria-label="Avisos, 3 novos">
+        <svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 6-3 7-3 7h18s-3-1-3-7"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></svg>
+        Avisos
+        <span class="badge" aria-hidden="true">3</span>
+      </a>
+    </nav>
+
+    <span class="spacer"></span>
+
+    <button class="btn-pub">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      Publicar
+    </button>
+
+    <div class="acct">
+      <button class="acct-btn" id="acctbtn" aria-expanded="false" aria-haspopup="true">
+        <span class="avatar">F</span>
+        Fagner
+        <svg class="chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+
+      <div class="menu" id="menu" role="menu">
+        <div class="menu-head">
+          <b>Fagner</b>
+          <span>@fagner</span>
+        </div>
+
+        <a href="#" role="menuitem">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>
+          Meu perfil
+        </a>
+        <a href="#" role="menuitem">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-3-1.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.3-3l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 3 1.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.6 1z"/></svg>
+          Configurações
+        </a>
+        <a href="#" role="menuitem">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.2 9a3 3 0 0 1 5.6 1c0 2-3 2.5-3 4"/><path d="M12 17.5v.01"/></svg>
+          Ajuda
+        </a>
+
+        <div class="theme-row">
+          <span class="lbl">Aparência</span>
+          <div class="seg">
+            <button data-theme-btn="light" aria-pressed="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>
+              Claro
+            </button>
+            <button data-theme-btn="dark" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+              Escuro
+            </button>
+          </div>
+        </div>
+
+        <hr>
+        <button class="item out" role="menuitem">
+          <svg viewBox="0 0 24 24"><path d="M15 17l5-5-5-5M20 12H9M12 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6"/></svg>
+          Sair da conta
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═════════ TOPO MOBILE ═════════ -->
+  <header class="hd-m only-mobile">
+    <a class="brand" href="#">
+      <span class="mark"><svg viewBox="0 0 32 32"><rect class="tile" width="32" height="32" rx="8"/><path class="book" d="M10 7.5h12a1.6 1.6 0 0 1 1.6 1.6v13.8a1.6 1.6 0 0 1-1.6 1.6H10z"/><rect class="spine" x="8.4" y="7.5" width="2.2" height="17" rx="1.1"/><path class="ribbon" d="M16.6 7.5h4.2v6.6l-2.1-1.7-2.1 1.7z"/></svg></span>
+      <span class="name">Comes&amp;Bebes</span>
+    </a>
+    <button class="mini" id="sheetbtn" aria-label="Sua conta"><span class="avatar">F</span></button>
+  </header>
+
+  <!-- conteúdo de exemplo -->
+  <div class="body">
+    <h2>O que andaram cozinhando</h2>
+    <p>Área do feed — fora do escopo desta revisão.</p>
+    <div class="ghost"><div></div><div></div></div>
+  </div>
+
+  <!-- ═════════ BARRA INFERIOR MOBILE ═════════ -->
+  <nav class="tabs only-mobile" aria-label="Principal">
+    <a href="#" class="on" aria-current="page">
+      <svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22v-8h6v8"/></svg>
+      <span>Início</span>
+    </a>
+    <a href="#">
+      <svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg>
+      <span>Salvos</span>
+    </a>
+    <a href="#" class="pub">
+      <span class="circ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></span>
+      <span>Publicar</span>
+    </a>
+    <a href="#" aria-label="Avisos, 3 novos">
+      <span class="tbadge" aria-hidden="true">3</span>
+      <svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 6-3 7-3 7h18s-3-1-3-7"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></svg>
+      <span>Avisos</span>
+    </a>
+    <a href="#">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>
+      <span>Perfil</span>
+    </a>
+  </nav>
+
+</div>
+</div>
+
+<!-- folha do perfil (celular) -->
+<div class="sheet-bg" id="sheetbg"></div>
+<div class="sheet" id="sheet" role="dialog" aria-label="Sua conta">
+  <div class="grab"></div>
+  <div class="menu-head" style="border:0;padding:4px 12px 14px">
+    <b>Fagner</b><span>@fagner</span>
+  </div>
+  <div class="menu" style="display:block;position:static;width:auto;border:0;box-shadow:none;padding:0">
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>Meu perfil</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9a2 2 0 1 1-2.8 2.8a1.7 1.7 0 0 0-2.9 1.2a2 2 0 1 1-4 0a1.7 1.7 0 0 0-3-1.3a2 2 0 1 1-2.8-2.8a1.7 1.7 0 0 0-1.2-2.9a2 2 0 1 1 0-4a1.7 1.7 0 0 0 1.3-3a2 2 0 1 1 2.8-2.8a1.7 1.7 0 0 0 2.9-1.2a2 2 0 1 1 4 0a1.7 1.7 0 0 0 3 1.3a2 2 0 1 1 2.8 2.8a1.7 1.7 0 0 0 1.2 2.9a2 2 0 1 1 0 4a1.7 1.7 0 0 0-1.6 1z"/></svg>Configurações</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.2 9a3 3 0 0 1 5.6 1c0 2-3 2.5-3 4"/><path d="M12 17.5v.01"/></svg>Ajuda</a>
+    <div class="theme-row">
+      <span class="lbl">Aparência</span>
+      <div class="seg">
+        <button data-theme-btn="light" aria-pressed="true">Claro</button>
+        <button data-theme-btn="dark" aria-pressed="false">Escuro</button>
+      </div>
+    </div>
+    <hr>
+    <button class="item out"><svg viewBox="0 0 24 24"><path d="M15 17l5-5-5-5M20 12H9M12 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6"/></svg>Sair da conta</button>
+  </div>
+</div>
+
+<div class="legend">
+  <b>O que mudou</b>
+  <ul>
+    <li><b>Buscar</b> saiu do header e vai para o feed, como você pediu.</li>
+    <li><b>Sair</b> deixou de ser item de menu principal. Foi para dentro da conta, separado por uma linha e com pedido de confirmação.</li>
+    <li><b>Publicar</b> virou botão. É a ação principal do produto e não pode ter o mesmo peso de um link.</li>
+    <li><b>Início</b> passou a existir no web também. Antes só o logotipo voltava ao feed.</li>
+    <li><b>@gpt</b> virou avatar e primeiro nome. O arroba é jargão.</li>
+    <li><b>Tema</b> saiu do ícone solto de lua e virou "Aparência: Claro / Escuro", com palavra.</li>
+    <li><b>Notificações</b> virou <b>Avisos</b> — palavra mais curta e mais cotidiana.</li>
+  </ul>
+</div>
+
+<script>
+const stage=document.getElementById('stage');
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{
+  stage.dataset.view=b.dataset.view;
+  document.querySelectorAll('[data-view]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  close();
+});
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  document.querySelectorAll('[data-theme-btn]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.themeBtn===t));
+}
+document.querySelectorAll('[data-theme-btn]').forEach(b=>b.onclick=()=>setTheme(b.dataset.themeBtn));
+
+const menu=document.getElementById('menu'), acct=document.getElementById('acctbtn'),
+      sheet=document.getElementById('sheet'), bg=document.getElementById('sheetbg');
+function close(){menu.classList.remove('open');acct.setAttribute('aria-expanded','false');
+  sheet.classList.remove('open');bg.classList.remove('open');}
+acct.onclick=e=>{e.stopPropagation();const o=menu.classList.toggle('open');acct.setAttribute('aria-expanded',o);};
+document.getElementById('sheetbtn').onclick=e=>{e.stopPropagation();sheet.classList.add('open');bg.classList.add('open');};
+bg.onclick=close;
+document.addEventListener('click',e=>{ if(!menu.contains(e.target)&&!sheet.contains(e.target)) close(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') close(); });
+document.getElementById('openmenu').onclick=e=>{
+  e.stopPropagation();
+  if(stage.dataset.view==='mobile'){sheet.classList.add('open');bg.classList.add('open');}
+  else{menu.classList.add('open');acct.setAttribute('aria-expanded','true');}
+};
+</script>
+</body>
+</html>
