@@ -200,8 +200,10 @@ describe('feed', () => {
       expect(lastTypes).toEqual([])
     })
 
-    const pratosButton = wrapper.findAll('.feed-view__filter').find((b) => b.text() === 'Pratos')
-    await pratosButton?.trigger('click')
+    await wrapper.get('.feed-view__filter-btn').trigger('click')
+    const pratosChip = wrapper.findAll('.feed-view__chip').find((b) => b.text() === 'Só pratos')
+    await pratosChip?.trigger('click')
+    await wrapper.findAll('button').find((b) => b.text() === 'Ver resultados')?.trigger('click')
     await flushPromises()
 
     await vi.waitFor(() => {
@@ -294,7 +296,10 @@ describe('feed', () => {
         }),
       ),
     )
-    window.localStorage.setItem('comes-e-bebes:feed-filter', 'receitas')
+    window.localStorage.setItem(
+      'comes-e-bebes:feed-filter',
+      JSON.stringify({ tipo: 'receitas', quem: 'EVERYONE', ordem: 'RECENT' }),
+    )
 
     const { router } = await mountFeed({ authenticated: true })
 

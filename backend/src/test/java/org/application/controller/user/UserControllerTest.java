@@ -2,12 +2,14 @@ package org.application.controller.user;
 
 import org.application.config.CurrentUser;
 import org.application.controller.ApiExceptionHandler;
+import org.application.controller.user.request.UpdateNotificationPreferencesRequest;
 import org.application.model.User;
 import org.application.model.UserRole;
 import org.application.model.UserStatus;
 import org.application.service.AccountSecurityService;
 import org.application.service.CollectionService;
 import org.application.service.FollowService;
+import org.application.service.NotificationResponseFactory;
 import org.application.service.PublicationResponseFactory;
 import org.application.service.PublicationService;
 import org.application.service.UserService;
@@ -50,12 +52,14 @@ class UserControllerTest {
     @Mock private CollectionService collectionService;
     @Mock private CurrentUser currentUser;
     @Mock private PublicationResponseFactory responseFactory;
+    @Mock private NotificationResponseFactory notificationResponseFactory;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         UserController controller = new UserController(userService, publicationService, ZoneId.of("UTC"),
-                accountSecurityService, followService, collectionService, currentUser, responseFactory);
+                accountSecurityService, followService, collectionService, currentUser, responseFactory,
+                notificationResponseFactory);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new ApiExceptionHandler())
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
@@ -176,6 +180,7 @@ class UserControllerTest {
                         .content("{\"notifyOnFollowedPublish\":false}"))
                 .andExpect(status().isNoContent());
 
-        verify(userService).updateNotifyOnFollowedPublish(userId, false);
+        verify(userService).updateNotificationPreferences(userId,
+                new UpdateNotificationPreferencesRequest(false, null, null, null, null, null, null));
     }
 }

@@ -219,8 +219,8 @@ function goToFeed(): void {
         :disabled="registerMutation.isPending.value"
         required
       >
-        Eu aceito os <a href="#">Termos de Serviço</a> e a
-        <a href="#">Política de Privacidade</a> do Comes&amp;Bebes.
+        Eu aceito os <RouterLink to="/termos" target="_blank">Termos de Serviço</RouterLink> e a
+        <RouterLink to="/privacidade" target="_blank">Política de Privacidade</RouterLink> do Comes&amp;Bebes.
       </BaseCheckbox>
       <BaseButton
         class="auth-form__submit"

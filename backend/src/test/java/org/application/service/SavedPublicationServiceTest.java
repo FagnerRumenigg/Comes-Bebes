@@ -25,6 +25,7 @@ class SavedPublicationServiceTest {
     @Mock private SavedPublicationRepository savedRepository;
     @Mock private PublicationRepository publicationRepository;
     @Mock private UserRepository userRepository;
+    @Mock private UserNotificationRepository notificationRepository;
     @Mock private java.time.Clock clock;
     @InjectMocks private SavedPublicationService service;
 
@@ -32,7 +33,7 @@ class SavedPublicationServiceTest {
     void shouldSaveActivePublicationForActiveUser() {
         UUID publicationId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
-        when(publicationRepository.findByIdAndStatus(publicationId, PublicationStatus.ACTIVE)).thenReturn(Optional.of(Publication.builder().id(publicationId).build()));
+        when(publicationRepository.findByIdAndStatus(publicationId, PublicationStatus.ACTIVE)).thenReturn(Optional.of(Publication.builder().id(publicationId).authorId(UUID.randomUUID()).build()));
         when(userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)).thenReturn(Optional.of(User.builder().id(userId).build()));
         when(savedRepository.findById(any())).thenReturn(Optional.empty());
 

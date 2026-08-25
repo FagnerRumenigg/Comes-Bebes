@@ -38,7 +38,6 @@ class ReactionServiceTest {
         Publication publication = Publication.builder().id(publicationId).authorId(userId).status(PublicationStatus.ACTIVE).build();
         when(publicationRepository.findByIdAndStatus(publicationId, PublicationStatus.ACTIVE)).thenReturn(Optional.of(publication));
         when(userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)).thenReturn(Optional.of(User.builder().id(userId).build()));
-        when(publicationRepository.findById(publicationId)).thenReturn(Optional.of(publication));
 
         assertThatThrownBy(() -> service.apply(publicationId, new ReactionRequest(userId, "WOULD_EAT")))
                 .isInstanceOf(InvalidOperationException.class);
@@ -55,7 +54,6 @@ class ReactionServiceTest {
         when(type.getId()).thenReturn(typeId);
         when(normalizer.normalize(" WOULD_EAT ")).thenReturn("would_eat");
         when(publicationRepository.findByIdAndStatus(publicationId, PublicationStatus.ACTIVE)).thenReturn(Optional.of(publication));
-        when(publicationRepository.findById(publicationId)).thenReturn(Optional.of(publication));
         when(userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)).thenReturn(Optional.of(User.builder().id(userId).build()));
         when(reactionTypeRepository.findByCodeAndActiveTrue("WOULD_EAT")).thenReturn(Optional.of(type));
         when(reactionRepository.findById(any())).thenReturn(Optional.empty());
@@ -75,7 +73,6 @@ class ReactionServiceTest {
         when(type.getId()).thenReturn(typeId);
         when(normalizer.normalize("HUNGRY")).thenReturn("hungry");
         when(publicationRepository.findByIdAndStatus(publicationId, PublicationStatus.ACTIVE)).thenReturn(Optional.of(publication));
-        when(publicationRepository.findById(publicationId)).thenReturn(Optional.of(publication));
         when(userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)).thenReturn(Optional.of(User.builder().id(userId).build()));
         when(reactionTypeRepository.findByCodeAndActiveTrue("HUNGRY")).thenReturn(Optional.of(type));
         when(reactionRepository.findById(any())).thenReturn(Optional.empty());
@@ -97,7 +94,6 @@ class ReactionServiceTest {
         PublicationReaction existing = PublicationReaction.builder().publicationId(publicationId).userId(userId).reactionTypeId((short) 1).build();
         when(normalizer.normalize("WOULD_EAT")).thenReturn("would_eat");
         when(publicationRepository.findByIdAndStatus(publicationId, PublicationStatus.ACTIVE)).thenReturn(Optional.of(publication));
-        when(publicationRepository.findById(publicationId)).thenReturn(Optional.of(publication));
         when(userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)).thenReturn(Optional.of(User.builder().id(userId).build()));
         when(reactionTypeRepository.findByCodeAndActiveTrue("WOULD_EAT")).thenReturn(Optional.of(type));
         when(reactionRepository.findById(any())).thenReturn(Optional.of(existing));
@@ -118,7 +114,6 @@ class ReactionServiceTest {
         PublicationReaction reaction = PublicationReaction.builder().publicationId(publicationId).userId(userId).reactionTypeId((short) 1).build();
         when(normalizer.normalize("WOULD_EAT")).thenReturn("would_eat");
         when(publicationRepository.findByIdAndStatus(publicationId, PublicationStatus.ACTIVE)).thenReturn(Optional.of(publication));
-        when(publicationRepository.findById(publicationId)).thenReturn(Optional.of(publication));
         when(userRepository.findByIdAndStatus(userId, UserStatus.ACTIVE)).thenReturn(Optional.of(User.builder().id(userId).build()));
         // remove() busca por findByCode (sem exigir active=true): quem reagiu antes de um
         // tipo ser retirado do catálogo continua podendo tirar a própria reação.

@@ -115,7 +115,9 @@ class PublicationControllerTest {
 
     @Test
     void shouldListFeedAndSearch() throws Exception {
-        when(publicationService.feed(any(org.springframework.data.domain.Pageable.class), nullable(UUID.class), nullable(java.util.Set.class)))
+        when(publicationService.feed(any(org.springframework.data.domain.Pageable.class), nullable(UUID.class),
+                nullable(java.util.Set.class), nullable(org.application.model.FeedScope.class),
+                nullable(org.application.model.FeedSort.class)))
                 .thenReturn(new PageImpl<>(List.of()));
         when(publicationService.search(any(), any(), any(org.springframework.data.domain.Pageable.class), nullable(UUID.class)))
                 .thenReturn(new PageImpl<>(List.of()));
@@ -127,7 +129,8 @@ class PublicationControllerTest {
     @Test
     void shouldFilterFeedByTypes() throws Exception {
         when(publicationService.feed(any(org.springframework.data.domain.Pageable.class), nullable(UUID.class),
-                eq(java.util.Set.of(PublicationType.DISH))))
+                eq(java.util.Set.of(PublicationType.DISH)), nullable(org.application.model.FeedScope.class),
+                nullable(org.application.model.FeedSort.class)))
                 .thenReturn(new PageImpl<>(List.of()));
 
         mockMvc.perform(get("/publications/feed?types=DISH")).andExpect(status().isOk());

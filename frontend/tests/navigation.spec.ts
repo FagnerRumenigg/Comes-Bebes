@@ -104,9 +104,13 @@ describe('mapa de rotas', () => {
 })
 
 describe('layouts e navegação', () => {
-  it('mantém os landmarks próprios de cada layout', () => {
+  it('mantém os landmarks próprios de cada layout', async () => {
+    const router = createTestRouter()
+    await router.push('/login')
+    await router.isReady()
+
     const global = {
-      plugins: [createPinia()],
+      plugins: [createPinia(), router],
       stubs: ['RouterLink', 'RouterView', 'PageContainer', 'ThemeSwitch'],
     }
 
@@ -141,7 +145,7 @@ describe('layouts e navegação', () => {
         .get('nav')
         .findAll('a, button')
         .map((item) => item.text()),
-    ).toEqual(['Início', 'Buscar', 'Salvos', 'Avisos'])
+    ).toEqual(['Início', 'Salvos', 'Avisos'])
     expect(mobile.findAll('a, button').map((item) => item.text())).toEqual([
       'Início',
       'Salvos',

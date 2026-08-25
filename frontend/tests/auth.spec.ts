@@ -261,6 +261,7 @@ describe('formulários de autenticação', () => {
     await wrapper.get('#register-email').setValue('cozinha-nova@exemplo.com')
     await wrapper.get('#register-password').setValue('MinhaSenha123!')
     await wrapper.get('#register-confirm-password').setValue('MinhaSenha123!')
+    await wrapper.get('#register-terms').setValue(true)
     await wrapper.get('form').trigger('submit')
     await vi.waitFor(() => expect(wrapper.text()).toContain('Pronto, Cozinha de Teste!'))
 
