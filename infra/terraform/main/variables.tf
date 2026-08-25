@@ -181,9 +181,9 @@ variable "api_memory" {
 }
 
 variable "api_min_replicas" {
-  description = "0 — decisão pra fase de testes (custo baixo, cold start ~1-2min aceitável enquanto só há uso esporádico). Rate limiters agora persistem em Postgres (RateLimitStore), não é mais um bloqueio técnico pra escalar a zero — só max_replicas=1 continua obrigatório, pra nunca ter 2 réplicas simultâneas."
+  description = "1 — decisão deliberada pra evitar o cold start de ~1-2min na primeira requisição (afetava a experiência de quem estava testando). Rate limiters persistem em Postgres (RateLimitStore), não são mais o bloqueio técnico pra escalar a zero — se o custo justificar voltar a 0 no futuro, é só trocar aqui. max_replicas continua 1, pra nunca ter 2 réplicas simultâneas."
   type        = number
-  default     = 0
+  default     = 1
 }
 
 variable "api_max_replicas" {
@@ -229,15 +229,15 @@ variable "validator_max_replicas" {
 # --- Config da aplicação (não-segredo) ----------------------------------
 
 variable "cors_allowed_origins" {
-  type    = string
-  default = "http://localhost:3000,http://localhost:5173,https://fagnerrumenigg.github.io"
+  description = "Origens locais de dev — a origem de produção (Static Web App e, durante a transição, o GitHub Pages antigo) é acrescentada em main.tf, não fica fixa aqui."
+  type        = string
+  default     = "http://localhost:3000,http://localhost:5173"
 }
 
-variable "webauthn_rp_id" {
-  description = "Domínio do frontend (GitHub Pages) — não muda com a migração."
-  type        = string
-  default     = "fagnerrumenigg.github.io"
-}
+# webauthn_rp_id não é mais variável independente — o RP ID do WebAuthn é
+# sempre o domínio do Static Web App (azurerm_static_web_app.frontend.default_host_name
+# em main.tf). Trocar de domínio quebra passkeys já cadastradas (aceito
+# deliberadamente pra essa migração — projeto ainda em fase de testes).
 
 variable "jwt_issuer" {
   type    = string
@@ -297,6 +297,22 @@ variable "user_blocked_username_hmac_secret" {
   sensitive = true
 }
 
+# --- Static Web App (frontend) ------------------------------------------
+# Substitui o GitHub Pages. Domínio padrão do Azure por enquanto
+# (*.azurestaticapps.net) — sem domínio próprio configurado ainda.
+
+variable "static_web_app_name" {
+  description = "Nome do Azure Static Web App. Globalmente único."
+  type        = string
+  default     = "swa-comesebebes"
+}
+
+variable "static_web_app_location" {
+  description = "Static Web Apps só existe num conjunto restrito de regiões (não inclui brazilsouth, diferente do resto da infra) — eastus2 é a mais próxima disponível. Baixo impacto: o conteúdo estático é servido por CDN global de qualquer forma, essa região só afeta onde o build roda."
+  type        = string
+  default     = "eastus2"
+}
+
 # --- Orçamento / alerta de custo ----------------------------------------
 
 variable "monthly_budget_amount" {
@@ -305,10 +321,10 @@ variable "monthly_budget_amount" {
   default     = 25
 }
 
-variable "budget_alert_email" {
-  description = "E-mail que recebe o alerta de orçamento."
-  type        = string
-  default     = "rumeniggmoraes@gmail.com"
+variable "budget_alert_emails" {
+  description = "E-mails que recebem o alerta de orçamento."
+  type        = list(string)
+  default     = ["rumeniggmoraes@gmail.com", "joao_taboada@hotmail.com"]
 }
 
 variable "budget_start_date" {

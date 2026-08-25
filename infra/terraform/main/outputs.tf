@@ -44,3 +44,14 @@ output "validator_internal_fqdn" {
 output "storage_account_images_name" {
   value = azurerm_storage_account.images.name
 }
+
+output "static_web_app_default_hostname" {
+  description = "Domínio público do frontend novo — é a URL que o usuário acessa (já entra sozinho em COMESEBEBES_CORS_ALLOWED_ORIGINS/WEBAUTHN_RP_ID, resolvido em main.tf)."
+  value       = azurerm_static_web_app.frontend.default_host_name
+}
+
+output "static_web_app_deployment_token" {
+  description = "Token de deploy do Static Web App — vira o secret AZURE_STATIC_WEB_APPS_API_KEY no GitHub Actions (Settings → Secrets → Actions). Sensível: não aparece em `terraform output` sem -raw, não vai pro log do CI/CD."
+  value       = azurerm_static_web_app.frontend.api_key
+  sensitive   = true
+}

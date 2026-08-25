@@ -362,12 +362,15 @@ resource "azurerm_container_app" "api" {
         value = tostring(var.validator_read_timeout_ms)
       }
       env {
-        name  = "COMESEBEBES_CORS_ALLOWED_ORIGINS"
-        value = var.cors_allowed_origins
+        name = "COMESEBEBES_CORS_ALLOWED_ORIGINS"
+        # GitHub Pages (https://fagnerrumenigg.github.io) fica na lista até
+        # confirmarmos que o Static Web App está bom e desativarmos o
+        # deploy antigo — remover essa origem depois disso.
+        value = "${var.cors_allowed_origins},https://${azurerm_static_web_app.frontend.default_host_name},https://fagnerrumenigg.github.io"
       }
       env {
         name  = "COMESEBEBES_WEBAUTHN_RP_ID"
-        value = var.webauthn_rp_id
+        value = azurerm_static_web_app.frontend.default_host_name
       }
       env {
         name  = "COMESEBEBES_JWT_ISSUER"
@@ -423,6 +426,20 @@ resource "azurerm_container_app" "api" {
   ]
 }
 
+# --- Static Web App (frontend) -------------------------------------------
+# Substitui o GitHub Pages. Tier Free (100GB/mês de banda, SSL grátis,
+# domínio padrão *.azurestaticapps.net por enquanto). O conteúdo em si é
+# publicado pelo workflow do GitHub Actions (deploy-static-web-app.yml),
+# não pelo Terraform — esse recurso só provisiona o "onde".
+
+resource "azurerm_static_web_app" "frontend" {
+  name                = var.static_web_app_name
+  resource_group_name = azurerm_resource_group.app.name
+  location            = var.static_web_app_location
+  sku_tier            = "Free"
+  sku_size            = "Free"
+}
+
 # --- Budget / alerta de custo --------------------------------------------
 
 resource "azurerm_consumption_budget_resource_group" "app" {
@@ -443,7 +460,7 @@ resource "azurerm_consumption_budget_resource_group" "app" {
     threshold      = 80
     threshold_type = "Actual"
 
-    contact_emails = [var.budget_alert_email]
+    contact_emails = var.budget_alert_emails
   }
 
   notification {
@@ -452,6 +469,6 @@ resource "azurerm_consumption_budget_resource_group" "app" {
     threshold      = 100
     threshold_type = "Forecasted"
 
-    contact_emails = [var.budget_alert_email]
+    contact_emails = var.budget_alert_emails
   }
 }

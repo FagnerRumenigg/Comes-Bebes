@@ -1,0 +1,6 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/assets/*", "/favicon.png", "/mockServiceWorker.js", "/staticwebapp.config.json"]
+  }
+}
