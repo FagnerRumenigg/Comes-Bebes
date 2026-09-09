@@ -418,6 +418,7 @@ watch(recipeQuery.data, (recipe) => {
 })
 
 const sourceTitle = computed(() => sourceQuery.data.value?.title ?? 'receita original')
+const sourceAuthorName = computed(() => sourceQuery.data.value?.authorDisplayName ?? 'quem criou a receita')
 const titlePreview = computed(() => `${sourceTitle.value} · ${titleSuffix.value.trim() || 'sua versão'}`)
 const sourceLoadError = computed(() => {
   const error = sourceQuery.error.value ?? recipeQuery.error.value
@@ -507,7 +508,16 @@ onBeforeUnmount(() => {
             />
             <template v-if="!imagePreview">
               <AppIcon name="camera" :size="32" :stroke-width="1.5" />
-              <span class="create-publication__photo-cta">Comece pela foto</span>
+              <span class="create-publication__photo-cta">
+                {{ isMyVersion ? 'Mostre como o seu ficou' : 'Comece pela foto' }}
+              </span>
+              <span class="create-publication__photo-desc">
+                {{
+                  isMyVersion
+                    ? `A foto tem que ser sua. A foto original continua na publicação de ${sourceAuthorName}.`
+                    : 'Do prato pronto, da panela, do pedaço que sobrou. Como estiver.'
+                }}
+              </span>
               <span class="create-publication__photo-hint">
                 JPEG, PNG, WebP, HEIC ou HEIF até 20 MB.
               </span>
@@ -518,7 +528,8 @@ onBeforeUnmount(() => {
             </template>
           </label>
           <p v-if="imagePreview" class="create-publication__photo-note">
-            Depois de publicar, ela não poderá mais ser trocada.
+            Você pode trocar a foto à vontade agora. Depois de publicar, ela não poderá mais ser
+            trocada.
           </p>
         </fieldset>
 
@@ -544,6 +555,10 @@ onBeforeUnmount(() => {
           <BaseFieldError v-if="fieldErrors.titleSuffix" :message="fieldErrors.titleSuffix" />
           <p class="create-publication__title-preview">
             Vai aparecer como: <strong>{{ titlePreview }}</strong>
+          </p>
+          <p class="create-publication__title-help">
+            O nome de {{ sourceAuthorName }} fica no começo, para as pessoas saberem de onde veio a
+            receita.
           </p>
         </div>
         <BaseInput
@@ -573,9 +588,22 @@ onBeforeUnmount(() => {
         />
 
         <div v-if="recipeMode" class="create-publication__recipe">
-          <IngredientEditor v-model="ingredients" :error="ingredientError" /><PreparationStepsEditor
+          <IngredientEditor
+            v-model="ingredients"
+            :error="ingredientError"
+            :hint="
+              isMyVersion
+                ? `Já veio a lista de ${sourceAuthorName}. Mude, apague ou acrescente o que quiser.`
+                : undefined
+            "
+          /><PreparationStepsEditor
             v-model="instructions"
             :error="fieldErrors.instructions ?? fieldErrors['recipe.instructions']"
+            :hint="
+              isMyVersion
+                ? `Já veio o preparo de ${sourceAuthorName}. Reescreva do seu jeito, ou deixe como está se você não mudou nada.`
+                : undefined
+            "
           />
           <div class="create-publication__yield">
             <BaseInput v-model="yieldQuantity" label="Rendimento" type="number" :min="0" /><BaseInput
@@ -811,6 +839,7 @@ onBeforeUnmount(() => {
   font-weight: var(--font-weight-semibold);
 }
 
+.create-publication__photo-desc,
 .create-publication__photo-hint {
   font-size: var(--font-size-sm);
 }
@@ -886,6 +915,12 @@ onBeforeUnmount(() => {
 
 .create-publication__title-preview strong {
   color: var(--color-text);
+}
+
+.create-publication__title-help {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
 }
 
 .create-publication__recipe {

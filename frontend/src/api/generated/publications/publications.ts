@@ -1061,7 +1061,7 @@ export function useSaved<TData = Awaited<ReturnType<typeof saved>>, TError = unk
 
 
 /**
- * Retorna publicações ativas paginadas. Visitantes recebem somente PUBLIC; usuários autenticados podem receber PUBLIC e INTERNAL. A primeira página é 1. Sem o parâmetro types, retorna todos os tipos (Mix).
+ * Retorna publicações ativas paginadas. Visitantes recebem somente PUBLIC; usuários autenticados podem receber PUBLIC e INTERNAL. A primeira página é 1. Sem o parâmetro types, retorna todos os tipos (Mix). scope=FOLLOWING/MY_COLLECTIONS exige sessão — sem uma, o resultado cai para EVERYONE.
  * @summary Listar feed
  */
 export const feed = (

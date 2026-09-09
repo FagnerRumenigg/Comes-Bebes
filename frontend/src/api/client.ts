@@ -7,7 +7,7 @@ import {
   markRequestStarted,
 } from '@/composables/useBackendStatus'
 
-const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8082'
+export const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8082'
 const unreachableStatuses = new Set([502, 503, 504])
 
 function isBackendUnreachable(error: unknown): boolean {

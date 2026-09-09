@@ -181,9 +181,9 @@ variable "api_memory" {
 }
 
 variable "api_min_replicas" {
-  description = "1 — decisão deliberada pra evitar o cold start de ~1-2min na primeira requisição (afetava a experiência de quem estava testando). Rate limiters persistem em Postgres (RateLimitStore), não são mais o bloqueio técnico pra escalar a zero — se o custo justificar voltar a 0 no futuro, é só trocar aqui. max_replicas continua 1, pra nunca ter 2 réplicas simultâneas."
+  description = "0 — decisão deliberada por custo (2026-08-25): não vale pagar por manter 1 réplica sempre ativa nesta fase do projeto. O cold start (~1-2min) fica coberto pela tela de carregando com o joguinho (BackendOfflineScreen.vue + WordGuessGame.vue), em vez de evitado. Rate limiters persistem em Postgres (RateLimitStore), não são mais bloqueio técnico pra escalar a zero. max_replicas continua 1, pra nunca ter 2 réplicas simultâneas."
   type        = number
-  default     = 1
+  default     = 0
 }
 
 variable "api_max_replicas" {

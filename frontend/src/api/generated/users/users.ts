@@ -567,6 +567,68 @@ export const useCompleteOnboarding = <TError = ApiErrorResponse,
       return useMutation(mutationOptions, queryClient);
     }
     /**
+ * Marca todos os avisos ativos do usuário como lidos (docs/telas/12-avisos.html — chamado ao abrir a tela).
+ * @summary Marcar avisos como lidos
+ */
+export const markNotificationsRead = (
+    id: MaybeRef<string>,
+ options?: SecondParameter<typeof apiRequest>,) => {
+      id = unref(id);
+      
+      return apiRequest<void>(
+      {url: `/users/${id}/notifications/read`, method: 'PATCH'
+    },
+      options);
+    }
+  
+
+
+export const getMarkNotificationsReadMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markNotificationsRead>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof markNotificationsRead>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['markNotificationsRead'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markNotificationsRead>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  markNotificationsRead(id,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkNotificationsReadMutationResult = NonNullable<Awaited<ReturnType<typeof markNotificationsRead>>>
+    
+    export type MarkNotificationsReadMutationError = unknown
+
+    /**
+ * @summary Marcar avisos como lidos
+ */
+export const useMarkNotificationsRead = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markNotificationsRead>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof markNotificationsRead>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+
+      const mutationOptions = getMarkNotificationsReadMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna as preferências de notificação da conta autenticada.
  * @summary Consultar preferências de notificação
  */
@@ -918,6 +980,68 @@ export function useNotifications<TData = Awaited<ReturnType<typeof notifications
 
 
 /**
+ * Exclusão lógica de todos os avisos ativos do usuário ("Limpar tudo" — docs/telas/12-avisos.html).
+ * @summary Limpar todos os avisos
+ */
+export const clearNotifications = (
+    id: MaybeRef<string>,
+ options?: SecondParameter<typeof apiRequest>,) => {
+      id = unref(id);
+      
+      return apiRequest<void>(
+      {url: `/users/${id}/notifications`, method: 'DELETE'
+    },
+      options);
+    }
+  
+
+
+export const getClearNotificationsMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearNotifications>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof clearNotifications>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['clearNotifications'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clearNotifications>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  clearNotifications(id,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClearNotificationsMutationResult = NonNullable<Awaited<ReturnType<typeof clearNotifications>>>
+    
+    export type ClearNotificationsMutationError = unknown
+
+    /**
+ * @summary Limpar todos os avisos
+ */
+export const useClearNotifications = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearNotifications>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof clearNotifications>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+
+      const mutationOptions = getClearNotificationsMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna os perfis seguidos pelo usuário, paginados.
  * @summary Listar quem o usuário segue
  */
@@ -1143,6 +1267,70 @@ export function useGetUserCollections<TData = Awaited<ReturnType<typeof getUserC
 
 
 /**
+ * Exclusão lógica de um aviso específico ("Apagar este aviso" — docs/telas/12-avisos.html).
+ * @summary Apagar um aviso
+ */
+export const deleteNotification = (
+    id: MaybeRef<string>,
+    notificationId: MaybeRef<string>,
+ options?: SecondParameter<typeof apiRequest>,) => {
+      id = unref(id);
+notificationId = unref(notificationId);
+      
+      return apiRequest<void>(
+      {url: `/users/${id}/notifications/${notificationId}`, method: 'DELETE'
+    },
+      options);
+    }
+  
+
+
+export const getDeleteNotificationMutationOptions = <TError = ApiErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteNotification>>, TError,{id: string;notificationId: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteNotification>>, TError,{id: string;notificationId: string}, TContext> => {
+
+const mutationKey = ['deleteNotification'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteNotification>>, {id: string;notificationId: string}> = (props) => {
+          const {id,notificationId} = props ?? {};
+
+          return  deleteNotification(id,notificationId,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteNotificationMutationResult = NonNullable<Awaited<ReturnType<typeof deleteNotification>>>
+    
+    export type DeleteNotificationMutationError = ApiErrorResponse
+
+    /**
+ * @summary Apagar um aviso
+ */
+export const useDeleteNotification = <TError = ApiErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteNotification>>, TError,{id: string;notificationId: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof deleteNotification>>,
+        TError,
+        {id: string;notificationId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteNotificationMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Exclui logicamente a conta e preserva as publicações anonimizadas.
  * @summary Anonimizar conta
  */

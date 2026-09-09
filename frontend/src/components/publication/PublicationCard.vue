@@ -50,6 +50,7 @@ const imageAlt = computed(
       :author-id="publication.authorId"
       :author-display-name="publication.authorDisplayName"
       :author-username="publication.authorUsername"
+      :author-avatar-key="publication.authorAvatarKey"
       :published-at="publication.publishedAt"
       :photo-taken-at="publication.photoTakenAt"
       :visibility="publication.visibility"

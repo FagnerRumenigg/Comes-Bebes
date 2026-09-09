@@ -23,6 +23,8 @@ public record CollectionResponse(
         String authorUsername,
         @Schema(description = "Nome exibido do autor.", example = "Fagner")
         String authorDisplayName,
+        @Schema(description = "Avatar de cozinha escolhido pelo autor. Nulo mostra a inicial do nome.", nullable = true, example = "PANELA")
+        String authorAvatarKey,
         @Schema(description = "Nome da coleção.", example = "Receitas de domingo")
         String name,
         @Schema(description = "Descrição opcional.", example = "Pratos para reunir a família", nullable = true)
@@ -31,7 +33,7 @@ public record CollectionResponse(
         CollectionVisibility visibility,
         @Schema(description = "Quantidade de publicações na coleção. Não é contador de aprovação, é inventário — fica visível para todo mundo (produto5.md v5 §14.5).", example = "8")
         long publicationsCount,
-        @Schema(description = "Até 3 imagens de capa (mosaico do cartão), na ordem das publicações da coleção. Vazio quando a coleção não tem nenhuma publicação ativa.")
+        @Schema(description = "Imagem de capa (a publicação mais recente da coleção). Lista vazia quando a coleção não tem nenhuma publicação ativa.")
         List<String> coverImageUrls,
         @Schema(description = "Quantidade de seguidores da coleção. Só preenchido para o próprio autor: visitante nunca vê contador de seguidores (produto5.md v5 §3.1, impl10.md v10 §13.8).", nullable = true, example = "3")
         Long followersCount,
@@ -50,6 +52,7 @@ public record CollectionResponse(
                 .authorId(collection.getAuthorId())
                 .authorUsername(author == null ? null : author.getUsername())
                 .authorDisplayName(author == null ? null : author.getDisplayName())
+                .authorAvatarKey(author == null ? null : author.getAvatarKey())
                 .name(collection.getName())
                 .description(collection.getDescription())
                 .visibility(collection.getVisibility())

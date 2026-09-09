@@ -56,6 +56,8 @@ export function notificationTextParts(item: NotificationItem): NotificationTextP
       return [{ text: 'Sua denúncia foi analisada e a publicação foi mantida.' }]
     case 'NEW_DEVICE_LOGIN':
       return [{ text: 'Novo login detectado em um dispositivo. Não foi você? Revogue o acesso.' }]
+    case 'NEW_FEEDBACK_RECEIVED':
+      return [{ text: actor, bold: true }, { text: ' escreveu em Falar com a gente.' }]
     default:
       return [{ text: 'Você recebeu um novo aviso.' }]
   }
@@ -84,6 +86,7 @@ const ICONS: Record<string, IconName> = {
   COLLECTION_SHARED_WITH_YOU: 'invite',
   REPORT_REJECTED_WARNING: 'alert',
   NEW_DEVICE_LOGIN: 'lock',
+  NEW_FEEDBACK_RECEIVED: 'envelope',
 }
 
 export function notificationIcon(item: NotificationItem): IconName {
@@ -104,6 +107,7 @@ export function notificationShowsCollectionMuteOption(item: NotificationItem): b
 /** Destino ao tocar no aviso (fora do menu de opções). */
 export function notificationLinkTo(item: NotificationItem): string | null {
   if (item.type === 'NEW_DEVICE_LOGIN') return '/dispositivos'
+  if (item.type === 'NEW_FEEDBACK_RECEIVED') return '/admin/feedback'
   if (item.collectionId) return `/colecoes/${item.collectionId}`
   if (item.publicationId) return `/publicacoes/${item.publicationId}`
   return null

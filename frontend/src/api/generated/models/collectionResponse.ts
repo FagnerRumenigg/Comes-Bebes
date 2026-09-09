@@ -5,6 +5,7 @@
  * API RESTful da rede social de comida ComeSebebes.
  * OpenAPI spec version: v1
  */
+import type { CollectionResponseAuthorAvatarKey } from './collectionResponseAuthorAvatarKey';
 import type { CollectionResponseDescription } from './collectionResponseDescription';
 import type { CollectionResponseVisibility } from './collectionResponseVisibility';
 import type { CollectionResponseFollowersCount } from './collectionResponseFollowersCount';
@@ -22,6 +23,8 @@ export interface CollectionResponse {
   authorUsername: string;
   /** Nome exibido do autor. */
   authorDisplayName: string;
+  /** Avatar de cozinha escolhido pelo autor. Nulo mostra a inicial do nome. */
+  authorAvatarKey: CollectionResponseAuthorAvatarKey;
   /** Nome da coleção. */
   name: string;
   /** Descrição opcional. */
@@ -30,6 +33,8 @@ export interface CollectionResponse {
   visibility: CollectionResponseVisibility;
   /** Quantidade de publicações na coleção. Não é contador de aprovação, é inventário — fica visível para todo mundo (produto5.md v5 §14.5). */
   publicationsCount: number;
+  /** Imagem de capa (a publicação mais recente da coleção). Lista vazia quando a coleção não tem nenhuma publicação ativa. */
+  coverImageUrls: string[];
   /** Quantidade de seguidores da coleção. Só preenchido para o próprio autor: visitante nunca vê contador de seguidores (produto5.md v5 §3.1, impl10.md v10 §13.8). */
   followersCount: CollectionResponseFollowersCount;
   /** Indica se a conta autenticada segue esta coleção. Nulo para visitantes ou para o próprio autor. */

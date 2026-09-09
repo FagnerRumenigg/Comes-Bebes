@@ -19,10 +19,43 @@ validação.
 | 10 | Publicar | ✅ Concluída |
 | 11 | Recuperar senha | ✅ Concluída |
 | 12 | Avisos | ✅ Concluída |
-| 13 | Minha versão | ⬜ Pendente |
-| 14 | Editar perfil | ⬜ Pendente |
+| 13 | Minha versão | ✅ Concluída |
+| 14 | Editar perfil | ✅ Concluída |
 
 ## Pendências deixadas de propósito
+
+- **Avatares de cozinha:** resolvido — a pendência dos dois `.docx` ("Avatares
+  de cozinha (adiado) — por ora o avatar é a inicial do nome") foi fechada.
+  Doze desenhos (panela, colher de pau, xícara, fatia de bolo, pão, tomate,
+  milho, limão, garfo e faca, pimenta, ovo, abacaxi), na mesma linguagem
+  visual de `marca.svg` — formas planas, só as cores de `tokens.css`,
+  alternando os dois pares já validados na marca (verde/dourado e
+  dourado/verde). Depois de testar num rascunho (Artifact), a pessoa pediu
+  contorno mais forte pra separar as formas, pensando em acessibilidade (visão
+  monocular) — o contorno usa `--color-text` (fica escuro no claro, claro no
+  escuro) em vez de preto fixo, senão sumiria no tema escuro.
+  - `users.avatar_key` novo (migration `V37`), string nula = continua na
+    inicial. `UpdateUserRequest.avatarKey` aceita as 12 chaves ou string vazia
+    pra limpar, mesmo padrão de `bio`. Exposto em `UserResponse` (perfil
+    público) e em `UserInfoResponse`/`GET /auth/info` (pro menu da conta não
+    precisar buscar o perfil público de novo).
+  - Frontend: `kitchen-avatar-paths.ts` guarda os 12 desenhos,
+    `KitchenAvatarIcon.vue` renderiza um deles, `BaseAvatar.vue` mostra o
+    desenho escolhido em vez da inicial quando existe. Escolha do avatar fica
+    em Editar perfil (tela 14) — onde a legenda da própria tela 08 já dizia
+    que isso ia entrar. Aparece também no cabeçalho/menu da conta e no
+    próprio Perfil.
+  - **Espalhado depois pra todo lugar que já mostrava avatar**, a pedido do
+    usuário: `authorAvatarKey` novo em `PublicationResponse` (autor no feed/
+    card de publicação, via `PublicationResponseFactory`) e em
+    `CollectionResponse` (autor da coleção, os dois call-sites de
+    `CollectionResponse.of` já tinham o `User author` em mãos); `actorAvatarKey`
+    novo em `NotificationResponse`/`NotificationResponseFactory` (quem
+    originou o aviso). "Quem eu sigo" e a lista de convidados de uma coleção
+    já reaproveitam `UserResponse` puro, então só precisaram do campo no
+    template (`FollowingListView.vue`, `CollectionDetailsView.vue`). Sem
+    coluna nova no banco — é sempre o mesmo `users.avatar_key`, só mais
+    lugares lendo.
 
 - **02 e 11 (login/recuperar senha):** resolvido — fluxo completo de
   "Esqueci minha senha" construído do zero (não existia nada antes: nem
@@ -145,34 +178,100 @@ validação.
     destino.
   - Fase C (resumo semanal por e-mail) **não entrou** — a infra de e-mail já
     existe (tela 11), falta o job `@Scheduled` e o template. Fica pendente.
-- **Client gerado (orval) desatualizado:** `GET /auth/info` (tela 04, agora
-  também com `defaultPublicationVisibility`), os parâmetros `scope`/`sort` de
-  `GET /publications/feed` (tela 05), o campo `coverImageUrls` de
-  `CollectionResponse` (telas 06/07), os endpoints `PUT`/`DELETE
-  /collections/{id}/invitees...` (tela 07), os campos `bio` e
-  `defaultPublicationVisibility` de `UpdateUserRequest` (telas 08/09/10),
-  `POST /auth/password-reset` + `POST /auth/password-reset/confirm` (tela 11)
-  e, da tela 12: os campos novos de `GET /users/{id}/notifications`
-  (`collectionId`, `actorDisplayName`, `publicationTitle`,
-  `publicationImageUrl`, `collectionName`, `createdAt`), os endpoints
-  `PATCH /users/{id}/notifications/read`, `DELETE
-  /users/{id}/notifications` e `DELETE /users/{id}/notifications/{id}`, e os
-  6 campos novos de `GET`/`PATCH /users/{id}/notification-preferences` —
-  existem no backend mas o `openapi.json`/client do frontend ainda não sabem
-  disso — isso só atualiza rodando o backend e depois `npm run api:generate`.
-  E da tela de Ajuda: `GET /documents/{slug}` e `POST /feedback` são
-  endpoints inteiramente novos, ainda não existem no client gerado.
-  Enquanto isso, `useAccountInfo.ts`, `feed.queries.ts`, `CollectionCard.vue`,
-  `CollectionDetailsView.vue`, `ProfileView.vue`, `EditProfileView.vue`,
-  `SettingsAccountPane.vue`, `CreatePublicationView.vue`,
+- **13 (minha versão):** resolvido — a tela já existia (`CreatePublicationView.vue`
+  reaproveitado com `sourceId`, seção 21.6 de `REGRAS_AGENTE.md`), mas nunca tinha
+  passado pela validação formal palavra por palavra. Achados corrigidos:
+  1) o estado vazio da foto mostrava o texto genérico de Publicar ("Comece pela
+     foto") mesmo no fluxo de minha versão, sem avisar que a foto tem que ser
+     da própria pessoa — agora mostra "Mostre como o seu ficou" / "A foto tem
+     que ser sua. A foto original continua na publicação de {autor}." só nesse
+     fluxo;
+  2) faltava a frase "Você pode trocar a foto à vontade agora." na nota de foto
+     já escolhida (a referência tem essa frase tanto em `10-publicar.html`
+     quanto em `13-minha-versao.html`; só a segunda frase estava implementada)
+     — corrigido nos dois fluxos, já que é o mesmo trecho de template;
+  3) faltava o texto explicando por que o título já vem com um prefixo fixo
+     ("O nome de {autor} fica no começo...") — adicionado;
+  4) os textos de ajuda de Ingredientes e Modo de preparo eram genéricos mesmo
+     quando os campos já vinham preenchidos com a receita original — agora
+     `IngredientEditor.vue`/`PreparationStepsEditor.vue` aceitam um `hint`
+     opcional, e minha versão passa um texto que explica a origem do
+     conteúdo pré-preenchido.
+  Um ponto ficou só registrado, não mudado: a referência visual de ambas as
+  telas mostra Ingredientes/Modo de preparo como texto livre (uma
+  `<textarea>`), e `REGRAS_AGENTE.md` §6 documenta que campos repetíveis com
+  botões de adicionar/remover/reordenar por ingrediente já foram tentados e
+  substituídos por texto livre antes. O código atual (`IngredientEditor.vue`,
+  `PreparationStepsEditor.vue`) usa exatamente esse padrão de campos
+  repetíveis, e já está assim também em `10-publicar.html`/tela 10 (✅
+  concluída antes desta sessão) — não é uma regressão desta tela, é
+  consistente com o que já estava em produção. Provável motivo: o backend
+  espera ingredientes estruturados (`CreateRecipeRequest.ingredients`, usado
+  também na busca por ingrediente). Não mexido agora porque afeta as duas
+  telas e é decisão de produto, não bug — só fica registrado que
+  `REGRAS_AGENTE.md` e o código divergem nesse ponto específico, para alguém
+  decidir e atualizar um dos dois.
+- **14 (editar perfil):** resolvido — a tela já existia
+  (`EditProfileView.vue`), primeira validação formal encontrou dois textos
+  que não batiam com a referência: rótulo do campo de descrição era
+  "Descrição" (referência: "Escreva alguma coisa sobre você") e o texto de
+  ajuda dizia "Um pouco sobre você — aparece no seu perfil." em vez de
+  "Aparece no seu perfil, embaixo do nome. Pode deixar em branco." — os dois
+  corrigidos. Também faltava o contador de caracteres que a referência mostra
+  junto do campo; adicionado (sem mudar `BaseTextarea.vue`, que é compartilhado
+  por muitas outras telas — o contador é markup local desta tela). Não mudado:
+  a referência usa `maxlength` de 40 (nome) e 20 (@usuário), o código usa 100
+  e 30 — ambos abaixo do limite real do backend (100 pros dois,
+  `UpdateUserRequest`), então não bloqueiam nada válido; fica como estava por
+  não ter como saber se o número menor da referência era intencional.
+- **Falar com a gente (`/sugestao`, `FeedbackView.vue`):** validado contra o
+  checklist geral de `REGRAS_AGENTE.md` (não tem HTML de referência dedicado
+  no pacote de telas) — sem vocabulário banido, cobre os cinco estados
+  (vazio, preenchendo, carregando, erro, sucesso) e bate com
+  `CreateFeedbackRequest` do backend. Nenhuma correção necessária.
+- **Painel/aviso de "Falar com a gente":** resolvido — decisão tomada com o
+  usuário: aviso dentro do próprio app (reaproveita o sistema de avisos da
+  tela 12), não e-mail (a credencial real do Azure Communication Services pra
+  produção ainda não está configurada — ver nota da tela 11 — então um aviso
+  por e-mail não chegaria de verdade ainda); painel só de leitura, sem marcar
+  como resolvido por enquanto.
+  - `GET /feedback` (ADMIN, paginado, mais recente primeiro) — novo painel
+    `/admin/feedback` (`FeedbackQueueView.vue`, link em `AdminLayout.vue`).
+  - Tipo de aviso novo `NEW_FEEDBACK_RECEIVED` (migration `V36`, sem
+    preferência de usuário — ao contrário dos outros 5 avisos da tela 12, este
+    fica sempre ligado e só existe pra quem tem role ADMIN)
+    (`FeedbackService.notifyAdmins`), exibido em `NotificationsView.vue` como
+    qualquer outro aviso e levando pra `/admin/feedback`.
+- **Client gerado (orval) — a causa raiz era outra:** o regenerado desta
+  sessão (`npm run api:generate`) não mudava nada porque `orval.config.ts`
+  lê de um arquivo estático (`frontend/openapi/openapi.json`), não do backend
+  ao vivo — faltava o passo manual de antes buscar `GET /v3/api-docs` do
+  backend rodando e sobrescrever esse arquivo. Feito agora (`curl
+  localhost:8082/v3/api-docs -o openapi/openapi.json && npm run
+  api:generate`), o client finalmente pegou tudo que estava pendente: `GET
+  /auth/info` com `defaultPublicationVisibility`, `scope`/`sort` do feed,
+  `coverImageUrls`, os endpoints de convite de coleção, `bio` e
+  `defaultPublicationVisibility` de `UpdateUserRequest`, os dois endpoints de
+  recuperação de senha, os campos novos de avisos/preferências de aviso, e
+  os endpoints de Ajuda (`GET /documents/{slug}`, `POST`/`GET /feedback`).
+  `npm run api:check` confirma consistência agora.
+  Só `features/feedback/feedback.ts` foi migrado pros hooks gerados nesta
+  sessão (arquivo removido, `FeedbackView.vue`/`FeedbackQueueView.vue` usam
+  `@/api/generated/feedback/feedback` direto). Os demais hand-rolled
+  continuam como estavam — `useAccountInfo.ts`, `feed.queries.ts`,
+  `CollectionCard.vue`, `CollectionDetailsView.vue`, `ProfileView.vue`,
+  `EditProfileView.vue`, `SettingsAccountPane.vue`, `CreatePublicationView.vue`,
   `ForgotPasswordView.vue`, `features/notifications/notifications.ts`,
-  `features/settings/notificationPreferences.ts`,
-  `features/documents/documents.ts`, `features/feedback/feedback.ts` e
-  `NotificationsView.vue` tratam esses campos/rotas com tipos estendidos ou
-  chamadas diretas na mão.
-  Trocar pelos hooks/tipos gerados quando der. De quebra, o mock MSW de
-  `GET /users/:id/notifications` (`mocks/handlers/discovery.ts`) ficou ainda
-  mais desatualizado — já usava tipos (`PUBLICATION_APPROVED`,
-  `PUBLICATION_REPORTED`) que nem existem no `CHECK` do banco; não foi
-  corrigido agora porque exigiria também mockar os endpoints novos de
-  apagar/limpar/marcar lido, fora do escopo desta tela.
+  `features/settings/notificationPreferences.ts` e
+  `features/documents/documents.ts` — os tipos deles já batem com o gerado
+  (só não foram trocados pelos hooks), então não é mais uma pendência de
+  correção, só de limpeza. Trocar quando der.
+  De quebra, corrigidos pra tipar contra o client real: `mocks/handlers/collections.ts`
+  e `mocks/handlers/discovery.ts` (faltava `coverImageUrls`/`bio` nas
+  respostas mockadas) e os fixtures de `collection-details.spec.ts`,
+  `profile.spec.ts`, `saved.spec.ts`. O mock MSW de
+  `GET /users/:id/notifications` (`mocks/handlers/discovery.ts`) continua
+  desatualizado — já usava tipos (`PUBLICATION_APPROVED`,
+  `PUBLICATION_REPORTED`) que nem existem no `CHECK` do banco; não corrigido
+  porque exigiria também mockar os endpoints novos de apagar/limpar/marcar
+  lido, fora do escopo desta tela.

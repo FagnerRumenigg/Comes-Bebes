@@ -7,7 +7,10 @@
  */
 import type { UpdateUserRequestUsername } from './updateUserRequestUsername';
 import type { UpdateUserRequestDisplayName } from './updateUserRequestDisplayName';
+import type { UpdateUserRequestBio } from './updateUserRequestBio';
 import type { UpdateUserRequestEmail } from './updateUserRequestEmail';
+import type { UpdateUserRequestDefaultPublicationVisibility } from './updateUserRequestDefaultPublicationVisibility';
+import type { UpdateUserRequestAvatarKey } from './updateUserRequestAvatarKey';
 
 /**
  * Campos opcionais para atualizar o perfil do usuário.
@@ -26,9 +29,25 @@ export interface UpdateUserRequest {
    */
   displayName?: UpdateUserRequestDisplayName;
   /**
+   * Nova descrição do perfil. String vazia limpa a descrição.
+   * @minLength 0
+   * @maxLength 280
+   */
+  bio?: UpdateUserRequestBio;
+  /**
    * Define o e-mail da conta. Contas antigas sem e-mail (produto5.md v5 §5.1) usam este campo para migrar — depois de definido, o login passa a exigir e-mail.
    * @minLength 0
    * @maxLength 254
    */
   email?: UpdateUserRequestEmail;
+  /**
+   * Nova visibilidade padrão para as próximas publicações (docs/telas/09-configuracoes.html). Vale só dali pra frente — publicações já existentes não mudam.
+   * @pattern PUBLIC|INTERNAL|PRIVATE
+   */
+  defaultPublicationVisibility?: UpdateUserRequestDefaultPublicationVisibility;
+  /**
+   * Avatar de cozinha escolhido pra substituir a inicial do nome. String vazia volta a mostrar a inicial.
+   * @pattern |PANELA|COLHER_DE_PAU|XICARA|BOLO|PAO|TOMATE|MILHO|LIMAO|TALHERES|PIMENTA|OVO|ABACAXI
+   */
+  avatarKey?: UpdateUserRequestAvatarKey;
 }

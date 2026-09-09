@@ -5,19 +5,38 @@
  * API RESTful da rede social de comida ComeSebebes.
  * OpenAPI spec version: v1
  */
+import type { NotificationResponseCollectionId } from './notificationResponseCollectionId';
 import type { NotificationResponseActorId } from './notificationResponseActorId';
+import type { NotificationResponseActorDisplayName } from './notificationResponseActorDisplayName';
+import type { NotificationResponseActorAvatarKey } from './notificationResponseActorAvatarKey';
+import type { NotificationResponsePublicationTitle } from './notificationResponsePublicationTitle';
+import type { NotificationResponsePublicationImageUrl } from './notificationResponsePublicationImageUrl';
+import type { NotificationResponseCollectionName } from './notificationResponseCollectionName';
 import type { NotificationResponseReadAt } from './notificationResponseReadAt';
 
 /**
- * Notificação privada do usuário.
+ * Notificação privada do usuário (docs/telas/12-avisos.html).
  */
 export interface NotificationResponse {
   id: string;
   type: string;
   moderationCaseId: string;
   publicationId: string;
+  /** Coleção relacionada; preenchido para avisos de coleção. */
+  collectionId: NotificationResponseCollectionId;
   /** Usuário que originou a notificação (ex.: quem passou a seguir). Nulo quando não se aplica. */
   actorId: NotificationResponseActorId;
+  /** Nome de exibição de quem originou a notificação. */
+  actorDisplayName: NotificationResponseActorDisplayName;
+  /** Avatar de cozinha de quem originou a notificação. Nulo mostra a inicial do nome. */
+  actorAvatarKey: NotificationResponseActorAvatarKey;
+  /** Título da publicação relacionada, quando houver. */
+  publicationTitle: NotificationResponsePublicationTitle;
+  /** Imagem da publicação relacionada, quando houver. */
+  publicationImageUrl: NotificationResponsePublicationImageUrl;
+  /** Nome da coleção relacionada, quando houver. */
+  collectionName: NotificationResponseCollectionName;
+  createdAt: string;
   /** Momento da leitura; nulo enquanto não lida. */
   readAt: NotificationResponseReadAt;
 }

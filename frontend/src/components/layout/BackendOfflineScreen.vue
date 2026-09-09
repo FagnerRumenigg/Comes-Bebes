@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
-import { httpClient } from '@/api/client'
+import { baseURL } from '@/api/client'
+import WordGuessGame from '@/components/game/WordGuessGame.vue'
+import { markBackendOnline } from '@/composables/useBackendStatus'
 
 const POLL_INTERVAL_MS = 5_000
 const POLL_TIMEOUT_MS = 4_000
@@ -11,14 +13,14 @@ interface Stage {
   at: number
   msg: string
   sub: string
-  retry?: boolean
-  cancel?: boolean
   fail?: boolean
 }
 
 // Cada estágio só troca o texto — nada de barra de progresso falsa
 // (docs/telas/03-carregando.html). O backend real pode acordar de um
-// scale-to-zero do Azure Container Apps em até ~2 minutos.
+// scale-to-zero do Azure Container Apps em até ~2 minutos. Sem botão de
+// "tentar de novo": o polling automático (checkNow a cada 5s) já cobre
+// isso sozinho, um botão manual só duplicava a mesma ação.
 const STAGES: Stage[] = [
   {
     at: 0,
@@ -33,20 +35,23 @@ const STAGES: Stage[] = [
   {
     at: 25,
     msg: 'Está demorando mais que o normal',
-    sub: 'Você pode esperar mais um pouco ou tentar de novo.',
-    retry: true,
+    sub: 'Continuamos tentando sozinhos a cada poucos segundos.',
   },
   {
     at: 90,
     msg: 'Está demorando bem mais que o normal',
-    sub: 'Pode ser a nossa conexão ou a sua. Continue tentando de novo em instantes.',
-    retry: true,
+    sub: 'Pode ser a nossa conexão ou a sua. Continuamos tentando em segundo plano.',
     fail: true,
   },
 ]
 
 const checking = ref(false)
 const elapsedSeconds = ref(0)
+const showGame = ref(false)
+// O backend já respondeu, mas só troca de tela quando a pessoa clicar em
+// "seguir" — evita arrancar alguém no meio de uma partida do joguinho assim
+// que o servidor acorda.
+const ready = ref(false)
 let pollHandle: ReturnType<typeof setInterval> | undefined
 let elapsedHandle: ReturnType<typeof setInterval> | undefined
 const startedAt = Date.now()
@@ -60,17 +65,31 @@ const stage = computed(() => {
 })
 
 async function checkNow(): Promise<void> {
-  if (checking.value) return
+  if (checking.value || ready.value) return
   checking.value = true
   try {
-    // Sucesso aqui já marca o backend como online via interceptor do
-    // httpClient (markBackendOnline) - a tela some sozinha, sem reload.
-    await httpClient.get('/actuator/health/liveness', { timeout: POLL_TIMEOUT_MS })
+    // fetch direto, sem passar pelo httpClient - o interceptor dele marcaria
+    // o backend como online na hora (markBackendOnline), trocando de tela
+    // sozinho em vez de esperar o clique em "seguir".
+    const controller = new AbortController()
+    const timeoutHandle = setTimeout(() => controller.abort(), POLL_TIMEOUT_MS)
+    const response = await fetch(`${baseURL}/actuator/health/liveness`, {
+      signal: controller.signal,
+    })
+    clearTimeout(timeoutHandle)
+    if (response.ok) {
+      ready.value = true
+      if (pollHandle) clearInterval(pollHandle)
+    }
   } catch {
     // Ainda fora do ar - só segue tentando no próximo intervalo.
   } finally {
     checking.value = false
   }
+}
+
+function continueNow(): void {
+  markBackendOnline()
 }
 
 onMounted(() => {
@@ -91,7 +110,7 @@ onUnmounted(() => {
     <div class="backend-offline__card" :class="{ 'backend-offline__card--fail': stage.fail }">
       <svg
         class="backend-offline__pot"
-        :class="{ 'backend-offline__pot--running': !stage.fail }"
+        :class="{ 'backend-offline__pot--running': !stage.fail && !ready }"
         viewBox="0 0 140 200"
         role="img"
         aria-label="Cafeteira preparando café"
@@ -124,15 +143,30 @@ onUnmounted(() => {
         </g>
       </svg>
 
-      <h1 id="backend-offline-title">{{ stage.msg }}</h1>
-      <p aria-live="polite">{{ stage.sub }}</p>
+      <h1 id="backend-offline-title">{{ ready ? 'Tudo pronto!' : stage.msg }}</h1>
+      <p aria-live="polite">
+        {{ ready ? 'O servidor já está de pé. Pode continuar de onde parou.' : stage.sub }}
+      </p>
       <p class="backend-offline__elapsed">{{ elapsedSeconds }}s</p>
 
-      <div v-if="stage.retry" class="backend-offline__actions">
-        <button type="button" class="backend-offline__retry" @click="checkNow">
-          Tentar de novo
+      <div v-if="ready" class="backend-offline__actions">
+        <button type="button" class="backend-offline__retry" @click="continueNow">
+          Tudo pronto, seguir
         </button>
       </div>
+
+      <button
+        v-if="!showGame && !ready"
+        type="button"
+        class="backend-offline__game-toggle"
+        @click="showGame = true"
+      >
+        Enquanto isso, quer jogar?
+      </button>
+    </div>
+
+    <div v-if="showGame" class="backend-offline__game">
+      <WordGuessGame />
     </div>
   </section>
 </template>
@@ -295,5 +329,33 @@ p {
 
 .backend-offline__retry:hover {
   filter: brightness(1.08);
+}
+
+.backend-offline__game-toggle {
+  display: block;
+  width: 100%;
+  min-height: var(--control-min-size);
+  margin-top: var(--space-5);
+  color: var(--color-primary);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.backend-offline__game-toggle:hover {
+  text-decoration: underline;
+}
+
+.backend-offline__game {
+  width: min(100%, 27.5rem);
+  padding: var(--space-6) var(--space-5);
+  margin-top: var(--space-5);
+  background: var(--color-background);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
 }
 </style>

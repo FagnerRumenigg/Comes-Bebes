@@ -6,7 +6,10 @@ export interface IngredientDraft {
   note: string
 }
 
-const props = defineProps<{ modelValue: IngredientDraft[]; error?: string }>()
+const props = withDefaults(
+  defineProps<{ modelValue: IngredientDraft[]; error?: string; hint?: string }>(),
+  { error: undefined, hint: 'Inclua pelo menos um ingrediente e ordene como aparece na receita.' },
+)
 const emit = defineEmits<{ 'update:modelValue': [value: IngredientDraft[]] }>()
 
 function update(index: number, field: keyof IngredientDraft, value: string): void {
@@ -40,9 +43,7 @@ function move(index: number, direction: -1 | 1): void {
 <template>
   <fieldset class="ingredient-editor">
     <legend>Ingredientes</legend>
-    <p class="ingredient-editor__hint">
-      Inclua pelo menos um ingrediente e ordene como aparece na receita.
-    </p>
+    <p class="ingredient-editor__hint">{{ hint }}</p>
     <div v-for="(ingredient, index) in modelValue" :key="index" class="ingredient-editor__row">
       <label>
         <span>Ingrediente {{ index + 1 }}</span>

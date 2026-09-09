@@ -7,9 +7,21 @@
  */
 
 /**
- * Preferências de notificação da conta autenticada.
+ * Preferências de aviso da conta autenticada (docs/telas/09-configuracoes.html, seção "Avisos").
  */
 export interface NotificationPreferencesResponse {
-  /** Notificar quando alguém que você segue publicar. */
+  /** Quando alguém que você segue publica. */
   notifyOnFollowedPublish: boolean;
+  /** Quando alguém guarda uma publicação sua. */
+  notifyOnSaved: boolean;
+  /** Quando alguém reage a uma publicação sua. */
+  notifyOnReacted: boolean;
+  /** Quando alguém faz a própria versão de uma receita sua. */
+  notifyOnMyVersion: boolean;
+  /** Quando entra coisa nova numa coleção que você segue. */
+  notifyOnCollectionNewItem: boolean;
+  /** Quando alguém compartilha uma coleção com você. */
+  notifyOnCollectionShared: boolean;
+  /** Receber um resumo semanal por e-mail. */
+  notifyWeeklyEmail: boolean;
 }

@@ -12,7 +12,9 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import BaseTextarea from '@/components/base/BaseTextarea.vue'
 import BaseToast from '@/components/base/BaseToast.vue'
+import KitchenAvatarIcon from '@/components/base/KitchenAvatarIcon.vue'
 import AppIcon from '@/components/icons/AppIcon.vue'
+import { KITCHEN_AVATARS } from '@/components/icons/kitchen-avatar-paths'
 import { useAuthStore } from '@/stores/auth.store'
 
 // bio ainda não passou pelo orval (mesma situação de outros campos novos
@@ -27,7 +29,8 @@ const authStore = useAuthStore()
 const ownUsername = computed(() => authStore.identity?.username ?? '')
 const profileQuery = useFindByUsername(ownUsername)
 
-const form = reactive({ displayName: '', username: '', bio: '' })
+const form = reactive({ displayName: '', username: '', bio: '', avatarKey: '' })
+const initial = computed(() => (form.displayName.trim().charAt(0).toUpperCase() || '?'))
 const initialUsername = ref('')
 const fieldErrors = reactive<Record<string, string>>({})
 const generalError = ref<string | null>(null)
@@ -39,6 +42,7 @@ watch(
     form.displayName = profile.displayName
     form.username = profile.username
     form.bio = profile.bio ?? ''
+    form.avatarKey = profile.avatarKey ?? ''
     initialUsername.value = profile.username
   },
   { immediate: true },
@@ -82,6 +86,7 @@ function submit(): void {
     displayName: form.displayName.trim(),
     username: form.username.trim(),
     bio: form.bio.trim(),
+    avatarKey: form.avatarKey,
   }
   updateMutation.mutate({ id: authStore.identity.userId, data })
 }
@@ -104,14 +109,42 @@ function submit(): void {
     </div>
     <template v-else>
       <div class="edit-profile-view__avatar-row">
-        <BaseAvatar :name="form.displayName || '?'" size="medium" />
+        <BaseAvatar :name="form.displayName || '?'" :avatar-key="form.avatarKey" size="medium" />
         <div>
           <p class="edit-profile-view__avatar-title">Sua imagem</p>
-          <p class="edit-profile-view__avatar-hint">
-            Por enquanto é a inicial do seu nome. Em breve dá para escolher um desenho.
-          </p>
+          <p class="edit-profile-view__avatar-hint">Escolha um desenho de cozinha, ou deixe a inicial do seu nome.</p>
         </div>
       </div>
+
+      <fieldset class="edit-profile-view__avatar-picker">
+        <legend class="edit-profile-view__avatar-picker-legend">Escolher desenho</legend>
+        <div class="edit-profile-view__avatar-options">
+          <button
+            type="button"
+            class="edit-profile-view__avatar-option"
+            :class="{ 'edit-profile-view__avatar-option--active': !form.avatarKey }"
+            :aria-pressed="!form.avatarKey"
+            :disabled="updateMutation.isPending.value"
+            @click="form.avatarKey = ''"
+          >
+            <span class="edit-profile-view__avatar-option-initial">{{ initial }}</span>
+            <span>Inicial</span>
+          </button>
+          <button
+            v-for="option in KITCHEN_AVATARS"
+            :key="option.key"
+            type="button"
+            class="edit-profile-view__avatar-option"
+            :class="{ 'edit-profile-view__avatar-option--active': form.avatarKey === option.key }"
+            :aria-pressed="form.avatarKey === option.key"
+            :disabled="updateMutation.isPending.value"
+            @click="form.avatarKey = option.key"
+          >
+            <KitchenAvatarIcon :avatar-key="option.key" class="edit-profile-view__avatar-option-icon" />
+            <span>{{ option.label }}</span>
+          </button>
+        </div>
+      </fieldset>
 
       <BaseToast
         v-if="generalError"
@@ -153,15 +186,20 @@ function submit(): void {
           >, os links antigos param de funcionar. Guardamos <strong>@{{ initialUsername }}</strong>
           por 30 dias, para ninguém usar no seu lugar.
         </p>
-        <BaseTextarea
-          id="edit-profile-bio"
-          v-model="form.bio"
-          label="Descrição"
-          hint="Um pouco sobre você — aparece no seu perfil."
-          maxlength="280"
-          :rows="3"
-          :disabled="updateMutation.isPending.value"
-        />
+        <div class="edit-profile-view__bio-field">
+          <BaseTextarea
+            id="edit-profile-bio"
+            v-model="form.bio"
+            label="Escreva alguma coisa sobre você"
+            maxlength="280"
+            :rows="3"
+            :disabled="updateMutation.isPending.value"
+          />
+          <p class="edit-profile-view__bio-count">{{ form.bio.length }} de 280</p>
+          <p class="edit-profile-view__bio-hint">
+            Aparece no seu perfil, embaixo do nome. Pode deixar em branco.
+          </p>
+        </div>
 
         <div class="edit-profile-view__actions">
           <BaseButton variant="ghost" type="button" @click="router.push(`/u/${ownUsername}`)">
@@ -228,9 +266,86 @@ function submit(): void {
   font-size: var(--font-size-sm);
 }
 
+.edit-profile-view__avatar-picker {
+  display: grid;
+  gap: var(--space-3);
+  padding: 0;
+  border: 0;
+}
+
+.edit-profile-view__avatar-picker-legend {
+  padding: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.edit-profile-view__avatar-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.25rem, 1fr));
+  gap: var(--space-2);
+}
+
+.edit-profile-view__avatar-option {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-2);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  text-align: center;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.edit-profile-view__avatar-option:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.edit-profile-view__avatar-option--active {
+  border-color: var(--color-primary);
+  border-width: 2px;
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+}
+
+.edit-profile-view__avatar-option-initial,
+.edit-profile-view__avatar-option-icon {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  place-items: center;
+  color: var(--color-primary-contrast);
+  font-family: var(--font-editorial);
+  font-size: var(--font-size-lg);
+  background: var(--color-secondary);
+  border-radius: var(--radius-pill);
+}
+
 .edit-profile-view__form {
   display: grid;
   gap: var(--space-5);
+}
+
+.edit-profile-view__bio-field {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.edit-profile-view__bio-count {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  text-align: right;
+}
+
+.edit-profile-view__bio-hint {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
 }
 
 .edit-profile-view__username-warning {

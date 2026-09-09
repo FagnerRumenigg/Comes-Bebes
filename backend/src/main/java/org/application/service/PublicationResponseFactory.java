@@ -89,6 +89,7 @@ public class PublicationResponseFactory {
                 .imageUrl("/images/" + publication.getGcsObjectName())
                 .authorUsername(author.map(org.application.model.User::getUsername).orElse(null))
                 .authorDisplayName(author.map(org.application.model.User::getDisplayName).orElse(null))
+                .authorAvatarKey(author.map(org.application.model.User::getAvatarKey).orElse(null))
                 .usedReactions(usedReactions)
                 .selectedReactions(selected)
                 .saved(viewerId != null && savedPublicationRepository.existsByUserIdAndPublicationIdAndDeletedAtIsNull(viewerId, publication.getId()))

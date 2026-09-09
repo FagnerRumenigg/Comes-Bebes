@@ -54,6 +54,7 @@ public class NotificationResponseFactory {
                     .collectionId(item.getCollectionId())
                     .actorId(item.getActorId())
                     .actorDisplayName(actor == null ? null : actor.getDisplayName())
+                    .actorAvatarKey(actor == null ? null : actor.getAvatarKey())
                     .publicationTitle(publication == null ? null : publication.getTitle())
                     .publicationImageUrl(publication == null ? null : "/images/" + publication.getGcsObjectName())
                     .collectionName(collection == null ? null : collection.getName())

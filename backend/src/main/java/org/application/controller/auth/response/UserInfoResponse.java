@@ -9,9 +9,11 @@ public record UserInfoResponse(
         @Schema(description = "Nome exibido no perfil.", example = "Fagner")
         String displayName,
         @Schema(description = "Visibilidade padrão para novas publicações (docs/telas/09-configuracoes.html). Preferência privada — não faz parte do UserResponse público.", example = "PUBLIC")
-        PublicationVisibility defaultPublicationVisibility
+        PublicationVisibility defaultPublicationVisibility,
+        @Schema(description = "Avatar de cozinha escolhido. Nulo mostra a inicial do nome — também disponível em UserResponse, repetido aqui pro menu da conta não precisar buscar o perfil público.", nullable = true, example = "PANELA")
+        String avatarKey
 ) {
     public static UserInfoResponse of(User user) {
-        return new UserInfoResponse(user.getDisplayName(), user.getDefaultPublicationVisibility());
+        return new UserInfoResponse(user.getDisplayName(), user.getDefaultPublicationVisibility(), user.getAvatarKey());
     }
 }

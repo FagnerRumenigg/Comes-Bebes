@@ -10,6 +10,7 @@ import type { PublicationResponseVisibility } from './publicationResponseVisibil
 import type { PublicationResponseTitle } from './publicationResponseTitle';
 import type { PublicationResponseDescription } from './publicationResponseDescription';
 import type { PublicationResponseStatus } from './publicationResponseStatus';
+import type { PublicationResponseAuthorAvatarKey } from './publicationResponseAuthorAvatarKey';
 import type { PublicationResponseUsedReactionsItem } from './publicationResponseUsedReactionsItem';
 import type { PublicationResponseSelectedReactionsItem } from './publicationResponseSelectedReactionsItem';
 import type { PublicationResponseOriginalPublicationId } from './publicationResponseOriginalPublicationId';
@@ -40,6 +41,8 @@ export interface PublicationResponse {
   imageUrl: string;
   authorUsername: string;
   authorDisplayName: string;
+  /** Avatar de cozinha escolhido pelo autor. Nulo mostra a inicial do nome. */
+  authorAvatarKey: PublicationResponseAuthorAvatarKey;
   /** Tipos de reação com pelo menos um uso, na ordem canônica. Sem contagem: nenhum contador público em lugar nenhum do produto (produto5.md v5 §3.1, impl10.md v10 §15.4). */
   usedReactions: PublicationResponseUsedReactionsItem[];
   selectedReactions: PublicationResponseSelectedReactionsItem[];

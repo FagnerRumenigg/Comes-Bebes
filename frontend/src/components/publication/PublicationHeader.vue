@@ -13,6 +13,7 @@ const props = defineProps<{
   authorId: string
   authorDisplayName: string
   authorUsername: string
+  authorAvatarKey?: string | null
   publishedAt: string
   photoTakenAt?: string | null
   visibility: PublicationResponseVisibility
@@ -44,7 +45,7 @@ const photoTakenAtLabel = computed(() =>
 <template>
   <header class="publication-header">
     <RouterLink class="publication-header__avatar" :to="`/u/${authorUsername}`" tabindex="-1" aria-hidden="true">
-      <BaseAvatar :name="authorDisplayName" size="small" />
+      <BaseAvatar :name="authorDisplayName" :avatar-key="authorAvatarKey" size="small" />
     </RouterLink>
     <div class="publication-header__identity">
       <span class="publication-header__name-row">

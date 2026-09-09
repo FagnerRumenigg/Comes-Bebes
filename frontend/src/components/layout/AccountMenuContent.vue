@@ -14,7 +14,7 @@ const emit = defineEmits<{
 const router = useRouter()
 const authStore = useAuthStore()
 const { resolvedTheme, setTheme } = useTheme()
-const { displayName } = useAccountInfo()
+const { displayName, avatarKey } = useAccountInfo()
 
 async function goToProfile(): Promise<void> {
   emit('close')
@@ -31,6 +31,11 @@ async function goToHelp(): Promise<void> {
   await router.push('/configuracoes/ajuda')
 }
 
+async function goToAdmin(): Promise<void> {
+  emit('close')
+  await router.push('/admin/moderacao')
+}
+
 async function logout(): Promise<void> {
   emit('close')
   await authStore.logout()
@@ -41,7 +46,11 @@ async function logout(): Promise<void> {
 <template>
   <div class="account-menu-content">
     <div class="account-menu-content__head">
-      <BaseAvatar :name="displayName ?? authStore.identity?.username ?? '?'" size="small" />
+      <BaseAvatar
+        :name="displayName ?? authStore.identity?.username ?? '?'"
+        :avatar-key="avatarKey"
+        size="small"
+      />
       <div>
         <b>{{ displayName ?? `@${authStore.identity?.username}` }}</b>
         <span v-if="displayName" class="account-menu-content__username"
@@ -63,6 +72,16 @@ async function logout(): Promise<void> {
     <button class="account-menu-content__item" type="button" @click="goToHelp">
       <AppIcon name="help" :size="20" :stroke-width="1.8" />
       Ajuda
+    </button>
+
+    <button
+      v-if="authStore.isAdmin"
+      class="account-menu-content__item"
+      type="button"
+      @click="goToAdmin"
+    >
+      <AppIcon name="lock" :size="20" :stroke-width="1.8" />
+      Administração
     </button>
 
     <div class="account-menu-content__theme">

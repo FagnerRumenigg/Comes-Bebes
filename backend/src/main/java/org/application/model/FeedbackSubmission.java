@@ -13,8 +13,9 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
- * "Falar com a gente" (docs/telas/09-configuracoes.html) — só armazenada,
- * sem tela de leitura/admin por enquanto.
+ * "Falar com a gente" (docs/telas/09-configuracoes.html) — lida pelo painel
+ * administrativo (GET /feedback, ADMIN); quem administra recebe um aviso
+ * (NEW_FEEDBACK_RECEIVED) a cada mensagem nova.
  */
 @Getter
 @Builder

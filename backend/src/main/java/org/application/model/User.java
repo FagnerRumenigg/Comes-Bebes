@@ -44,6 +44,9 @@ public class User {
     @Column(length = 280)
     private String bio;
 
+    @Column(name = "avatar_key", length = 30)
+    private String avatarKey;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "default_publication_visibility", nullable = false, length = 10)
     @Builder.Default
@@ -135,6 +138,10 @@ public class User {
 
     public void updateBio(String bio) {
         this.bio = bio;
+    }
+
+    public void updateAvatarKey(String avatarKey) {
+        this.avatarKey = avatarKey;
     }
 
     public void updateDefaultPublicationVisibility(PublicationVisibility visibility) {

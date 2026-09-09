@@ -19,6 +19,8 @@ public record UserResponse(
         String displayName,
         @Schema(description = "Descrição livre do perfil.", nullable = true, example = "Cozinho mais no fim de semana.")
         String bio,
+        @Schema(description = "Avatar de cozinha escolhido. Nulo mostra a inicial do nome.", nullable = true, example = "PANELA")
+        String avatarKey,
         @Schema(description = "Papel de acesso da conta.", example = "USER")
         UserRole role,
         @Schema(description = "Estado atual da conta.", example = "ACTIVE")
@@ -38,6 +40,7 @@ public record UserResponse(
                 .username(user.getUsername())
                 .displayName(user.getDisplayName())
                 .bio(user.getBio())
+                .avatarKey(user.getAvatarKey())
                 .role(user.getRole())
                 .status(user.getStatus())
                 .onboardingCompleted(user.isOnboardingCompleted())

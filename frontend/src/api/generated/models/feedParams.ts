@@ -6,12 +6,22 @@
  * OpenAPI spec version: v1
  */
 import type { FeedTypesItem } from './feedTypesItem';
+import type { FeedScope } from './feedScope';
+import type { FeedSort } from './feedSort';
 
 export type FeedParams = {
 /**
  * Filtra por um ou mais tipos de publicação. Sem valor, retorna todos (Mix).
  */
 types?: FeedTypesItem[];
+/**
+ * De quem: todo mundo, quem o viewer segue, ou publicações em coleções que o viewer segue. Padrão EVERYONE.
+ */
+scope?: FeedScope;
+/**
+ * Ordenar por: mais recentes (padrão, autenticado vê não-vistas primeiro) ou mais antigas (cronológico puro).
+ */
+sort?: FeedSort;
 /**
  * Número da página, iniciando em 1.
  * @minimum 1

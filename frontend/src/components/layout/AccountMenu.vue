@@ -8,7 +8,7 @@ import { useAuthStore } from '@/stores/auth.store'
 
 import AccountMenuContent from './AccountMenuContent.vue'
 
-const { displayName } = useAccountInfo()
+const { displayName, avatarKey } = useAccountInfo()
 
 // Mesmo ponto de corte de MobileNavigation.vue/AppHeader.vue (48rem) — decide
 // se abre o dropdown (web) ou a folha (mobile). Renderizar só uma variante por
@@ -82,7 +82,11 @@ onBeforeUnmount(() => {
       :aria-expanded="open"
       @click="toggle"
     >
-      <BaseAvatar :name="displayName ?? authStore.identity?.username ?? '?'" size="small" />
+      <BaseAvatar
+        :name="displayName ?? authStore.identity?.username ?? '?'"
+        :avatar-key="avatarKey"
+        size="small"
+      />
       <span>{{ displayName ?? `@${authStore.identity?.username}` }}</span>
       <AppIcon name="chevron-down" :size="16" :stroke-width="2.2" class="account-menu__chevron" />
     </button>
@@ -95,7 +99,11 @@ onBeforeUnmount(() => {
       :aria-expanded="open"
       @click="toggle"
     >
-      <BaseAvatar :name="displayName ?? authStore.identity?.username ?? '?'" size="small" />
+      <BaseAvatar
+        :name="displayName ?? authStore.identity?.username ?? '?'"
+        :avatar-key="avatarKey"
+        size="small"
+      />
     </button>
 
     <div v-if="open && !isMobile" class="account-menu__panel">

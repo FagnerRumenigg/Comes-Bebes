@@ -469,7 +469,7 @@ async function removeInvitee(userId: string): Promise<void> {
                 :key="invitee.id"
                 class="collection-details-view__invitee"
               >
-                <BaseAvatar :name="invitee.displayName" size="small" />
+                <BaseAvatar :name="invitee.displayName" :avatar-key="invitee.avatarKey" size="small" />
                 <span>{{ invitee.displayName }}</span>
                 <button
                   type="button"

@@ -28,6 +28,8 @@ const targetProfile: UserResponse = {
   role: 'USER',
   status: 'ACTIVE',
   onboardingCompleted: true,
+  bio: null,
+  avatarKey: null,
   followedByCurrentUser: false,
 }
 

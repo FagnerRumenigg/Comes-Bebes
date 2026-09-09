@@ -5,6 +5,8 @@
  * API RESTful da rede social de comida ComeSebebes.
  * OpenAPI spec version: v1
  */
+import type { UserResponseBio } from './userResponseBio';
+import type { UserResponseAvatarKey } from './userResponseAvatarKey';
 import type { UserResponseRole } from './userResponseRole';
 import type { UserResponseStatus } from './userResponseStatus';
 import type { UserResponseFollowedByCurrentUser } from './userResponseFollowedByCurrentUser';
@@ -19,6 +21,10 @@ export interface UserResponse {
   username: string;
   /** Nome exibido no perfil. */
   displayName: string;
+  /** Descrição livre do perfil. */
+  bio: UserResponseBio;
+  /** Avatar de cozinha escolhido. Nulo mostra a inicial do nome. */
+  avatarKey: UserResponseAvatarKey;
   /** Papel de acesso da conta. */
   role: UserResponseRole;
   /** Estado atual da conta. */

@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { nextTick, ref, useId, watch } from 'vue'
 
-const props = defineProps<{
-  modelValue: string
-  error?: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    modelValue: string
+    error?: string
+    hint?: string
+  }>(),
+  { error: undefined, hint: 'Escreva um passo por vez. Pressione Enter para criar o próximo.' },
+)
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 
 const groupId = `preparation-${useId()}`
@@ -61,9 +65,7 @@ watch(
 <template>
   <fieldset class="preparation-steps">
     <legend>Modo de preparo <span aria-hidden="true">*</span></legend>
-    <p class="preparation-steps__hint">
-      Escreva um passo por vez. Pressione Enter para criar o próximo.
-    </p>
+    <p class="preparation-steps__hint">{{ hint }}</p>
     <div v-for="(step, index) in steps" :key="index" class="preparation-steps__row">
       <label :for="`${groupId}-step-${index}`">Passo {{ index + 1 }}</label>
       <textarea

@@ -37,6 +37,8 @@ public record PublicationResponse(
         String imageUrl,
         String authorUsername,
         String authorDisplayName,
+        @Schema(description = "Avatar de cozinha escolhido pelo autor. Nulo mostra a inicial do nome.", nullable = true, example = "PANELA")
+        String authorAvatarKey,
         @Schema(description = "Tipos de reação com pelo menos um uso, na ordem canônica. Sem contagem: nenhum contador público em lugar nenhum do produto (produto5.md v5 §3.1, impl10.md v10 §15.4).")
         List<ReactionCode> usedReactions,
         List<ReactionCode> selectedReactions,

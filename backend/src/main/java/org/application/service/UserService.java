@@ -122,7 +122,8 @@ public class UserService {
         User user = findActive(id);
 
         if (request.username() == null && request.displayName() == null && request.email() == null
-                && request.bio() == null && request.defaultPublicationVisibility() == null) {
+                && request.bio() == null && request.defaultPublicationVisibility() == null
+                && request.avatarKey() == null) {
             throw new InvalidOperationException("Informe ao menos um campo para atualização.");
         }
 
@@ -158,6 +159,10 @@ public class UserService {
 
         if (request.defaultPublicationVisibility() != null) {
             user.updateDefaultPublicationVisibility(PublicationVisibility.valueOf(request.defaultPublicationVisibility()));
+        }
+
+        if (request.avatarKey() != null) {
+            user.updateAvatarKey(request.avatarKey().isBlank() ? null : request.avatarKey());
         }
 
         return userRepository.save(user);

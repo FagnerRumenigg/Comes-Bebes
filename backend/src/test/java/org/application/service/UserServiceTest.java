@@ -141,7 +141,7 @@ class UserServiceTest {
                 .username("fagner")
                 .displayName("Fagner")
                 .build());
-        UpdateUserRequest request = new UpdateUserRequest("fagner_cozinha", "Fagner da Cozinha", null, null, null);
+        UpdateUserRequest request = new UpdateUserRequest("fagner_cozinha", "Fagner da Cozinha", null, null, null, null);
 
         when(userRepository.findByIdAndStatus(id, UserStatus.ACTIVE)).thenReturn(Optional.of(user));
         when(userRepository.existsByUsernameIgnoreCase("fagner_cozinha")).thenReturn(false);
@@ -160,7 +160,7 @@ class UserServiceTest {
         UUID id = UUID.randomUUID();
         User user = User.of(org.application.dto.UserData.builder()
                 .passwordHash("hash").username("fagner").displayName("Fagner").build());
-        UpdateUserRequest request = new UpdateUserRequest("João Editado!!", null, null, null, null);
+        UpdateUserRequest request = new UpdateUserRequest("João Editado!!", null, null, null, null, null);
 
         when(userRepository.findByIdAndStatus(id, UserStatus.ACTIVE)).thenReturn(Optional.of(user));
         when(userRepository.existsByUsernameIgnoreCase("joao_editado")).thenReturn(false);
@@ -176,7 +176,7 @@ class UserServiceTest {
         UUID id = UUID.randomUUID();
         User user = User.of(org.application.dto.UserData.builder()
                 .passwordHash("hash").username("fagner").displayName("Fagner").build());
-        UpdateUserRequest request = new UpdateUserRequest("maria", null, null, null, null);
+        UpdateUserRequest request = new UpdateUserRequest("maria", null, null, null, null, null);
 
         when(userRepository.findByIdAndStatus(id, UserStatus.ACTIVE)).thenReturn(Optional.of(user));
         when(userRepository.existsByUsernameIgnoreCase("maria")).thenReturn(true);
@@ -193,7 +193,7 @@ class UserServiceTest {
         UUID id = UUID.randomUUID();
         User user = User.of(org.application.dto.UserData.builder()
                 .passwordHash("hash").username("fagner").displayName("Fagner").build());
-        UpdateUserRequest request = new UpdateUserRequest("admin", null, null, null, null);
+        UpdateUserRequest request = new UpdateUserRequest("admin", null, null, null, null, null);
 
         when(userRepository.findByIdAndStatus(id, UserStatus.ACTIVE)).thenReturn(Optional.of(user));
         when(userRepository.existsByUsernameIgnoreCase("admin2")).thenReturn(false);
@@ -210,7 +210,7 @@ class UserServiceTest {
         UUID id = UUID.randomUUID();
         User user = User.of(org.application.dto.UserData.builder()
                 .passwordHash("hash").username("fagner").displayName("Fagner").build());
-        UpdateUserRequest request = new UpdateUserRequest("maria", null, null, null, null);
+        UpdateUserRequest request = new UpdateUserRequest("maria", null, null, null, null, null);
 
         when(userRepository.findByIdAndStatus(id, UserStatus.ACTIVE)).thenReturn(Optional.of(user));
         when(userRepository.existsByUsernameIgnoreCase("maria")).thenReturn(false);
@@ -231,7 +231,7 @@ class UserServiceTest {
         UUID id = UUID.randomUUID();
         User user = User.of(org.application.dto.UserData.builder()
                 .passwordHash("hash").username("fagner").displayName("Fagner").build());
-        UpdateUserRequest request = new UpdateUserRequest("Fagner", null, null, null, null);
+        UpdateUserRequest request = new UpdateUserRequest("Fagner", null, null, null, null, null);
 
         when(userRepository.findByIdAndStatus(id, UserStatus.ACTIVE)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
@@ -255,7 +255,7 @@ class UserServiceTest {
 
         when(userRepository.findByIdAndStatus(id, UserStatus.ACTIVE)).thenReturn(Optional.of(user));
 
-        assertThatThrownBy(() -> userService.update(id, new UpdateUserRequest(null, null, null, null, null)))
+        assertThatThrownBy(() -> userService.update(id, new UpdateUserRequest(null, null, null, null, null, null)))
                 .isInstanceOf(InvalidOperationException.class);
     }
 
@@ -268,7 +268,7 @@ class UserServiceTest {
         UUID id = UUID.randomUUID();
         User user = User.of(org.application.dto.UserData.builder()
                 .passwordHash("hash").username("fagner").displayName("Fagner").build());
-        UpdateUserRequest request = new UpdateUserRequest(null, null, null, "fagner@exemplo.com.br", null);
+        UpdateUserRequest request = new UpdateUserRequest(null, null, null, "fagner@exemplo.com.br", null, null);
 
         when(userRepository.findByIdAndStatus(id, UserStatus.ACTIVE)).thenReturn(Optional.of(user));
         when(stringNormalizer.normalize("fagner@exemplo.com.br")).thenReturn("fagner@exemplo.com.br");
@@ -285,7 +285,7 @@ class UserServiceTest {
         UUID id = UUID.randomUUID();
         User user = User.of(org.application.dto.UserData.builder()
                 .passwordHash("hash").username("fagner").displayName("Fagner").build());
-        UpdateUserRequest request = new UpdateUserRequest(null, null, null, "maria@exemplo.com.br", null);
+        UpdateUserRequest request = new UpdateUserRequest(null, null, null, "maria@exemplo.com.br", null, null);
 
         when(userRepository.findByIdAndStatus(id, UserStatus.ACTIVE)).thenReturn(Optional.of(user));
         when(stringNormalizer.normalize("maria@exemplo.com.br")).thenReturn("maria@exemplo.com.br");

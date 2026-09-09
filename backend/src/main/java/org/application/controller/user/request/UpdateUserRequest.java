@@ -25,6 +25,10 @@ public record UpdateUserRequest(
         @Schema(description = "Nova visibilidade padrão para as próximas publicações "
                 + "(docs/telas/09-configuracoes.html). Vale só dali pra frente — publicações já "
                 + "existentes não mudam.", example = "PUBLIC", nullable = true)
-        @Pattern(regexp = "PUBLIC|INTERNAL|PRIVATE") String defaultPublicationVisibility
+        @Pattern(regexp = "PUBLIC|INTERNAL|PRIVATE") String defaultPublicationVisibility,
+        @Schema(description = "Avatar de cozinha escolhido pra substituir a inicial do nome. String "
+                + "vazia volta a mostrar a inicial.", example = "PANELA", nullable = true)
+        @Pattern(regexp = "|PANELA|COLHER_DE_PAU|XICARA|BOLO|PAO|TOMATE|MILHO|LIMAO|TALHERES|PIMENTA|OVO|ABACAXI")
+        String avatarKey
 ) {
 }

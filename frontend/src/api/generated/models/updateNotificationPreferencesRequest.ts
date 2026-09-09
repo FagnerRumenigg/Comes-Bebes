@@ -5,11 +5,30 @@
  * API RESTful da rede social de comida ComeSebebes.
  * OpenAPI spec version: v1
  */
+import type { UpdateNotificationPreferencesRequestNotifyOnFollowedPublish } from './updateNotificationPreferencesRequestNotifyOnFollowedPublish';
+import type { UpdateNotificationPreferencesRequestNotifyOnSaved } from './updateNotificationPreferencesRequestNotifyOnSaved';
+import type { UpdateNotificationPreferencesRequestNotifyOnReacted } from './updateNotificationPreferencesRequestNotifyOnReacted';
+import type { UpdateNotificationPreferencesRequestNotifyOnMyVersion } from './updateNotificationPreferencesRequestNotifyOnMyVersion';
+import type { UpdateNotificationPreferencesRequestNotifyOnCollectionNewItem } from './updateNotificationPreferencesRequestNotifyOnCollectionNewItem';
+import type { UpdateNotificationPreferencesRequestNotifyOnCollectionShared } from './updateNotificationPreferencesRequestNotifyOnCollectionShared';
+import type { UpdateNotificationPreferencesRequestNotifyWeeklyEmail } from './updateNotificationPreferencesRequestNotifyWeeklyEmail';
 
 /**
- * Preferências de notificação da conta autenticada.
+ * Preferências de aviso opcionais — campo nulo significa "não mexer" (docs/telas/09-configuracoes.html, seção "Avisos").
  */
 export interface UpdateNotificationPreferencesRequest {
-  /** Notificar quando alguém que você segue publicar. */
-  notifyOnFollowedPublish?: boolean;
+  /** Quando alguém que você segue publica. */
+  notifyOnFollowedPublish?: UpdateNotificationPreferencesRequestNotifyOnFollowedPublish;
+  /** Quando alguém guarda uma publicação sua. */
+  notifyOnSaved?: UpdateNotificationPreferencesRequestNotifyOnSaved;
+  /** Quando alguém reage a uma publicação sua. */
+  notifyOnReacted?: UpdateNotificationPreferencesRequestNotifyOnReacted;
+  /** Quando alguém faz a própria versão de uma receita sua. */
+  notifyOnMyVersion?: UpdateNotificationPreferencesRequestNotifyOnMyVersion;
+  /** Quando entra coisa nova numa coleção que você segue. */
+  notifyOnCollectionNewItem?: UpdateNotificationPreferencesRequestNotifyOnCollectionNewItem;
+  /** Quando alguém compartilha uma coleção com você. */
+  notifyOnCollectionShared?: UpdateNotificationPreferencesRequestNotifyOnCollectionShared;
+  /** Receber um resumo semanal por e-mail. */
+  notifyWeeklyEmail?: UpdateNotificationPreferencesRequestNotifyWeeklyEmail;
 }

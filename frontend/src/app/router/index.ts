@@ -28,6 +28,7 @@ import DocumentView from '@/views/DocumentView.vue'
 import FeedbackView from '@/views/FeedbackView.vue'
 import ModerationQueueView from '@/views/ModerationQueueView.vue'
 import ModerationCaseView from '@/views/ModerationCaseView.vue'
+import FeedbackQueueView from '@/views/FeedbackQueueView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
 
 import { routeAccessGuard } from './guards'
@@ -222,6 +223,12 @@ export const routes: RouteRecordRaw[] = [
         name: 'moderation-case',
         component: ModerationCaseView,
         meta: { access: 'admin', pageTitle: 'Análise de moderação' },
+      },
+      {
+        path: 'feedback',
+        name: 'admin-feedback',
+        component: FeedbackQueueView,
+        meta: { access: 'admin', pageTitle: 'Falar com a gente' },
       },
     ],
   },

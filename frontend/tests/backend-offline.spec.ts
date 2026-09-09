@@ -82,17 +82,18 @@ describe('detecção de backend indisponível', () => {
       },
     })
 
-    // Estágio inicial (0-10s): só a mensagem, sem botão de retry ainda —
-    // é intencional (docs/telas/03-carregando.html), espera curta não
-    // merece oferecer saída.
+    // Estágio inicial (0-10s): só a mensagem, sem botão de "tentar de novo"
+    // ainda — é intencional (docs/telas/03-carregando.html), espera curta
+    // não merece oferecer essa saída. O convite pro joguinho pode aparecer
+    // desde já: não é uma saída/escape, só uma distração opcional.
     expect(wrapper.text()).toContain('Preparando tudo para você')
     expect(wrapper.text()).not.toContain('Feed')
-    expect(wrapper.find('button').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Tentar de novo')
 
     wrapper.unmount()
   })
 
-  it('a tela de fallback some sozinha quando o health check volta a responder', async () => {
+  it('a tela de fallback espera o clique em "seguir" mesmo depois do health check voltar a responder', async () => {
     vi.useFakeTimers()
     const router = createRouter({
       history: createMemoryHistory(),
@@ -112,9 +113,17 @@ describe('detecção de backend indisponível', () => {
       },
     })
 
-    // Sobe o polling automático (a cada 5s) até ele bater no health check
-    // já respondendo — some sozinha, sem precisar de clique manual.
+    // Sobe o polling automático (a cada 5s) até ele bater no health check já
+    // respondendo — não some sozinha (evita arrancar quem estiver no meio do
+    // joguinho), só troca o texto/botão pra "Tudo pronto, seguir".
     await vi.advanceTimersByTimeAsync(5_000)
+    await wrapper.vm.$nextTick()
+
+    expect(backendStatus.offline).toBe(true)
+    expect(wrapper.text()).toContain('Tudo pronto!')
+    expect(wrapper.text()).not.toContain('Feed')
+
+    await wrapper.get('button').trigger('click')
 
     expect(backendStatus.offline).toBe(false)
     await wrapper.vm.$nextTick()

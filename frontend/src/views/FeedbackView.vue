@@ -2,11 +2,11 @@
 import { ref } from 'vue'
 
 import { normalizeHttpError } from '@/api/errors'
+import { useSubmit } from '@/api/generated/feedback/feedback'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseFieldError from '@/components/base/BaseFieldError.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import BaseTextarea from '@/components/base/BaseTextarea.vue'
-import { useSubmitFeedback } from '@/features/feedback/feedback'
 
 const message = ref('')
 const contactEmail = ref('')
@@ -14,7 +14,7 @@ const messageError = ref('')
 const submitError = ref('')
 const sent = ref(false)
 
-const submitMutation = useSubmitFeedback()
+const submitMutation = useSubmit()
 
 function submit(): void {
   if (submitMutation.isPending.value) return
@@ -27,7 +27,7 @@ function submit(): void {
   }
 
   submitMutation.mutate(
-    { message: message.value.trim(), contactEmail: contactEmail.value.trim() || undefined },
+    { data: { message: message.value.trim(), contactEmail: contactEmail.value.trim() || undefined } },
     {
       onSuccess: () => {
         sent.value = true

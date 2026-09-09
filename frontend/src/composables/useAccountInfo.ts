@@ -14,6 +14,7 @@ import { useAuthStore } from '@/stores/auth.store'
 interface AuthInfoResponse {
   displayName: string
   defaultPublicationVisibility: 'PUBLIC' | 'INTERNAL' | 'PRIVATE'
+  avatarKey: string | null
 }
 
 export function getAccountInfoQueryKey(userId: string | null) {
@@ -34,5 +35,6 @@ export function useAccountInfo() {
   return {
     displayName: computed(() => query.data.value?.displayName),
     defaultPublicationVisibility: computed(() => query.data.value?.defaultPublicationVisibility),
+    avatarKey: computed(() => query.data.value?.avatarKey ?? null),
   }
 }

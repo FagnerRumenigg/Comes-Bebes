@@ -20,6 +20,8 @@ public record NotificationResponse(
         UUID actorId,
         @Schema(description = "Nome de exibição de quem originou a notificação.", nullable = true)
         String actorDisplayName,
+        @Schema(description = "Avatar de cozinha de quem originou a notificação. Nulo mostra a inicial do nome.", nullable = true, example = "PANELA")
+        String actorAvatarKey,
         @Schema(description = "Título da publicação relacionada, quando houver.", nullable = true)
         String publicationTitle,
         @Schema(description = "Imagem da publicação relacionada, quando houver.", nullable = true)

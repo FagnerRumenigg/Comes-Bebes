@@ -228,6 +228,7 @@ function linkComponentProps(item: NotificationItem): { is: typeof RouterLink | '
               v-if="notificationShowsAvatar(item)"
               class="notif-item__avatar"
               :name="item.actorDisplayName ?? '?'"
+              :avatar-key="item.actorAvatarKey"
             />
             <span v-else class="notif-item__icon">
               <AppIcon :name="notificationIcon(item)" :size="21" :stroke-width="1.9" />

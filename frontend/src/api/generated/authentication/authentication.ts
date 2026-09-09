@@ -6,13 +6,19 @@
  * OpenAPI spec version: v1
  */
 import {
-  useMutation
+  useMutation,
+  useQuery
 } from '@tanstack/vue-query';
 import type {
+  DataTag,
   MutationFunction,
   QueryClient,
+  QueryFunction,
+  QueryKey,
   UseMutationOptions,
-  UseMutationReturnType
+  UseMutationReturnType,
+  UseQueryOptions,
+  UseQueryReturnType
 } from '@tanstack/vue-query';
 
 import {
@@ -24,11 +30,14 @@ import type {
 
 import type {
   ApiErrorResponse,
+  ConfirmPasswordResetRequest,
   CreateUserRequest,
   CreatedUserResponse,
   LoginRequest,
   LoginResponse,
-  RefreshTokenRequest
+  RefreshTokenRequest,
+  RequestPasswordResetRequest,
+  UserInfoResponse
 } from '.././models';
 
 import { apiRequest } from '../../client';
@@ -165,6 +174,136 @@ export const useRefresh = <TError = unknown,
       > => {
 
       const mutationOptions = getRefreshMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
+ * Envia um link de recuperação por e-mail quando existe uma conta com o e-mail informado. Sempre responde com sucesso, exista ou não a conta, pra não revelar quem tem cadastro (docs/telas/11-recuperar-senha.html).
+ * @summary Pedir link de recuperação de senha
+ */
+export const requestPasswordReset = (
+    requestPasswordResetRequest: MaybeRef<RequestPasswordResetRequest>,
+ options?: SecondParameter<typeof apiRequest>,signal?: AbortSignal
+) => {
+      requestPasswordResetRequest = unref(requestPasswordResetRequest);
+      
+      return apiRequest<void>(
+      {url: `/auth/password-reset`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: requestPasswordResetRequest, signal
+    },
+      options);
+    }
+  
+
+
+export const getRequestPasswordResetMutationOptions = <TError = ApiErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestPasswordReset>>, TError,{data: RequestPasswordResetRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestPasswordReset>>, TError,{data: RequestPasswordResetRequest}, TContext> => {
+
+const mutationKey = ['requestPasswordReset'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestPasswordReset>>, {data: RequestPasswordResetRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestPasswordReset(data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestPasswordResetMutationResult = NonNullable<Awaited<ReturnType<typeof requestPasswordReset>>>
+    export type RequestPasswordResetMutationBody = RequestPasswordResetRequest
+    export type RequestPasswordResetMutationError = ApiErrorResponse
+
+    /**
+ * @summary Pedir link de recuperação de senha
+ */
+export const useRequestPasswordReset = <TError = ApiErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestPasswordReset>>, TError,{data: RequestPasswordResetRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof requestPasswordReset>>,
+        TError,
+        {data: RequestPasswordResetRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getRequestPasswordResetMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
+ * Troca a senha usando o token do link recebido por e-mail. O token vale por 1 hora e só pode ser usado uma vez; ao concluir, todas as sessões da conta são encerradas.
+ * @summary Confirmar nova senha
+ */
+export const confirmPasswordReset = (
+    confirmPasswordResetRequest: MaybeRef<ConfirmPasswordResetRequest>,
+ options?: SecondParameter<typeof apiRequest>,signal?: AbortSignal
+) => {
+      confirmPasswordResetRequest = unref(confirmPasswordResetRequest);
+      
+      return apiRequest<void>(
+      {url: `/auth/password-reset/confirm`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: confirmPasswordResetRequest, signal
+    },
+      options);
+    }
+  
+
+
+export const getConfirmPasswordResetMutationOptions = <TError = ApiErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmPasswordReset>>, TError,{data: ConfirmPasswordResetRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof confirmPasswordReset>>, TError,{data: ConfirmPasswordResetRequest}, TContext> => {
+
+const mutationKey = ['confirmPasswordReset'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmPasswordReset>>, {data: ConfirmPasswordResetRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  confirmPasswordReset(data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConfirmPasswordResetMutationResult = NonNullable<Awaited<ReturnType<typeof confirmPasswordReset>>>
+    export type ConfirmPasswordResetMutationBody = ConfirmPasswordResetRequest
+    export type ConfirmPasswordResetMutationError = ApiErrorResponse
+
+    /**
+ * @summary Confirmar nova senha
+ */
+export const useConfirmPasswordReset = <TError = ApiErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmPasswordReset>>, TError,{data: ConfirmPasswordResetRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof confirmPasswordReset>>,
+        TError,
+        {data: ConfirmPasswordResetRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getConfirmPasswordResetMutationOptions(options);
 
       return useMutation(mutationOptions, queryClient);
     }
@@ -361,4 +500,72 @@ export const useLogin = <TError = ApiErrorResponse,
 
       return useMutation(mutationOptions, queryClient);
     }
+    /**
+ * Retorna dados da conta autenticada que não vêm no token de login, como o nome de exibição (usado no menu da conta — docs/telas/04).
+ * @summary Informações básicas da sessão
+ */
+export const info = (
     
+ options?: SecondParameter<typeof apiRequest>,signal?: AbortSignal
+) => {
+      
+      
+      return apiRequest<UserInfoResponse>(
+      {url: `/auth/info`, method: 'GET', signal
+    },
+      options);
+    }
+  
+
+
+
+export const getInfoQueryKey = () => {
+    return [
+    'auth','info'
+    ] as const;
+    }
+
+    
+export const getInfoQueryOptions = <TData = Awaited<ReturnType<typeof info>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof info>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  getInfoQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof info>>> = ({ signal }) => info(requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof info>>, TError, TData> 
+}
+
+export type InfoQueryResult = NonNullable<Awaited<ReturnType<typeof info>>>
+export type InfoQueryError = unknown
+
+
+/**
+ * @summary Informações básicas da sessão
+ */
+
+export function useInfo<TData = Awaited<ReturnType<typeof info>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof info>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient 
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getInfoQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+

@@ -35,6 +35,7 @@ async function logout(): Promise<void> {
           </RouterLink>
           <nav aria-label="Navegação administrativa">
             <RouterLink to="/admin/moderacao">Moderação</RouterLink>
+            <RouterLink to="/admin/feedback">Falar com a gente</RouterLink>
             <RouterLink to="/">Voltar ao site</RouterLink>
           </nav>
           <div class="admin-layout__actions">

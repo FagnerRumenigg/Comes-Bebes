@@ -23,7 +23,7 @@ import type {
 } from '.././models';
 
 
-export const getFindByUsernameResponseMock = (overrideResponse: Partial< UserResponse > = {}): UserResponse => ({id: faker.string.uuid(), username: faker.string.alpha({length: {min: 10, max: 20}}), displayName: faker.string.alpha({length: {min: 10, max: 20}}), role: faker.helpers.arrayElement(['USER','ADMIN'] as const), status: faker.helpers.arrayElement(['ACTIVE','BLOCKED','DELETED'] as const), onboardingCompleted: faker.datatype.boolean(), followedByCurrentUser: faker.helpers.arrayElement([faker.datatype.boolean(),null,]), ...overrideResponse})
+export const getFindByUsernameResponseMock = (overrideResponse: Partial< UserResponse > = {}): UserResponse => ({id: faker.string.uuid(), username: faker.string.alpha({length: {min: 10, max: 20}}), displayName: faker.string.alpha({length: {min: 10, max: 20}}), bio: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), avatarKey: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), role: faker.helpers.arrayElement(['USER','ADMIN'] as const), status: faker.helpers.arrayElement(['ACTIVE','BLOCKED','DELETED'] as const), onboardingCompleted: faker.datatype.boolean(), followedByCurrentUser: faker.helpers.arrayElement([faker.datatype.boolean(),null,]), ...overrideResponse})
 
 
 export const getFindByUsernameMockHandler = (overrideResponse?: UserResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<UserResponse> | UserResponse), options?: RequestHandlerOptions) => {

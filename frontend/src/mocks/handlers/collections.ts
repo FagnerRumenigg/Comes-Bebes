@@ -44,6 +44,16 @@ function viewerIdFor(request: Request): string | null {
   return username ? (accountByUsername(username)?.userId ?? null) : null
 }
 
+// Capa = a publicação mais recente adicionada (mesma regra do CollectionService
+// real: COVER_IMAGE_COUNT = 1, ordenado pela última posição) — array por causa
+// do formato de CollectionResponse.coverImageUrls, mas sempre no máximo 1 item.
+function coverImageUrlsFor(collectionId: string): string[] {
+  const ids = mockCollectionPublicationIds(collectionId)
+  const lastId = ids[ids.length - 1]
+  const publication = lastId ? mockPublications.find((item) => item.id === lastId) : undefined
+  return publication?.imageUrl ? [publication.imageUrl] : []
+}
+
 function toResponse(collection: MockCollection, viewerId: string | null): CollectionResponse {
   const author = accountByUserId(collection.authorId)
   const isOwner = Boolean(viewerId) && viewerId === collection.authorId
@@ -52,10 +62,12 @@ function toResponse(collection: MockCollection, viewerId: string | null): Collec
     authorId: collection.authorId,
     authorUsername: author?.username ?? '',
     authorDisplayName: author?.displayName ?? '',
+    authorAvatarKey: null,
     name: collection.name,
     description: collection.description,
     visibility: collection.visibility,
     publicationsCount: mockCollectionPublicationIds(collection.id).length,
+    coverImageUrls: coverImageUrlsFor(collection.id),
     // Contador de seguidores só para o dono: visitante nunca vê (produto5.md v5 §3.1, impl10.md v10 §13.8).
     followersCount: isOwner ? mockCollectionFollowersCount(collection.id) : null,
     followedByCurrentUser:

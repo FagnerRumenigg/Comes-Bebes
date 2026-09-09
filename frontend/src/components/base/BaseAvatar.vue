@@ -1,27 +1,39 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import KitchenAvatarIcon from './KitchenAvatarIcon.vue'
+import { findKitchenAvatar } from '@/components/icons/kitchen-avatar-paths'
+
 const props = withDefaults(
   defineProps<{
     name: string
     size?: 'small' | 'medium' | 'large'
+    avatarKey?: string | null
   }>(),
   {
     size: 'small',
+    avatarKey: null,
   },
 )
 
 const initial = computed(() => props.name.trim().charAt(0).toUpperCase() || '?')
+// Só troca pelo desenho se a chave realmente existir — senão continua na
+// inicial em vez de ficar em branco.
+const resolvedAvatarKey = computed(() => (findKitchenAvatar(props.avatarKey) ? props.avatarKey : null))
 </script>
 
 <template>
-  <span class="base-avatar" :class="`base-avatar--${size}`" aria-hidden="true">{{ initial }}</span>
+  <span class="base-avatar" :class="`base-avatar--${size}`" aria-hidden="true">
+    <KitchenAvatarIcon v-if="resolvedAvatarKey" :avatar-key="resolvedAvatarKey" class="base-avatar__icon" />
+    <template v-else>{{ initial }}</template>
+  </span>
 </template>
 
 <style scoped>
 .base-avatar {
   display: inline-grid;
   flex: none;
+  overflow: hidden;
   place-items: center;
   color: var(--color-primary-contrast);
   font-family: var(--font-editorial);

@@ -22,6 +22,7 @@ export interface NotificationItem {
   collectionId: string | null
   actorId: string | null
   actorDisplayName: string | null
+  actorAvatarKey: string | null
   publicationTitle: string | null
   publicationImageUrl: string | null
   collectionName: string | null

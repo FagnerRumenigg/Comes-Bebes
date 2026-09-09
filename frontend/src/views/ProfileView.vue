@@ -110,7 +110,11 @@ function confirmBlock(): void {
     </div>
     <template v-else-if="profileQuery.data.value">
       <header class="profile-view__header">
-        <BaseAvatar :name="profileQuery.data.value.displayName" size="large" />
+        <BaseAvatar
+          :name="profileQuery.data.value.displayName"
+          :avatar-key="profileQuery.data.value.avatarKey"
+          size="large"
+        />
         <h1>{{ profileQuery.data.value.displayName }}</h1>
         <p class="profile-view__username">@{{ profileQuery.data.value.username }}</p>
         <p v-if="profile?.bio" class="profile-view__bio">{{ profile.bio }}</p>

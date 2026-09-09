@@ -20,7 +20,8 @@ import type {
 
 import type {
   CreatedUserResponse,
-  LoginResponse
+  LoginResponse,
+  UserInfoResponse
 } from '.././models';
 
 
@@ -29,6 +30,8 @@ export const getRegisterResponseMock = (overrideResponse: Partial< CreatedUserRe
 export const getRefreshResponseMock = (overrideResponse: Partial< LoginResponse > = {}): LoginResponse => ({accessToken: faker.string.alpha({length: {min: 10, max: 20}}), refreshToken: faker.string.alpha({length: {min: 10, max: 20}}), tokenType: faker.string.alpha({length: {min: 10, max: 20}}), expiresInSeconds: faker.number.int({min: undefined, max: undefined}), userId: faker.string.uuid(), username: faker.string.alpha({length: {min: 10, max: 20}}), role: faker.helpers.arrayElement(['USER','ADMIN'] as const), onboardingCompleted: faker.datatype.boolean(), hasUnseenPatchNotes: faker.datatype.boolean(), emailRequired: faker.datatype.boolean(), expiresAt: `${faker.date.past().toISOString().split('.')[0]}Z`, sessionId: faker.string.uuid(), deviceId: faker.string.uuid(), ...overrideResponse})
 
 export const getLoginResponseMock = (overrideResponse: Partial< LoginResponse > = {}): LoginResponse => ({accessToken: faker.string.alpha({length: {min: 10, max: 20}}), refreshToken: faker.string.alpha({length: {min: 10, max: 20}}), tokenType: faker.string.alpha({length: {min: 10, max: 20}}), expiresInSeconds: faker.number.int({min: undefined, max: undefined}), userId: faker.string.uuid(), username: faker.string.alpha({length: {min: 10, max: 20}}), role: faker.helpers.arrayElement(['USER','ADMIN'] as const), onboardingCompleted: faker.datatype.boolean(), hasUnseenPatchNotes: faker.datatype.boolean(), emailRequired: faker.datatype.boolean(), expiresAt: `${faker.date.past().toISOString().split('.')[0]}Z`, sessionId: faker.string.uuid(), deviceId: faker.string.uuid(), ...overrideResponse})
+
+export const getInfoResponseMock = (overrideResponse: Partial< UserInfoResponse > = {}): UserInfoResponse => ({displayName: faker.string.alpha({length: {min: 10, max: 20}}), defaultPublicationVisibility: faker.helpers.arrayElement(['PUBLIC','INTERNAL','PRIVATE'] as const), avatarKey: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), ...overrideResponse})
 
 
 export const getRegisterMockHandler = (overrideResponse?: CreatedUserResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<CreatedUserResponse> | CreatedUserResponse), options?: RequestHandlerOptions) => {
@@ -51,6 +54,26 @@ export const getRefreshMockHandler = (overrideResponse?: LoginResponse | ((info:
     : getRefreshResponseMock()),
       { status: 200,
         headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
+export const getRequestPasswordResetMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
+  return http.post('*/auth/password-reset', async (info) => {await delay(1000);
+  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
+    return new HttpResponse(null,
+      { status: 204,
+        
+      })
+  }, options)
+}
+
+export const getConfirmPasswordResetMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
+  return http.post('*/auth/password-reset/confirm', async (info) => {await delay(1000);
+  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
+    return new HttpResponse(null,
+      { status: 204,
+        
       })
   }, options)
 }
@@ -86,10 +109,25 @@ export const getLoginMockHandler = (overrideResponse?: LoginResponse | ((info: P
       })
   }, options)
 }
+
+export const getInfoMockHandler = (overrideResponse?: UserInfoResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<UserInfoResponse> | UserInfoResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/auth/info', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getInfoResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
 export const getAuthenticationMock = () => [
   getRegisterMockHandler(),
   getRefreshMockHandler(),
+  getRequestPasswordResetMockHandler(),
+  getConfirmPasswordResetMockHandler(),
   getLogoutMockHandler(),
   getLogoutAllMockHandler(),
-  getLoginMockHandler()
+  getLoginMockHandler(),
+  getInfoMockHandler()
 ]

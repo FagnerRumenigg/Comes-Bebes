@@ -1,10 +1,7 @@
 import { delay, http, HttpResponse } from 'msw'
 
-import type {
-  PageResponseNotificationResponse,
-  PageResponsePublicationResponse,
-  UserResponse,
-} from '@/api/generated/models'
+import type { PageResponsePublicationResponse, UserResponse } from '@/api/generated/models'
+import type { NotificationItem } from '@/features/notifications/notifications'
 import { mockAuthenticatedUsername } from '@/mocks/authentication'
 import { mockAccounts } from '@/mocks/fixtures/auth'
 import { mockPublications } from '@/mocks/fixtures/publications'
@@ -22,6 +19,44 @@ const page = <T>(content: T[], requestedPage = 1, size = 20) => ({
   last: true,
 })
 
+// Tipos reais do CHECK de application.user_notifications (ver migration V34) —
+// os antigos PUBLICATION_APPROVED/PUBLICATION_REPORTED não existem mais desde
+// a tela 12 (avisos). Mutável de propósito: os handlers de marcar-lido/apagar
+// abaixo alteram esse array direto, sem persistir entre reloads (mock só dura
+// a sessão do navegador).
+const mockNotifications: NotificationItem[] = [
+  {
+    id: 'notification-1',
+    type: 'SAVED_YOUR_PUBLICATION',
+    moderationCaseId: null,
+    publicationId: mockPublications[1].id,
+    collectionId: null,
+    actorId: mockAccounts[1].userId,
+    actorDisplayName: mockAccounts[1].displayName,
+    actorAvatarKey: null,
+    publicationTitle: mockPublications[1].title,
+    publicationImageUrl: mockPublications[1].imageUrl,
+    collectionName: null,
+    createdAt: '2026-08-08T13:00:00-03:00',
+    readAt: null,
+  },
+  {
+    id: 'notification-2',
+    type: 'REACTED_TO_YOUR_PUBLICATION',
+    moderationCaseId: null,
+    publicationId: mockPublications[0].id,
+    collectionId: null,
+    actorId: mockPublications[0].authorId,
+    actorDisplayName: mockPublications[0].authorDisplayName,
+    actorAvatarKey: null,
+    publicationTitle: mockPublications[0].title,
+    publicationImageUrl: mockPublications[0].imageUrl,
+    collectionName: null,
+    createdAt: '2026-08-07T09:00:00-03:00',
+    readAt: '2026-08-07T12:00:00-03:00',
+  },
+]
+
 export const discoveryMockHandlers = [
   http.get('*/u/:username', async ({ params, request }) => {
     await delay(180)
@@ -35,6 +70,8 @@ export const discoveryMockHandlers = [
       role: found.role,
       status: 'ACTIVE',
       onboardingCompleted: true,
+      bio: null,
+      avatarKey: null,
       followedByCurrentUser:
         !viewerUsername || viewerUsername === found.username
           ? null
@@ -95,24 +132,32 @@ export const discoveryMockHandlers = [
     await delay(180)
     if (!request.headers.has('authorization') || params.id !== account.userId)
       return HttpResponse.json({ message: 'Autenticação necessária.' }, { status: 401 })
-    const response: PageResponseNotificationResponse = page([
-      {
-        id: 'notification-1',
-        type: 'PUBLICATION_APPROVED',
-        moderationCaseId: 'case-1',
-        publicationId: mockPublications[1].id,
-        actorId: null,
-        readAt: null,
-      },
-      {
-        id: 'notification-2',
-        type: 'PUBLICATION_REPORTED',
-        moderationCaseId: 'case-2',
-        publicationId: mockPublications[0].id,
-        actorId: null,
-        readAt: '2026-08-07T12:00:00Z',
-      },
-    ])
-    return HttpResponse.json(response)
+    return HttpResponse.json(page(mockNotifications))
+  }),
+  http.patch('*/users/:id/notifications/read', async ({ params, request }) => {
+    await delay(120)
+    if (!request.headers.has('authorization') || params.id !== account.userId)
+      return HttpResponse.json({ message: 'Autenticação necessária.' }, { status: 401 })
+    mockNotifications.forEach((item) => {
+      if (!item.readAt) item.readAt = new Date().toISOString()
+    })
+    return new HttpResponse(null, { status: 204 })
+  }),
+  http.delete('*/users/:id/notifications/:notificationId', async ({ params, request }) => {
+    await delay(120)
+    if (!request.headers.has('authorization') || params.id !== account.userId)
+      return HttpResponse.json({ message: 'Autenticação necessária.' }, { status: 401 })
+    const index = mockNotifications.findIndex((item) => item.id === params.notificationId)
+    if (index === -1)
+      return HttpResponse.json({ message: 'Aviso não encontrado.' }, { status: 404 })
+    mockNotifications.splice(index, 1)
+    return new HttpResponse(null, { status: 204 })
+  }),
+  http.delete('*/users/:id/notifications', async ({ params, request }) => {
+    await delay(120)
+    if (!request.headers.has('authorization') || params.id !== account.userId)
+      return HttpResponse.json({ message: 'Autenticação necessária.' }, { status: 401 })
+    mockNotifications.length = 0
+    return new HttpResponse(null, { status: 204 })
   }),
 ]

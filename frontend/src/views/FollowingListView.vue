@@ -46,7 +46,7 @@ const followingQuery = useFollowing(userId, { page: 1, size: 50 }, {
       <ul v-else class="following-list-view__list">
         <li v-for="person in followingQuery.data.value.content" :key="person.id">
           <RouterLink class="following-list-view__person" :to="`/u/${person.username}`">
-            <BaseAvatar :name="person.displayName" size="small" />
+            <BaseAvatar :name="person.displayName" :avatar-key="person.avatarKey" size="small" />
             <span class="following-list-view__person-info">
               <b>{{ person.displayName }}</b>
               <span>@{{ person.username }}</span>
