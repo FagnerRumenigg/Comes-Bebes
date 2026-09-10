@@ -4,3 +4,8 @@
 db_admin_password                 = "troque-por-uma-senha-forte-e-unica"
 jwt_secret                        = "troque-por-uma-chave-aleatoria-com-no-minimo-32-bytes"
 user_blocked_username_hmac_secret = "troque-por-outra-chave-aleatoria"
+
+# E-mail (Azure Communication Services) — "log" não exige nada destas duas.
+# Em "azure", reaproveita o recurso já existente (ver memória do projeto).
+email_delivery_mode    = "log"
+email_azure_access_key = ""

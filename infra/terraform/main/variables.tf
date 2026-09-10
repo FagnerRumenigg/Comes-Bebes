@@ -222,8 +222,9 @@ variable "validator_min_replicas" {
 }
 
 variable "validator_max_replicas" {
-  type    = number
-  default = 3
+  description = "1 — a Azure já estava rodando com esse valor (mudança manual anterior ao Portal, nunca refletida aqui); o código dizia 3 mas nunca tinha sido de fato aplicado. Corrigido pra bater com a realidade."
+  type        = number
+  default     = 1
 }
 
 # --- Config da aplicação (não-segredo) ----------------------------------
@@ -235,9 +236,12 @@ variable "cors_allowed_origins" {
 }
 
 # webauthn_rp_id não é mais variável independente — o RP ID do WebAuthn é
-# sempre o domínio do Static Web App (azurerm_static_web_app.frontend.default_host_name
-# em main.tf). Trocar de domínio quebra passkeys já cadastradas (aceito
-# deliberadamente pra essa migração — projeto ainda em fase de testes).
+# sempre var.custom_domain_name (o domínio apex próprio, resolvido em
+# main.tf; cobre também o www por regra do WebAuthn, que aceita RP ID como
+# sufixo da origem). Trocar de domínio quebra passkeys já cadastradas
+# (aceito deliberadamente — projeto ainda em fase de testes; já rolou uma
+# vez na migração pro Static Web App, agora de novo na troca pro domínio
+# próprio, decisão 2026-09-10).
 
 variable "jwt_issuer" {
   type    = string
@@ -297,9 +301,38 @@ variable "user_blocked_username_hmac_secret" {
   sensitive = true
 }
 
+# --- E-mail (Azure Communication Services) --------------------------------
+# Reaproveita o MESMO recurso já provisionado pro Entertain-Me (decisão
+# 2026-08-24, ver memória) — não é um recurso novo do Comes&Bebes.
+
+variable "email_delivery_mode" {
+  description = "log (padrão) só registra no log, sem exigir credencial; azure manda de verdade via Azure Communication Services Email."
+  type        = string
+  default     = "log"
+}
+
+variable "email_sender_address" {
+  description = "Endereço remetente do domínio gerenciado do Entertain-Me na Azure Communication Services."
+  type        = string
+  default     = "donotreply@1e2202b3-5dec-4b24-8ef6-d9e2168691cc.azurecomm.net"
+}
+
+variable "email_azure_endpoint" {
+  description = "Endpoint do recurso Azure Communication Services do Entertain-Me (entertainme-prod-communication), reaproveitado aqui."
+  type        = string
+  default     = "https://entertainme-prod-communication.brazil.communication.azure.com"
+}
+
+variable "email_azure_access_key" {
+  description = "Chave de acesso do mesmo recurso. Sem default — obrigatório fornecer no apply (-var ou .tfvars fora do Git)."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 # --- Static Web App (frontend) ------------------------------------------
-# Substitui o GitHub Pages. Domínio padrão do Azure por enquanto
-# (*.azurestaticapps.net) — sem domínio próprio configurado ainda.
+# Substitui o GitHub Pages. *.azurestaticapps.net continua ativo em
+# paralelo ao domínio próprio (ver custom_domain_name abaixo).
 
 variable "static_web_app_name" {
   description = "Nome do Azure Static Web App. Globalmente único."
@@ -311,6 +344,17 @@ variable "static_web_app_location" {
   description = "Static Web Apps só existe num conjunto restrito de regiões (não inclui brazilsouth, diferente do resto da infra) — eastus2 é a mais próxima disponível. Baixo impacto: o conteúdo estático é servido por CDN global de qualquer forma, essa região só afeta onde o build roda."
   type        = string
   default     = "eastus2"
+}
+
+# --- Domínio próprio (Azure DNS) -----------------------------------------
+# comesibebes.com.br, comprado no Registro.br em 2026-09. DNS migrado pra
+# Azure DNS (zona gerenciada em main.tf) pra dar pro Terraform cuidar de
+# tudo — ver comentário detalhado junto do azurerm_dns_zone.app.
+
+variable "custom_domain_name" {
+  description = "Domínio apex próprio (sem www), ex: comesibebes.com.br. É o RP ID do WebAuthn e a origem principal de CORS/FRONTEND_URL (ver main.tf)."
+  type        = string
+  default     = "comesibebes.com.br"
 }
 
 # --- Orçamento / alerta de custo ----------------------------------------

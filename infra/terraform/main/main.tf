@@ -223,6 +223,11 @@ resource "azurerm_container_app" "validator" {
     min_replicas = var.validator_min_replicas
     max_replicas = var.validator_max_replicas
 
+    http_scale_rule {
+      name                = "http-scaler"
+      concurrent_requests = "10"
+    }
+
     container {
       name   = "validator"
       image  = var.placeholder_image
@@ -242,8 +247,10 @@ resource "azurerm_container_app" "validator" {
 }
 
 # --- Container App: API -------------------------------------------------
-# min=max=1: obrigatório enquanto os rate limiters guardarem contador em
-# memória do processo (ConcurrentHashMap).
+# max=1 continua fixo pra nunca ter 2 réplicas simultâneas. min=0 desde
+# 2026-08-25 (ver variables.tf, api_min_replicas) — os rate limiters já
+# persistem em Postgres (RateLimitStore), não são mais o bloqueio técnico
+# pra escalar a zero.
 
 resource "azurerm_container_app" "api" {
   name                         = var.api_app_name
@@ -276,6 +283,11 @@ resource "azurerm_container_app" "api" {
     value = var.user_blocked_username_hmac_secret
   }
 
+  secret {
+    name  = "email-azure-access-key"
+    value = var.email_azure_access_key
+  }
+
   ingress {
     external_enabled = true
     target_port      = var.api_target_port
@@ -290,6 +302,11 @@ resource "azurerm_container_app" "api" {
   template {
     min_replicas = var.api_min_replicas
     max_replicas = var.api_max_replicas
+
+    http_scale_rule {
+      name                = "http-scaler"
+      concurrent_requests = "10"
+    }
 
     container {
       name   = "api"
@@ -363,11 +380,11 @@ resource "azurerm_container_app" "api" {
       }
       env {
         name  = "COMESEBEBES_CORS_ALLOWED_ORIGINS"
-        value = "${var.cors_allowed_origins},https://${azurerm_static_web_app.frontend.default_host_name}"
+        value = "${var.cors_allowed_origins},https://${var.custom_domain_name},https://www.${var.custom_domain_name},https://${azurerm_static_web_app.frontend.default_host_name}"
       }
       env {
         name  = "COMESEBEBES_WEBAUTHN_RP_ID"
-        value = azurerm_static_web_app.frontend.default_host_name
+        value = var.custom_domain_name
       }
       env {
         name  = "COMESEBEBES_JWT_ISSUER"
@@ -397,6 +414,26 @@ resource "azurerm_container_app" "api" {
         name  = "COMESEBEBES_PUBLICATION_RATE_LIMIT_WINDOW_SECONDS"
         value = tostring(var.publication_rate_limit_window_seconds)
       }
+      env {
+        name  = "COMESEBEBES_FRONTEND_URL"
+        value = "https://${var.custom_domain_name}"
+      }
+      env {
+        name  = "COMESEBEBES_EMAIL_DELIVERY_MODE"
+        value = var.email_delivery_mode
+      }
+      env {
+        name  = "COMESEBEBES_EMAIL_SENDER_ADDRESS"
+        value = var.email_sender_address
+      }
+      env {
+        name  = "COMESEBEBES_EMAIL_AZURE_ENDPOINT"
+        value = var.email_azure_endpoint
+      }
+      env {
+        name        = "COMESEBEBES_EMAIL_AZURE_ACCESS_KEY"
+        secret_name = "email-azure-access-key"
+      }
 
       liveness_probe {
         transport = "HTTP"
@@ -424,10 +461,11 @@ resource "azurerm_container_app" "api" {
 }
 
 # --- Static Web App (frontend) -------------------------------------------
-# Substitui o GitHub Pages. Tier Free (100GB/mês de banda, SSL grátis,
-# domínio padrão *.azurestaticapps.net por enquanto). O conteúdo em si é
-# publicado pelo workflow do GitHub Actions (deploy-static-web-app.yml),
-# não pelo Terraform — esse recurso só provisiona o "onde".
+# Substitui o GitHub Pages. Tier Free (100GB/mês de banda, SSL grátis). O
+# conteúdo em si é publicado pelo workflow do GitHub Actions
+# (deploy-static-web-app.yml), não pelo Terraform — esse recurso só
+# provisiona o "onde". Domínio próprio (comesibebes.com.br) é configurado
+# logo abaixo; *.azurestaticapps.net continua ativo em paralelo.
 
 resource "azurerm_static_web_app" "frontend" {
   name                = var.static_web_app_name
@@ -435,6 +473,82 @@ resource "azurerm_static_web_app" "frontend" {
   location            = var.static_web_app_location
   sku_tier            = "Free"
   sku_size            = "Free"
+}
+
+# --- Domínio próprio (Azure DNS) ------------------------------------------
+# comesibebes.com.br, comprado no Registro.br. DNS migrado pra Azure DNS
+# (decisão 2026-09-10) pra dar pro Terraform gerenciar tudo — TXT de
+# validação, ALIAS do apex e CNAME do www — num apply só. Passo manual
+# único, fora do Terraform: trocar os nameservers do domínio no painel do
+# Registro.br pelos gerados abaixo (output dns_zone_name_servers). Enquanto
+# isso não for feito, nada aqui resolve publicamente.
+#
+# O apex usa validação dns-txt-token (obrigatória em domínio apex — CNAME
+# não é permitido na raiz da zona) e roteia via ALIAS record (A record
+# apontando pro recurso do Static Web App em si, não pra um IP fixo, senão
+# perde a distribuição global). A validação do apex é assíncrona — o
+# Terraform não espera ela terminar, então o primeiro apply passa mesmo
+# sem os nameservers ainda propagados. Já o www usa cname-delegation, que é
+# síncrona (o provider ativamente confere se o CNAME resolve) — só valida
+# depois que a troca de nameservers tiver propagado; pode exigir um
+# segundo apply.
+
+resource "azurerm_dns_zone" "app" {
+  name                = var.custom_domain_name
+  resource_group_name = azurerm_resource_group.app.name
+}
+
+resource "azurerm_static_web_app_custom_domain" "apex" {
+  static_web_app_id = azurerm_static_web_app.frontend.id
+  domain_name       = var.custom_domain_name
+  validation_type   = "dns-txt-token"
+}
+
+resource "azurerm_dns_txt_record" "apex_validation" {
+  name                = "@"
+  zone_name           = azurerm_dns_zone.app.name
+  resource_group_name = azurerm_resource_group.app.name
+  ttl                 = 300
+
+  record {
+    # validation_token só existe enquanto a validação está pendente —
+    # depois que valida, a Azure zera o campo (vira ""). Sem o fallback,
+    # a expressão vira string vazia e o provider rejeita antes mesmo de
+    # calcular o diff (rejeita "" mesmo com ignore_changes abaixo, que só
+    # evita a atualização em si, não a validação do valor). O registro já
+    # cumpriu seu papel depois de validado, não precisa mais mudar.
+    value = (azurerm_static_web_app_custom_domain.apex.validation_token == null || azurerm_static_web_app_custom_domain.apex.validation_token == "") ? "dominio-ja-validado" : azurerm_static_web_app_custom_domain.apex.validation_token
+  }
+
+  lifecycle {
+    ignore_changes = [record]
+  }
+}
+
+resource "azurerm_dns_a_record" "apex_alias" {
+  name                = "@"
+  zone_name           = azurerm_dns_zone.app.name
+  resource_group_name = azurerm_resource_group.app.name
+  ttl                 = 300
+  target_resource_id  = azurerm_static_web_app.frontend.id
+
+  depends_on = [azurerm_dns_txt_record.apex_validation]
+}
+
+resource "azurerm_dns_cname_record" "www" {
+  name                = "www"
+  zone_name           = azurerm_dns_zone.app.name
+  resource_group_name = azurerm_resource_group.app.name
+  ttl                 = 300
+  record              = azurerm_static_web_app.frontend.default_host_name
+}
+
+resource "azurerm_static_web_app_custom_domain" "www" {
+  static_web_app_id = azurerm_static_web_app.frontend.id
+  domain_name       = "www.${var.custom_domain_name}"
+  validation_type   = "cname-delegation"
+
+  depends_on = [azurerm_dns_cname_record.www]
 }
 
 # --- Budget / alerta de custo --------------------------------------------

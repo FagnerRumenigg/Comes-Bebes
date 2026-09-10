@@ -46,7 +46,7 @@ output "storage_account_images_name" {
 }
 
 output "static_web_app_default_hostname" {
-  description = "Domínio público do frontend novo — é a URL que o usuário acessa (já entra sozinho em COMESEBEBES_CORS_ALLOWED_ORIGINS/WEBAUTHN_RP_ID, resolvido em main.tf)."
+  description = "Domínio padrão *.azurestaticapps.net — continua ativo em paralelo ao domínio próprio (custom_domain_name), que é quem entra em COMESEBEBES_CORS_ALLOWED_ORIGINS/WEBAUTHN_RP_ID como origem principal (resolvido em main.tf)."
   value       = azurerm_static_web_app.frontend.default_host_name
 }
 
@@ -54,4 +54,9 @@ output "static_web_app_deployment_token" {
   description = "Token de deploy do Static Web App — vira o secret AZURE_STATIC_WEB_APPS_API_KEY no GitHub Actions (Settings → Secrets → Actions). Sensível: não aparece em `terraform output` sem -raw, não vai pro log do CI/CD."
   value       = azurerm_static_web_app.frontend.api_key
   sensitive   = true
+}
+
+output "dns_zone_name_servers" {
+  description = "Nameservers da zona Azure DNS de custom_domain_name. Passo manual único: colar esses 4 valores no painel do Registro.br (Meus Domínios → o domínio → DNS → usar servidores DNS diferentes). Sem isso, comesibebes.com.br não resolve pra nada."
+  value       = azurerm_dns_zone.app.name_servers
 }
