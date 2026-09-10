@@ -107,7 +107,7 @@ function confirm(): void {
         class="photo-crop__cropper"
         :src="objectUrl"
         :stencil-props="{ aspectRatio: TARGET_ASPECT_RATIO }"
-        image-restriction="stencil"
+        image-restriction="fit-area"
       />
     </div>
 
