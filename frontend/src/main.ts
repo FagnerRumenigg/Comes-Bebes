@@ -56,12 +56,16 @@ async function bootstrap(): Promise<void> {
 
   useThemeStore(pinia).initialize()
   useReducedMotionStore(pinia).initialize()
-  await authStore.initialize()
   app.mount('#app')
-  // Aviso estático de index.html (cobre o tempo de boot antes da Vue
-  // montar, ex.: /auth/refresh esperando o backend acordar) - some assim
-  // que a Vue realmente montar.
+  // Aviso estático de index.html: só cobre o instante antes da Vue montar
+  // (ex.: o bundle ainda carregando). Não esperamos authStore.initialize()
+  // pra montar - se esperássemos, um /auth/refresh que demora (backend
+  // acordando de scale-to-zero) travaria a Vue inteira fora do DOM, e só o
+  // aviso estático (sem a animação/jogo) apareceria. Montando logo, a
+  // BackendOfflineScreen (dirigida por backendStatus, useBackendStatus.ts)
+  // assume esse aviso assim que a requisição entrar em curso.
   document.getElementById('boot-notice')?.remove()
+  void authStore.initialize()
 }
 
 void bootstrap()

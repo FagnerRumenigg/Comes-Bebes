@@ -73,7 +73,7 @@ async function checkNow(): Promise<void> {
     // sozinho em vez de esperar o clique em "seguir".
     const controller = new AbortController()
     const timeoutHandle = setTimeout(() => controller.abort(), POLL_TIMEOUT_MS)
-    const response = await fetch(`${baseURL}/actuator/health/liveness`, {
+    const response = await fetch(`${baseURL}/actuator/health/readiness`, {
       signal: controller.signal,
     })
     clearTimeout(timeoutHandle)

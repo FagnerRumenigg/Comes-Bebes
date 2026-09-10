@@ -105,6 +105,16 @@ management:
       # separados; por padrao so ativa automaticamente em ambiente Kubernetes.
       probes:
         enabled: true
+      group:
+        readiness:
+          # Por padrao o grupo readiness so reflete "o Spring terminou de subir",
+          # sem checar dependencias externas - responde 200 mesmo com o banco
+          # fora do ar. Adicionar "db" aqui faz o probe testar a conexao de
+          # verdade a cada chamada, e e por isso que existe um grupo readiness
+          # separado do liveness: se o banco cair, o Container App para de
+          # mandar trafego pra essa instancia (sem reiniciar o processo, que
+          # continua saudavel - reiniciar nao resolveria o banco estar fora).
+          include: readinessState,db
 
 azure:
   communication:
