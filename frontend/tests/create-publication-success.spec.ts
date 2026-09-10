@@ -1,6 +1,7 @@
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia } from 'pinia'
+import { defineComponent } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -11,8 +12,11 @@ import { useAuthStore } from '@/stores/auth.store'
 // PhotoCropDialog usa vue-advanced-cropper, que depende de layout/canvas real
 // (não funciona no jsdom/happy-dom) - esse stub simula "confirmar o crop sem
 // alterar nada" assim que o diálogo abre, pra manter o resto do fluxo testável.
-const PhotoCropDialogStub = {
-  props: ['open', 'file'],
+const PhotoCropDialogStub = defineComponent({
+  props: {
+    open: { type: Boolean, required: true },
+    file: { type: File as unknown as () => File | null, required: true },
+  },
   emits: ['update:open', 'confirm', 'cancel'],
   template: '<div />',
   watch: {
@@ -23,7 +27,7 @@ const PhotoCropDialogStub = {
       }
     },
   },
-}
+})
 
 async function mountCreate(): Promise<VueWrapper> {
   const pinia = createPinia()
