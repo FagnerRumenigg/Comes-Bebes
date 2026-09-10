@@ -73,7 +73,7 @@ describe('detecção de backend indisponível', () => {
     await router.push('/')
     await router.isReady()
 
-    mockServer.use(http.get('*/actuator/health/liveness', () => HttpResponse.error()))
+    mockServer.use(http.get('*/actuator/health/readiness', () => HttpResponse.error()))
 
     backendStatus.offline = true
     const wrapper = mount(App, {
@@ -103,7 +103,7 @@ describe('detecção de backend indisponível', () => {
     await router.isReady()
 
     mockServer.use(
-      http.get('*/actuator/health/liveness', () => HttpResponse.json({ status: 'UP' })),
+      http.get('*/actuator/health/readiness', () => HttpResponse.json({ status: 'UP' })),
     )
 
     backendStatus.offline = true

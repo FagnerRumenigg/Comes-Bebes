@@ -8,6 +8,23 @@ import { setAccessTokenProvider } from '@/api/client'
 import CreatePublicationView from '@/views/CreatePublicationView.vue'
 import { useAuthStore } from '@/stores/auth.store'
 
+// PhotoCropDialog usa vue-advanced-cropper, que depende de layout/canvas real
+// (não funciona no jsdom/happy-dom) - esse stub simula "confirmar o crop sem
+// alterar nada" assim que o diálogo abre, pra manter o resto do fluxo testável.
+const PhotoCropDialogStub = {
+  props: ['open', 'file'],
+  emits: ['update:open', 'confirm', 'cancel'],
+  template: '<div />',
+  watch: {
+    open(value: boolean) {
+      if (value && this.file) {
+        this.$emit('update:open', false)
+        this.$emit('confirm', this.file)
+      }
+    },
+  },
+}
+
 async function mountCreate(): Promise<VueWrapper> {
   const pinia = createPinia()
   const authStore = useAuthStore(pinia)
@@ -41,6 +58,7 @@ async function mountCreate(): Promise<VueWrapper> {
   return mount(CreatePublicationView, {
     global: {
       plugins: [pinia, router, [VueQueryPlugin, { queryClient: new QueryClient() }]],
+      stubs: { PhotoCropDialog: PhotoCropDialogStub },
     },
   })
 }
