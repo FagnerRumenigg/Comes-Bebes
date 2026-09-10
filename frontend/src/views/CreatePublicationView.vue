@@ -24,6 +24,7 @@ import AppIcon from '@/components/icons/AppIcon.vue'
 import IngredientEditor, {
   type IngredientDraft,
 } from '@/components/publication/IngredientEditor.vue'
+import PhotoCropDialog from '@/components/publication/PhotoCropDialog.vue'
 import PreparationStepsEditor from '@/components/publication/PreparationStepsEditor.vue'
 import TagEditor from '@/components/publication/TagEditor.vue'
 import {
@@ -76,6 +77,9 @@ const yieldUnit = ref('')
 const image = ref<File | null>(null)
 const imagePreview = ref('')
 const imageError = ref('')
+const photoInput = ref<HTMLInputElement>()
+const cropDialogOpen = ref(false)
+const cropFile = ref<File | null>(null)
 const formError = ref('')
 const ingredientError = ref('')
 const fieldErrors = reactive<Record<string, string>>({})
@@ -239,8 +243,22 @@ function acceptImage(event: Event): void {
     imageError.value = 'A imagem deve ter no máximo 20 MB.'
     return
   }
-  image.value = selected
-  imagePreview.value = URL.createObjectURL(selected)
+  cropFile.value = selected
+  cropDialogOpen.value = true
+}
+
+function handleCropConfirm(cropped: File): void {
+  image.value = cropped
+  clearImagePreview()
+  imagePreview.value = URL.createObjectURL(cropped)
+  cropFile.value = null
+}
+
+function handleCropCancel(): void {
+  cropFile.value = null
+  // Sem isso, escolher o mesmo arquivo de novo não dispara @change (o
+  // input HTML só reage a partir de uma mudança de valor).
+  if (photoInput.value) photoInput.value.value = ''
 }
 
 function clearImagePreview(): void {
@@ -500,6 +518,7 @@ onBeforeUnmount(() => {
             :class="{ 'create-publication__photo--filled': imagePreview }"
           >
             <input
+              ref="photoInput"
               type="file"
               class="create-publication__photo-input"
               accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
@@ -532,6 +551,14 @@ onBeforeUnmount(() => {
             trocada.
           </p>
         </fieldset>
+
+        <PhotoCropDialog
+          :open="cropDialogOpen"
+          :file="cropFile"
+          @update:open="cropDialogOpen = $event"
+          @confirm="handleCropConfirm"
+          @cancel="handleCropCancel"
+        />
 
         <BaseSelect v-if="!isMyVersion" v-model="type" label="Tipo de publicação" required>
           <option value="DISH">Prato</option>
@@ -803,7 +830,7 @@ onBeforeUnmount(() => {
 .create-publication__photo {
   position: relative;
   display: grid;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 4 / 5;
   justify-items: center;
   gap: var(--space-2);
   padding: var(--space-6);
