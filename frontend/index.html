@@ -13,6 +13,18 @@
     <title>Comes&amp;Bebes</title>
     <script>
       ;(() => {
+        // Quem ainda tem a URL antiga (*.azurestaticapps.net) salva/aberta
+        // cai direto no domínio próprio, preservando caminho/query/hash.
+        // Sem isso, o WebAuthn quebra na hora (RP ID do backend é sempre o
+        // domínio novo, e por spec ele precisa bater com o domínio atual da
+        // página) - não é algo que dê pra contornar do lado do backend.
+        if (window.location.hostname.endsWith('.azurestaticapps.net')) {
+          window.location.replace(
+            `https://comesibebes.com.br${window.location.pathname}${window.location.search}${window.location.hash}`,
+          )
+        }
+      })()
+      ;(() => {
         const redirect = new URLSearchParams(window.location.search).get('spa-redirect')
 
         if (redirect?.startsWith('/') && !redirect.startsWith('//')) {
