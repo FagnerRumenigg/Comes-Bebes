@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import heic2any from 'heic2any'
 import { useRoute, useRouter } from 'vue-router'
 import { useQueryClient } from '@tanstack/vue-query'
 
@@ -218,12 +219,16 @@ const ACCEPTED_IMAGE_TYPES = [
 ]
 const ACCEPTED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif']
 
+function isHeicImage(file: File): boolean {
+  return file.type === 'image/heic' || file.type === 'image/heif' || /\.(heic|heif)$/i.test(file.name)
+}
+
 function hasAcceptedExtension(filename: string): boolean {
   const lower = filename.toLowerCase()
   return ACCEPTED_IMAGE_EXTENSIONS.some((extension) => lower.endsWith(extension))
 }
 
-function acceptImage(event: Event): void {
+async function acceptImage(event: Event): Promise<void> {
   const selected = (event.target as HTMLInputElement).files?.[0] ?? null
   imageError.value = ''
   image.value = null
@@ -243,7 +248,20 @@ function acceptImage(event: Event): void {
     imageError.value = 'A imagem deve ter no máximo 20 MB.'
     return
   }
-  cropFile.value = selected
+  if (isHeicImage(selected)) {
+    try {
+      const converted = await heic2any({ blob: selected, toType: 'image/jpeg', quality: 0.9 })
+      const blob = Array.isArray(converted) ? converted[0] : converted
+      cropFile.value = new File([blob], `${selected.name.replace(/\.(heic|heif)$/i, '')}.jpg`, {
+        type: 'image/jpeg',
+      })
+    } catch {
+      imageError.value = 'Não foi possível abrir essa foto. Tente escolher outra imagem.'
+      return
+    }
+  } else {
+    cropFile.value = selected
+  }
   cropDialogOpen.value = true
 }
 
