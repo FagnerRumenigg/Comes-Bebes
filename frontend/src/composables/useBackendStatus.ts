@@ -35,7 +35,6 @@ const SLOW_REQUEST_THRESHOLD_MS = 3_000
 // esperar pelo catch do interceptor, como markBackendOffline() fazia antes,
 // nunca disparava a tela nesse cenário).
 const BACKEND_READINESS_CHECK_DELAY_MS = 8_000
-const BACKEND_READINESS_CHECK_TIMEOUT_MS = 4_000
 
 let pendingRequestCount = 0
 let slowRequestTimer: ReturnType<typeof setTimeout> | undefined
