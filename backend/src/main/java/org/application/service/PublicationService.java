@@ -569,7 +569,17 @@ public class PublicationService {
         if (type == PublicationType.DISH && recipe != null) {
             throw new InvalidOperationException("DISH_RECIPE_FORBIDDEN", "Uma publicação DISH não pode informar uma receita na criação.");
         }
-        if (recipe != null && new HashSet<>(recipe.ingredients().stream().map(CreateIngredientRequest::position).toList()).size() != recipe.ingredients().size()) {
+        if (recipe == null) return;
+        if (recipe.ingredients() == null || recipe.ingredients().isEmpty()) {
+            throw new InvalidOperationException("RECIPE_INGREDIENTS_REQUIRED", "Uma receita precisa informar pelo menos um ingrediente.");
+        }
+        if (recipe.instructions() == null || recipe.instructions().isBlank()) {
+            throw new InvalidOperationException("RECIPE_INSTRUCTIONS_REQUIRED", "Uma receita precisa informar o modo de preparo.");
+        }
+        if (recipe.yieldQuantity() != null && (recipe.yieldUnit() == null || recipe.yieldUnit().isBlank())) {
+            throw new InvalidOperationException("RECIPE_YIELD_UNIT_REQUIRED", "Informe a unidade quando informar o rendimento.");
+        }
+        if (new HashSet<>(recipe.ingredients().stream().map(CreateIngredientRequest::position).toList()).size() != recipe.ingredients().size()) {
             throw new InvalidOperationException("DUPLICATE_INGREDIENT_POSITION", "As posições dos ingredientes não podem se repetir.");
         }
     }

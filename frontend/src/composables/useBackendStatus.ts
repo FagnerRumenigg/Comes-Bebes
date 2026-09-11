@@ -34,11 +34,23 @@ const SLOW_REQUEST_THRESHOLD_MS = 3_000
 // de rede - a requisição só fica na fila até a instância subir -, então
 // esperar pelo catch do interceptor, como markBackendOffline() fazia antes,
 // nunca disparava a tela nesse cenário).
-const BACKEND_OFFLINE_SCREEN_THRESHOLD_MS = 8_000
+const BACKEND_READINESS_CHECK_DELAY_MS = 8_000
+const BACKEND_READINESS_CHECK_TIMEOUT_MS = 4_000
 
 let pendingRequestCount = 0
 let slowRequestTimer: ReturnType<typeof setTimeout> | undefined
-let backendOfflineScreenTimer: ReturnType<typeof setTimeout> | undefined
+let backendReadinessTimer: ReturnType<typeof setTimeout> | undefined
+let readinessCheck: (() => Promise<boolean>) | undefined
+
+export function setBackendReadinessCheck(check: () => Promise<boolean>): void {
+  readinessCheck = check
+}
+
+async function verifyBackendReadiness(): Promise<void> {
+  if (pendingRequestCount === 0 || !readinessCheck) return
+  const available = await readinessCheck()
+  if (pendingRequestCount > 0 && !available) markBackendOffline()
+}
 
 export function markRequestStarted(): void {
   pendingRequestCount += 1
@@ -48,10 +60,11 @@ export function markRequestStarted(): void {
         if (pendingRequestCount > 0) backendStatus.slowRequest = true
       }, SLOW_REQUEST_THRESHOLD_MS)
     }
-    if (!backendOfflineScreenTimer) {
-      backendOfflineScreenTimer = setTimeout(() => {
-        if (pendingRequestCount > 0) markBackendOffline()
-      }, BACKEND_OFFLINE_SCREEN_THRESHOLD_MS)
+    if (!backendReadinessTimer) {
+      backendReadinessTimer = setTimeout(() => {
+        backendReadinessTimer = undefined
+        void verifyBackendReadiness()
+      }, BACKEND_READINESS_CHECK_DELAY_MS)
     }
   }
 }
@@ -63,9 +76,9 @@ export function markRequestFinished(): void {
       clearTimeout(slowRequestTimer)
       slowRequestTimer = undefined
     }
-    if (backendOfflineScreenTimer) {
-      clearTimeout(backendOfflineScreenTimer)
-      backendOfflineScreenTimer = undefined
+    if (backendReadinessTimer) {
+      clearTimeout(backendReadinessTimer)
+      backendReadinessTimer = undefined
     }
     backendStatus.slowRequest = false
   }

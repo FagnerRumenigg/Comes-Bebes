@@ -5,10 +5,26 @@ import {
   markBackendOnline,
   markRequestFinished,
   markRequestStarted,
+  setBackendReadinessCheck,
 } from '@/composables/useBackendStatus'
 
 export const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8082'
 const unreachableStatuses = new Set([502, 503, 504])
+
+setBackendReadinessCheck(async () => {
+  const controller = new AbortController()
+  const timeoutHandle = setTimeout(() => controller.abort(), 4_000)
+  try {
+    const response = await fetch(`${baseURL}/actuator/health/readiness`, {
+      signal: controller.signal,
+    })
+    return response.ok
+  } catch {
+    return false
+  } finally {
+    clearTimeout(timeoutHandle)
+  }
+})
 
 function isBackendUnreachable(error: unknown): boolean {
   if (!axios.isAxiosError(error)) return false

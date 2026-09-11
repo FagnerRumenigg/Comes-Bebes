@@ -344,6 +344,26 @@ function recipePayload(): CreateRecipeRequest | undefined {
     formError.value = 'Informe o modo de preparo.'
     return undefined
   }
+  if (yieldQuantity.value.trim()) {
+    const quantity = Number(yieldQuantity.value)
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      formError.value = 'O rendimento deve ser maior que zero.'
+      return undefined
+    }
+    if (!yieldUnit.value.trim()) {
+      formError.value = 'Informe a unidade quando preencher o rendimento.'
+      return undefined
+    }
+  }
+  for (const ingredient of valid) {
+    if (ingredient.quantity.trim()) {
+      const quantity = Number(ingredient.quantity)
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        ingredientError.value = 'A quantidade dos ingredientes deve ser maior que zero.'
+        return undefined
+      }
+    }
+  }
   ingredientError.value = ''
   return {
     instructions: instructions.value,
@@ -368,6 +388,10 @@ async function submit(): Promise<void> {
   }
   if (isMyVersion.value && !titleSuffix.value.trim()) {
     formError.value = 'Informe o sufixo do título da sua versão.'
+    return
+  }
+  if (type.value === 'RECIPE' && !title.value.trim()) {
+    formError.value = 'Informe o título da receita.'
     return
   }
   const recipe = recipePayload()
@@ -599,6 +623,7 @@ onBeforeUnmount(() => {
               v-model="titleSuffix"
               type="text"
               maxlength="100"
+              required
               placeholder="do meu jeito"
             />
           </div>
@@ -615,8 +640,13 @@ onBeforeUnmount(() => {
           v-else
           v-model="title"
           label="Como se chama?"
-          hint="Opcional, até 150 caracteres."
+          :hint="
+            type === 'RECIPE'
+              ? 'Obrigatório para receitas, até 150 caracteres.'
+              : 'Opcional, até 150 caracteres.'
+          "
           maxlength="150"
+          :required="type === 'RECIPE'"
           :error="fieldErrors.title"
         />
 
