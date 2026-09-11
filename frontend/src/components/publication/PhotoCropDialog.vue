@@ -101,6 +101,12 @@ function confirm(): void {
     @close="handleClose"
   >
     <div class="photo-crop">
+      <!-- Sem limite de canvas, fotos de câmera de celular (bem maiores que
+           telas comuns, às vezes 4000px+ de lado) estouram o tamanho máximo
+           de canvas de alguns navegadores/GPUs mobile - a imagem some (fica
+           em branco) em vez de aparecer. 4096 é um teto seguro na prática
+           pra esse fim (recorte 4:5 pra foto de publicação não precisa de
+           mais que isso). -->
       <Cropper
         v-if="objectUrl"
         ref="cropperRef"
@@ -108,6 +114,7 @@ function confirm(): void {
         :src="objectUrl"
         :stencil-props="{ aspectRatio: TARGET_ASPECT_RATIO }"
         image-restriction="fit-area"
+        :canvas="{ maxWidth: 4096, maxHeight: 4096 }"
       />
     </div>
 
