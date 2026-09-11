@@ -6,6 +6,7 @@ import { useUnfollowCollection } from '@/api/generated/collections/collections'
 import BaseAvatar from '@/components/base/BaseAvatar.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import AppIcon from '@/components/icons/AppIcon.vue'
+import FollowButton from '@/components/profile/FollowButton.vue'
 import {
   notificationIcon,
   notificationLinkTo,
@@ -38,6 +39,7 @@ const markReadMutation = useMarkNotificationsRead(userId)
 const deleteMutation = useDeleteNotification(userId)
 const clearMutation = useClearNotifications(userId)
 const unfollowCollectionMutation = useUnfollowCollection()
+const followedBackIds = ref<Set<string>>(new Set())
 
 // O destaque de "novo" precisa continuar visível enquanto o usuário está
 // nesta tela, mesmo depois que abrir a tela marca tudo como lido no servidor
@@ -176,6 +178,15 @@ function stopCollectionNotifications(item: NotificationItem): void {
   )
 }
 
+function isFollowBackActive(item: NotificationItem): boolean {
+  return !!item.actorId && followedBackIds.value.has(item.actorId)
+}
+
+function markFollowedBack(item: NotificationItem): void {
+  if (!item.actorId) return
+  followedBackIds.value = new Set(followedBackIds.value).add(item.actorId)
+}
+
 function linkComponentProps(item: NotificationItem): { is: typeof RouterLink | 'div'; to?: string } {
   const to = notificationLinkTo(item)
   return to ? { is: RouterLink, to } : { is: 'div' }
@@ -246,6 +257,14 @@ function linkComponentProps(item: NotificationItem): { is: typeof RouterLink | '
                 </template>
               </p>
               <p class="notif-item__when">{{ formatNotificationWhen(item.createdAt) }}</p>
+              <FollowButton
+                v-if="item.type === 'NEW_FOLLOWER' && item.actorId"
+                class="notif-item__follow-back"
+                :user-id="item.actorId"
+                :following="isFollowBackActive(item)"
+                @click.stop
+                @toggled="markFollowedBack(item)"
+              />
             </component>
 
             <img
@@ -442,6 +461,10 @@ function linkComponentProps(item: NotificationItem): { is: typeof RouterLink | '
   margin: var(--space-1) 0 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
+}
+
+.notif-item__follow-back {
+  margin-top: var(--space-2);
 }
 
 .notif-item__thumb {
