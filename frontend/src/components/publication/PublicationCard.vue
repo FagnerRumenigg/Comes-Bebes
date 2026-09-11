@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { useQueryClient } from '@tanstack/vue-query'
 
+import { useDeletePublication } from '@/api/generated/publications/publications'
 import type { PublicationResponse } from '@/api/generated/models'
 import AppIcon from '@/components/icons/AppIcon.vue'
+import { normalizeHttpError } from '@/api/errors'
 import { showAuthNotice } from '@/composables/useAuthNotice'
 import { useAuthStore } from '@/stores/auth.store'
 
@@ -12,11 +15,16 @@ import ReactionBar from './ReactionBar.vue'
 import RecipeFlipCard from './RecipeFlipCard.vue'
 import ReportDialog from './ReportDialog.vue'
 import SaveButton from './SaveButton.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
+import BaseDialog from '@/components/base/BaseDialog.vue'
 
 const props = defineProps<{
   publication: PublicationResponse
 }>()
 const authStore = useAuthStore()
+const queryClient = useQueryClient()
+const deleteDialogOpen = ref(false)
+const deleteError = ref('')
 
 const typeLabel = computed(() => {
   const labels: Record<PublicationResponse['type'], string> = {
@@ -41,6 +49,24 @@ const statusMessage = computed(() => {
 const imageAlt = computed(
   () => props.publication.title ?? `Publicação de ${props.publication.authorDisplayName}`,
 )
+
+const deleteMutation = useDeletePublication({
+  mutation: {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['publications'] })
+      deleteDialogOpen.value = false
+    },
+    onError: (error) => {
+      deleteError.value = normalizeHttpError(error).message
+    },
+  },
+})
+
+function confirmDelete(): void {
+  if (deleteMutation.isPending.value) return
+  deleteError.value = ''
+  deleteMutation.mutate({ id: props.publication.id })
+}
 </script>
 
 <template>
@@ -85,6 +111,14 @@ const imageAlt = computed(
       >
         Editar
       </RouterLink>
+      <BaseButton
+        v-if="authStore.identity?.userId === publication.authorId"
+        variant="danger"
+        class="publication-card__delete"
+        @click="deleteDialogOpen = true"
+      >
+        Excluir
+      </BaseButton>
       <SaveButton :publication-id="publication.id" :saved="publication.saved" />
       <ReportDialog
         :publication-id="publication.id"
@@ -112,6 +146,22 @@ const imageAlt = computed(
         Minha versão
       </button>
     </div>
+
+    <BaseDialog
+      v-model:open="deleteDialogOpen"
+      title="Excluir publicação"
+      description="Tem certeza que deseja excluir esta publicação? Essa ação não pode ser desfeita."
+    >
+      <p v-if="deleteError" role="alert" class="publication-card__delete-error">
+        {{ deleteError }}
+      </p>
+      <div class="publication-card__dialog-actions">
+        <BaseButton variant="ghost" @click="deleteDialogOpen = false">Cancelar</BaseButton>
+        <BaseButton variant="danger" :loading="deleteMutation.isPending.value" @click="confirmDelete">
+          Excluir
+        </BaseButton>
+      </div>
+    </BaseDialog>
   </article>
 </template>
 
@@ -219,6 +269,22 @@ const imageAlt = computed(
 
 .publication-card__edit {
   text-decoration: none;
+}
+
+.publication-card__delete {
+  min-height: auto;
+  padding: 0;
+  box-shadow: none;
+}
+
+.publication-card__delete-error {
+  color: var(--color-danger);
+}
+
+.publication-card__dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
 }
 
 @media (max-width: 30rem) {

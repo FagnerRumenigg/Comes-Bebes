@@ -198,6 +198,14 @@ export function addMockPublication(publication: PublicationResponse): void {
   persistState()
 }
 
+export function deleteMockPublication(publicationId: string): boolean {
+  const index = mockPublications.findIndex((publication) => publication.id === publicationId)
+  if (index < 0) return false
+  mockPublications.splice(index, 1)
+  persistState()
+  return true
+}
+
 export function setPublicationStatus(
   publicationId: string,
   status: PublicationResponse['status'],

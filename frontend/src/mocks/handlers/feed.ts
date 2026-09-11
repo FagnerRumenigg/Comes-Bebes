@@ -13,6 +13,7 @@ import { mockAccounts } from '@/mocks/fixtures/auth'
 import { mockPublications } from '@/mocks/fixtures/publications'
 import {
   addMockPublication,
+  deleteMockPublication,
   personalizePublication,
   reportPublication,
   setPublicationReaction,
@@ -127,6 +128,17 @@ export const feedMockHandlers = [
       return HttpResponse.json({ message: 'Receita não encontrada.' }, { status: 404 })
     }
     return HttpResponse.json(publication.recipePreview)
+  }),
+  http.delete('*/publications/:id', async ({ params, request }) => {
+    await delay(180)
+    const username = mockAuthenticatedUsername(request)
+    if (!username) return unauthorized()
+    const publication = mockPublications.find((item) => item.id === params.id)
+    if (!publication || publication.authorId !== authorFor(request).userId) {
+      return HttpResponse.json({ message: 'Publicação não encontrada.' }, { status: 404 })
+    }
+    deleteMockPublication(String(params.id))
+    return new HttpResponse(null, { status: 204 })
   }),
   http.put('*/publications/:id/saved', async ({ params, request }) => {
     await delay(120)
