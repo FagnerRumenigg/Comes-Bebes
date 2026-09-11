@@ -3,6 +3,7 @@ import { nextTick, ref, watch } from 'vue'
 import { Cropper, type CropperResult } from 'vue-advanced-cropper'
 import 'vue-advanced-cropper/dist/style.css'
 
+import { apiRequest } from '@/api/client'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseDialog from '@/components/base/BaseDialog.vue'
 
@@ -26,6 +27,32 @@ const cropperRef = ref<InstanceType<typeof Cropper>>()
 const objectUrl = ref('')
 const isProcessing = ref(false)
 let confirmed = false
+const diagnosticsEnabled = import.meta.env.VITE_ENABLE_PHOTO_CROP_DIAGNOSTICS === 'true'
+const diagnosticSessionId = crypto.randomUUID()
+const openedAt = ref(0)
+
+function sendDiagnostic(event: string, extra: Record<string, unknown> = {}): void {
+  if (!diagnosticsEnabled || !props.file) return
+  void apiRequest({
+    url: '/diagnostics/photo-crop',
+    method: 'POST',
+    data: {
+      sessionId: diagnosticSessionId,
+      userAgent: navigator.userAgent,
+      screenWidth: window.screen.width,
+      screenHeight: window.screen.height,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      devicePixelRatio: window.devicePixelRatio,
+      fileType: props.file.type,
+      fileName: props.file.name,
+      fileSize: props.file.size,
+      elapsedMs: openedAt.value ? performance.now() - openedAt.value : null,
+      event,
+      ...extra,
+    },
+  }).catch(() => undefined)
+}
 
 watch(
   () => props.file,
@@ -43,7 +70,8 @@ watch(
 watch(
   () => props.open,
   async (isOpen) => {
-    if (!isOpen) return
+  if (!isOpen) return
+    openedAt.value = performance.now()
     await nextTick()
     // Mais um frame de folga: garante que o showModal() do BaseDialog (que
     // também espera um nextTick, em paralelo) já rodou e o layout foi
@@ -59,6 +87,20 @@ function handleOpenChange(value: boolean): void {
 function handleClose(): void {
   if (!confirmed) emit('cancel')
   confirmed = false
+}
+
+function handleCropperReady(): void {
+  const element = cropperRef.value?.$el as HTMLElement | undefined
+  sendDiagnostic('ready', {
+    cropperReady: true,
+    cropperWidth: element?.clientWidth ?? null,
+    cropperHeight: element?.clientHeight ?? null,
+  })
+  requestAnimationFrame(() => cropperRef.value?.refresh())
+}
+
+function handleCropperError(): void {
+  sendDiagnostic('error', { cropperReady: false, error: 'cropper-error' })
 }
 
 function requestCancel(): void {
@@ -115,6 +157,8 @@ function confirm(): void {
         :stencil-props="{ aspectRatio: TARGET_ASPECT_RATIO }"
         image-restriction="fit-area"
         :canvas="{ maxWidth: 4096, maxHeight: 4096 }"
+        @ready="handleCropperReady"
+        @error="handleCropperError"
       />
     </div>
 

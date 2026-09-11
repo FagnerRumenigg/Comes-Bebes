@@ -119,6 +119,7 @@ public class SecurityConfig {
                         // estar autenticado. Faltava aqui: sem essa regra, os dois endpoints
                         // caíam no anyRequest().authenticated() e devolviam 401 sempre.
                         .requestMatchers("/auth/password-reset", "/auth/password-reset/confirm").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/diagnostics/photo-crop").permitAll()
                         .requestMatchers("/auth/biometric/authenticate/start", "/auth/biometric/authenticate/complete", "/auth/biometric/status").permitAll()
                         // Restrito a GET: "/publications/*" e "/users/*" são wildcards de um
                         // segmento (ex.: /publications/{id}) que, sem o método, também batiam
