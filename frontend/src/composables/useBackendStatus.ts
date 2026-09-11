@@ -1,5 +1,11 @@
 import { reactive } from 'vue'
 
+// A tela de aquecimento comunica o cold start do backend remoto. Pode ser
+// desativada no desenvolvimento local sem alterar o comportamento de testes
+// ou de outros ambientes.
+export const backendOfflineScreenEnabled =
+  import.meta.env.VITE_ENABLE_BACKEND_OFFLINE_SCREEN !== 'false'
+
 export const backendStatus = reactive({
   offline: false,
   slowRequest: false,

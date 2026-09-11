@@ -118,7 +118,11 @@ onBeforeUnmount(() => {
 
 .base-dialog__surface {
   display: grid;
+  box-sizing: border-box;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  max-height: calc(100dvh - (2 * var(--space-4)));
   gap: var(--space-6);
+  overflow: hidden;
   padding: var(--space-6);
   background: var(--color-surface-raised);
   border: 1px solid var(--color-border);
@@ -143,6 +147,8 @@ onBeforeUnmount(() => {
 
 .base-dialog__content {
   min-width: 0;
+  min-height: 0;
+  overflow: auto;
 }
 
 .base-dialog__actions {

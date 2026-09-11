@@ -164,6 +164,13 @@ function confirm(): void {
 <style scoped>
 .photo-crop {
   display: grid;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden !important;
   /* O Cropper precisa de uma altura concreta pra se dimensionar — com só
      max-height (ou herdando altura automática dos wrappers), ele não tem
      como calcular a área de arraste e acaba mostrando a imagem inteira,
@@ -172,9 +179,42 @@ function confirm(): void {
 }
 
 .photo-crop__cropper {
+  display: block;
   width: 100%;
   height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden !important;
   background: var(--color-surface);
   border-radius: var(--radius-md);
+}
+
+/* O stylesheet do cropper deixa a imagem interna maior que a área visível
+   para permitir o zoom. Isso é correto, mas nunca pode aumentar o elemento
+   que participa do layout do modal. */
+.photo-crop__cropper :deep(.vue-advanced-cropper) {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden !important;
+}
+
+.photo-crop__cropper :deep(.vue-advanced-cropper__stretcher),
+.photo-crop__cropper :deep(.vue-advanced-cropper__cropper-wrapper),
+.photo-crop__cropper :deep(.vue-advanced-cropper__image-wrapper) {
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden !important;
+}
+
+@media (max-width: 30rem) {
+  .photo-crop {
+    height: min(45vh, 24rem);
+  }
 }
 </style>
