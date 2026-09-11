@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import heic2any from 'heic2any'
 import { useRoute, useRouter } from 'vue-router'
 import { useQueryClient } from '@tanstack/vue-query'
 
@@ -250,6 +249,7 @@ async function acceptImage(event: Event): Promise<void> {
   }
   if (isHeicImage(selected)) {
     try {
+      const { default: heic2any } = await import('heic2any')
       const converted = await heic2any({ blob: selected, toType: 'image/jpeg', quality: 0.9 })
       const blob = Array.isArray(converted) ? converted[0] : converted
       cropFile.value = new File([blob], `${selected.name.replace(/\.(heic|heif)$/i, '')}.jpg`, {
