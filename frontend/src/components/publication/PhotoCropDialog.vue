@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { Cropper, type CropperResult } from 'vue-advanced-cropper'
 import 'vue-advanced-cropper/dist/style.css'
 
@@ -24,6 +24,7 @@ const emit = defineEmits<{
 }>()
 
 const cropperRef = ref<InstanceType<typeof Cropper>>()
+const cropContainerRef = ref<HTMLElement>()
 const objectUrl = ref('')
 const isProcessing = ref(false)
 let confirmed = false
@@ -63,20 +64,10 @@ watch(
   },
 )
 
-// O <dialog> nativo fica com display:none até showModal() ser chamado
-// (BaseDialog faz isso depois de um nextTick). Se o Cropper montar antes
-// disso, ele mede um container com 0x0 e nunca se recupera sozinho —
-// então força um refresh assim que o diálogo realmente abre.
 watch(
   () => props.open,
-  async (isOpen) => {
-  if (!isOpen) return
-    openedAt.value = performance.now()
-    await nextTick()
-    // Mais um frame de folga: garante que o showModal() do BaseDialog (que
-    // também espera um nextTick, em paralelo) já rodou e o layout foi
-    // calculado antes de medir o container.
-    requestAnimationFrame(() => cropperRef.value?.refresh())
+  (isOpen) => {
+    if (isOpen) openedAt.value = performance.now()
   },
 )
 
@@ -90,13 +81,12 @@ function handleClose(): void {
 }
 
 function handleCropperReady(): void {
-  const element = cropperRef.value?.$el as HTMLElement | undefined
+  const element = cropContainerRef.value
   sendDiagnostic('ready', {
     cropperReady: true,
     cropperWidth: element?.clientWidth ?? null,
     cropperHeight: element?.clientHeight ?? null,
   })
-  requestAnimationFrame(() => cropperRef.value?.refresh())
 }
 
 function handleCropperError(): void {
@@ -142,7 +132,7 @@ function confirm(): void {
     @update:open="handleOpenChange"
     @close="handleClose"
   >
-    <div class="photo-crop">
+    <div ref="cropContainerRef" class="photo-crop">
       <!-- Sem limite de canvas, fotos de câmera de celular (bem maiores que
            telas comuns, às vezes 4000px+ de lado) estouram o tamanho máximo
            de canvas de alguns navegadores/GPUs mobile - a imagem some (fica
