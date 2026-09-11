@@ -38,6 +38,7 @@ import {
 import { PUBLICATION_VISIBILITY_OPTIONS } from '@/features/publications/visibilityOptions'
 import { useAccountInfo } from '@/composables/useAccountInfo'
 import { resolveImageUrl } from '@/utils/resolveImageUrl'
+import { preserveCurrentViewWhileRequesting } from '@/composables/useBackendStatus'
 
 const route = useRoute()
 const router = useRouter()
@@ -358,7 +359,7 @@ function recipePayload(): CreateRecipeRequest | undefined {
   }
 }
 
-function submit(): void {
+async function submit(): Promise<void> {
   if (isSubmitting.value || isRateLimited.value) return
   clearErrors()
   if (!image.value) {
@@ -371,6 +372,10 @@ function submit(): void {
   }
   const recipe = recipePayload()
   if (recipeMode.value && !recipe) return
+  // Garante que o conteúdo exista antes do upload. Se o backend estiver em
+  // cold start, a tela de loading pode aparecer enquanto a publicação espera.
+  await autosaveDraft()
+  preserveCurrentViewWhileRequesting()
   if (isMyVersion.value) {
     versionMutation.mutate({
       id: sourceId.value,

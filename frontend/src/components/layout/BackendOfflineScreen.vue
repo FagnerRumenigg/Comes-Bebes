@@ -8,6 +8,7 @@ import { markBackendOnline } from '@/composables/useBackendStatus'
 const POLL_INTERVAL_MS = 5_000
 const POLL_TIMEOUT_MS = 4_000
 const ELAPSED_TICK_MS = 1_000
+const REDIRECT_DELAY_MS = 30_000
 
 interface Stage {
   at: number
@@ -52,8 +53,11 @@ const showGame = ref(false)
 // "seguir" — evita arrancar alguém no meio de uma partida do joguinho assim
 // que o servidor acorda.
 const ready = ref(false)
+const redirectSeconds = ref(30)
 let pollHandle: ReturnType<typeof setInterval> | undefined
 let elapsedHandle: ReturnType<typeof setInterval> | undefined
+let redirectHandle: ReturnType<typeof setTimeout> | undefined
+let redirectCountdownHandle: ReturnType<typeof setInterval> | undefined
 const startedAt = Date.now()
 
 const stage = computed(() => {
@@ -79,6 +83,7 @@ async function checkNow(): Promise<void> {
     clearTimeout(timeoutHandle)
     if (response.ok) {
       ready.value = true
+      startRedirectCountdown()
       if (pollHandle) clearInterval(pollHandle)
     }
   } catch {
@@ -88,7 +93,20 @@ async function checkNow(): Promise<void> {
   }
 }
 
+function startRedirectCountdown(): void {
+  if (redirectHandle || redirectCountdownHandle) return
+  redirectSeconds.value = REDIRECT_DELAY_MS / 1_000
+  redirectCountdownHandle = setInterval(() => {
+    redirectSeconds.value = Math.max(0, redirectSeconds.value - 1)
+  }, ELAPSED_TICK_MS)
+  redirectHandle = setTimeout(continueNow, REDIRECT_DELAY_MS)
+}
+
 function continueNow(): void {
+  if (redirectHandle) clearTimeout(redirectHandle)
+  if (redirectCountdownHandle) clearInterval(redirectCountdownHandle)
+  redirectHandle = undefined
+  redirectCountdownHandle = undefined
   markBackendOnline()
 }
 
@@ -102,6 +120,8 @@ onMounted(() => {
 onUnmounted(() => {
   if (pollHandle) clearInterval(pollHandle)
   if (elapsedHandle) clearInterval(elapsedHandle)
+  if (redirectHandle) clearTimeout(redirectHandle)
+  if (redirectCountdownHandle) clearInterval(redirectCountdownHandle)
 })
 </script>
 
@@ -147,6 +167,9 @@ onUnmounted(() => {
       <p aria-live="polite">
         {{ ready ? 'O servidor já está de pé. Pode continuar de onde parou.' : stage.sub }}
       </p>
+      <p v-if="ready" class="backend-offline__redirect-notice" role="status">
+        Esta tela será redirecionada automaticamente em {{ redirectSeconds }}s.
+      </p>
       <p class="backend-offline__elapsed">{{ elapsedSeconds }}s</p>
 
       <div v-if="ready" class="backend-offline__actions">
@@ -173,8 +196,12 @@ onUnmounted(() => {
 
 <style scoped>
 .backend-offline {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
   display: grid;
   place-items: center;
+  overflow: auto;
   min-height: 100vh;
   padding: var(--space-8);
   background: var(--color-background);

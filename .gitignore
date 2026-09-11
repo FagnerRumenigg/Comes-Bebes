@@ -37,6 +37,9 @@ frontend/docs/design/
 /backend/docs/
 /frontend/docs/
 
+# Local assistant configuration
+backend/.claude/
+
 # Backend build artifacts
 backend/target/
 

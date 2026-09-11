@@ -104,21 +104,6 @@ function confirmDelete(): void {
     </div>
     <div class="publication-card__actions">
       <ReactionBar :publication="publication" />
-      <RouterLink
-        v-if="authStore.identity?.userId === publication.authorId"
-        class="publication-card__edit"
-        :to="`/publicacoes/${publication.id}/editar`"
-      >
-        Editar
-      </RouterLink>
-      <BaseButton
-        v-if="authStore.identity?.userId === publication.authorId"
-        variant="danger"
-        class="publication-card__delete"
-        @click="deleteDialogOpen = true"
-      >
-        Excluir
-      </BaseButton>
       <SaveButton :publication-id="publication.id" :saved="publication.saved" />
       <ReportDialog
         :publication-id="publication.id"
@@ -145,6 +130,21 @@ function confirmDelete(): void {
         <AppIcon name="my-version" :size="18" :stroke-width="1.9" />
         Minha versão
       </button>
+      <div v-if="authStore.identity?.userId === publication.authorId" class="publication-card__owner-actions">
+        <RouterLink
+          class="publication-card__edit"
+          :to="`/publicacoes/${publication.id}/editar`"
+        >
+          Editar
+        </RouterLink>
+        <button
+          type="button"
+          class="publication-card__delete"
+          @click="deleteDialogOpen = true"
+        >
+          Excluir
+        </button>
+      </div>
     </div>
 
     <BaseDialog
@@ -255,7 +255,8 @@ function confirmDelete(): void {
 }
 
 .publication-card__versions,
-.publication-card__edit {
+.publication-card__edit,
+.publication-card__delete {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -271,10 +272,19 @@ function confirmDelete(): void {
   text-decoration: none;
 }
 
+.publication-card__owner-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-inline-start: auto;
+}
+
 .publication-card__delete {
-  min-height: auto;
-  padding: 0;
-  box-shadow: none;
+  color: var(--color-danger);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
 }
 
 .publication-card__delete-error {

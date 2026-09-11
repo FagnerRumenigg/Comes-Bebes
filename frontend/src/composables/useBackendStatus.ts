@@ -9,6 +9,7 @@ export const backendOfflineScreenEnabled =
 export const backendStatus = reactive({
   offline: false,
   slowRequest: false,
+  preserveCurrentView: false,
 })
 
 export function markBackendOffline(): void {
@@ -17,6 +18,11 @@ export function markBackendOffline(): void {
 
 export function markBackendOnline(): void {
   if (backendStatus.offline) backendStatus.offline = false
+  backendStatus.preserveCurrentView = false
+}
+
+export function preserveCurrentViewWhileRequesting(): void {
+  backendStatus.preserveCurrentView = true
 }
 
 const SLOW_REQUEST_THRESHOLD_MS = 3_000

@@ -6,7 +6,10 @@ import PatchNotesModal from '@/components/patchnotes/PatchNotesModal.vue'
 import { dismissNavigationError, navigationState } from '@/app/router'
 import { appCrashed } from '@/composables/useAppCrash'
 import { authNotice, dismissAuthNotice } from '@/composables/useAuthNotice'
-import { backendOfflineScreenEnabled, backendStatus } from '@/composables/useBackendStatus'
+import {
+  backendOfflineScreenEnabled,
+  backendStatus,
+} from '@/composables/useBackendStatus'
 import { useKeepAlivePing } from '@/composables/useKeepAlivePing'
 import { onlineStatus } from '@/composables/useOnlineStatus'
 
@@ -28,7 +31,9 @@ function retryOffline(): void {
 <template>
   <ErrorScreen v-if="appCrashed" cause="unknown" @retry="reloadApp" @home="goHomeAfterCrash" />
   <ErrorScreen v-else-if="!onlineStatus.online" cause="offline" @retry="retryOffline" />
-  <BackendOfflineScreen v-else-if="backendOfflineScreenEnabled && backendStatus.offline" />
+  <BackendOfflineScreen
+    v-else-if="backendOfflineScreenEnabled && backendStatus.offline && !backendStatus.preserveCurrentView"
+  />
   <template v-else>
     <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
     <div
@@ -57,6 +62,9 @@ function retryOffline(): void {
     </div>
     <RouterView />
     <PatchNotesModal />
+    <BackendOfflineScreen
+      v-if="backendOfflineScreenEnabled && backendStatus.offline && backendStatus.preserveCurrentView"
+    />
   </template>
 </template>
 
