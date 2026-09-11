@@ -48,7 +48,7 @@ Example: ✓ Done. (vs. "I've successfully completed the task as requested...")
 - Wait for the user's explicit "ok" (or equivalent) before doing anything below. Don't deploy on your own judgment call that it "looks done."
 - Once approved, do all three, every time:
   1. **Ship it** — merge the branch to `main` (direct merge, no PR — see below), push, and tag per SemVer (`api-v*`/`validator-v*`) for backend changes. This triggers the fully automatic deploy (see `docs/DEPLOY.md`); confirm it actually went live.
-  2. **Add a patch note** — insert a row into `application.patch_notes` (see `docs/DEPLOY.md` → "Notas de versão") so the change shows up in the "novidades" modal on the user's next login.
+  2. **Add a patch note** — every bug fix or new feature must insert a row into `application.patch_notes` (see `docs/DEPLOY.md` → "Notas de versão") so the change shows up in the "novidades" modal on the user's next login.
   3. **Mark it done** — update `docs/BACKLOG.md`: flip the item's table row to ✅ Concluída and add/update its detail section (branch name, what actually shipped vs. what was planned), matching the style of existing entries.
 
 ## No PR — Direct Merge
