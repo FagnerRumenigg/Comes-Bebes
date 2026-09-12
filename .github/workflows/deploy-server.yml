@@ -30,10 +30,12 @@ jobs:
             echo "version=${TAG#api-v}" >> "$GITHUB_OUTPUT"
             echo "container_app=${{ vars.API_CONTAINER_APP_NAME }}" >> "$GITHUB_OUTPUT"
             echo "image=comesebebes-api" >> "$GITHUB_OUTPUT"
+            echo "health_path=/actuator/health/readiness" >> "$GITHUB_OUTPUT"
           else
             echo "version=${TAG#validator-v}" >> "$GITHUB_OUTPUT"
             echo "container_app=${{ vars.VALIDATOR_CONTAINER_APP_NAME }}" >> "$GITHUB_OUTPUT"
             echo "image=comesebebes-validator" >> "$GITHUB_OUTPUT"
+            echo "health_path=/health" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Login na Azure (OIDC)
@@ -61,12 +63,12 @@ jobs:
             exit 0
           fi
           for i in $(seq 1 30); do
-            CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://$FQDN/actuator/health/readiness" || true)
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://$FQDN${{ steps.release.outputs.health_path }}" || true)
             if [ "$CODE" = "200" ]; then
-              echo "Smoke test OK ($CODE) após $((i * 10))s"
+              echo "Smoke test OK ($CODE) em ${{ steps.release.outputs.health_path }} após $((i * 10))s"
               exit 0
             fi
             sleep 10
           done
-          echo "Smoke test falhou - /actuator/health/readiness não respondeu 200 em 5 minutos."
+          echo "Smoke test falhou - ${{ steps.release.outputs.health_path }} não respondeu 200 em 5 minutos."
           exit 1
