@@ -28,6 +28,19 @@ def health() -> dict[str, str]:
     return {"status": "UP"}
 
 
+@app.post("/warmup")
+def warmup() -> dict[str, str]:
+    """Carrega o classificador antes da primeira validação de uma imagem."""
+    try:
+        get_classifier()
+    except (ImportError, OSError, RuntimeError) as error:
+        raise HTTPException(
+            status_code=503,
+            detail={"code": "CLASSIFIER_UNAVAILABLE", "message": "O classificador não está disponível."},
+        ) from error
+    return {"status": "WARMED"}
+
+
 @app.post("/validate")
 def validate(file: UploadFile = File(...)) -> dict[str, object]:
     with tempfile.TemporaryDirectory(prefix="upload-", dir=BASE_DIRECTORY) as temporary_directory:

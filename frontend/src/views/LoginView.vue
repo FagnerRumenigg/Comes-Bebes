@@ -3,6 +3,7 @@ import { onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { normalizeHttpError } from '@/api/errors'
+import { apiRequest } from '@/api/client'
 import { useLogin } from '@/api/generated/authentication/authentication'
 import type { LoginRequest, LoginResponse } from '@/api/generated/models'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -27,6 +28,14 @@ const fieldErrors = reactive<Record<string, string>>({})
 const generalError = ref<string | null>(null)
 const credentialsInvalid = ref(false)
 const mocksEnabled = import.meta.env.DEV && import.meta.env.VITE_ENABLE_MOCKS !== 'false'
+
+function warmImageValidator(): void {
+  void apiRequest({
+    url: '/validator/warmup',
+    method: 'POST',
+    skipBackendMonitoring: true,
+  }).catch(() => undefined)
+}
 
 // Entrada por digital só faz sentido no celular (docs/telas/02) — no
 // desktop a senha do SO não protege o navegador do jeito que protege o app.
@@ -143,6 +152,7 @@ const loginMutation = useLogin({
   mutation: {
     onSuccess(response) {
       authStore.acceptSession(response, remember.value)
+      warmImageValidator()
       void maybeOfferBiometricEnrollment(response)
     },
     onError(error) {
@@ -174,6 +184,7 @@ async function submitBiometric(): Promise<void> {
   try {
     const response = await authenticate(deviceId)
     authStore.acceptSession(response, remember.value)
+    warmImageValidator()
     goToDestination(response.onboardingCompleted)
   } catch (error) {
     generalError.value = normalizeHttpError(error).message

@@ -46,7 +46,8 @@ export const httpClient = axios.create({
 
 type AccessTokenProvider = () => string | null
 type UnauthorizedHandler = () => Promise<boolean>
-type RetriableRequestConfig = AxiosRequestConfig & { retriedAfterUnauthorized?: boolean }
+type AppAxiosRequestConfig = AxiosRequestConfig & { skipBackendMonitoring?: boolean }
+type RetriableRequestConfig = AppAxiosRequestConfig & { retriedAfterUnauthorized?: boolean }
 
 let accessTokenProvider: AccessTokenProvider = () => null
 let unauthorizedHandler: UnauthorizedHandler | null = null
@@ -77,23 +78,28 @@ httpClient.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${accessToken}`
   }
 
-  markRequestStarted()
+  if (!(config as AppAxiosRequestConfig).skipBackendMonitoring) markRequestStarted()
   return config
 })
 
 httpClient.interceptors.response.use(
   (response) => {
-    markRequestFinished()
-    markBackendOnline()
+    if (!(response.config as AppAxiosRequestConfig).skipBackendMonitoring) {
+      markRequestFinished()
+      markBackendOnline()
+    }
     return response
   },
   (error: unknown) => {
-    markRequestFinished()
-    if (isBackendUnreachable(error)) {
-      markBackendOffline()
-    } else if (axios.isAxiosError(error) && error.response) {
-      // O servidor respondeu (mesmo com erro 4xx) - está alcançável.
-      markBackendOnline()
+    const config = axios.isAxiosError(error) ? error.config as AppAxiosRequestConfig | undefined : undefined
+    if (!config?.skipBackendMonitoring) {
+      markRequestFinished()
+      if (isBackendUnreachable(error)) {
+        markBackendOffline()
+      } else if (axios.isAxiosError(error) && error.response) {
+        // O servidor respondeu (mesmo com erro 4xx) - está alcançável.
+        markBackendOnline()
+      }
     }
     return Promise.reject(error)
   },
@@ -118,8 +124,8 @@ httpClient.interceptors.response.use(undefined, async (error: unknown) => {
 })
 
 export async function apiRequest<T>(
-  config: AxiosRequestConfig,
-  options?: AxiosRequestConfig,
+  config: AppAxiosRequestConfig,
+  options?: AppAxiosRequestConfig,
 ): Promise<T> {
   const requestConfig = { ...config, ...options }
   requestConfig.data = normalizeMultipartParts(requestConfig.data)

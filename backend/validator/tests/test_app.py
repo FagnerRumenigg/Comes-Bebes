@@ -95,3 +95,19 @@ def test_validate_rejects_non_image_payload(monkeypatch) -> None:
 
     assert response.status_code == 422
     assert response.json()["detail"]["code"] == "INVALID_IMAGE"
+
+
+def test_warmup_loads_classifier(monkeypatch) -> None:
+    loaded = False
+
+    def fake_get_classifier():
+        nonlocal loaded
+        loaded = True
+        return FakeApprovingClassifier()
+
+    monkeypatch.setattr("validator.app.get_classifier", fake_get_classifier)
+    response = TestClient(app).post("/warmup")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "WARMED"}
+    assert loaded is True

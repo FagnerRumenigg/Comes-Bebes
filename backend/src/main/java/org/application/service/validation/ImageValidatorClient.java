@@ -96,6 +96,19 @@ public class ImageValidatorClient {
         }
     }
 
+    public boolean warmUp() {
+        try {
+            ResponseEntity<Void> response = restTemplate.exchange(
+                    validatorUrl + "/warmup", HttpMethod.POST, HttpEntity.EMPTY, Void.class);
+            boolean warmed = response.getStatusCode().is2xxSuccessful();
+            log.info("event=image_validator_warmup status={}", response.getStatusCode().value());
+            return warmed;
+        } catch (RuntimeException exception) {
+            log.warn("event=image_validator_warmup_failed message={}", exception.getMessage());
+            return false;
+        }
+    }
+
     private ValidationResult toValidationResult(ResponseEntity<byte[]> response) {
         HttpHeaders responseHeaders = response.getHeaders();
         Integer width = parseIntHeader(responseHeaders, "X-Image-Width");
