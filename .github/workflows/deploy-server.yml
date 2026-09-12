@@ -54,6 +54,11 @@ jobs:
 
       - name: Smoke test
         run: |
+          TAG="${{ github.event.workflow_run.head_branch }}"
+          if [[ "$TAG" == validator-v* ]]; then
+            echo "Validador sem ingress externo; smoke test HTTP externo não se aplica. Probes internas do Container App serão usadas."
+            exit 0
+          fi
           FQDN=$(az containerapp show \
             --name "${{ steps.release.outputs.container_app }}" \
             --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
