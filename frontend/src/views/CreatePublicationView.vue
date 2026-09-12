@@ -25,6 +25,7 @@ import IngredientEditor, {
   type IngredientDraft,
 } from '@/components/publication/IngredientEditor.vue'
 import PhotoCropDialog from '@/components/publication/PhotoCropDialog.vue'
+import PublicationProcessingModal from '@/components/publication/PublicationProcessingModal.vue'
 import PreparationStepsEditor from '@/components/publication/PreparationStepsEditor.vue'
 import TagEditor from '@/components/publication/TagEditor.vue'
 import {
@@ -193,12 +194,16 @@ onMounted(async () => {
 
 const createMutation = useCreateUpload({
   mutation: {
+    retry: (failureCount, error) => normalizeHttpError(error).code === 'IMAGE_VALIDATOR_UNAVAILABLE' && failureCount < 1,
+    retryDelay: 1_000,
     onSuccess: (result) => finish(result.id),
     onError: (error) => handleMutationError(error, 'Não foi possível publicar.'),
   },
 })
 const versionMutation = useCreateMyVersion({
   mutation: {
+    retry: (failureCount, error) => normalizeHttpError(error).code === 'IMAGE_VALIDATOR_UNAVAILABLE' && failureCount < 1,
+    retryDelay: 1_000,
     onSuccess: (result) => finish(result.id),
     onError: (error) => handleMutationError(error, 'Não foi possível publicar sua versão.'),
   },
@@ -500,6 +505,7 @@ onBeforeUnmount(() => {
 
 <template>
   <article class="create-publication">
+    <PublicationProcessingModal v-if="isSubmitting" />
     <section v-if="published" class="create-publication__done">
       <StatusRing variant="success" />
       <h1>Publicado!</h1>

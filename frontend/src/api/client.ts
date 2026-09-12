@@ -39,6 +39,12 @@ function isBackendUnreachable(error: unknown): boolean {
   return status === undefined || unreachableStatuses.has(status)
 }
 
+function isImageValidatorUnavailable(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) return false
+  const data = error.response?.data
+  return typeof data === 'object' && data !== null && 'code' in data && data.code === 'IMAGE_VALIDATOR_UNAVAILABLE'
+}
+
 export const httpClient = axios.create({
   baseURL,
   headers: { Accept: 'application/json' },
@@ -94,7 +100,7 @@ httpClient.interceptors.response.use(
     const config = axios.isAxiosError(error) ? error.config as AppAxiosRequestConfig | undefined : undefined
     if (!config?.skipBackendMonitoring) {
       markRequestFinished()
-      if (isBackendUnreachable(error)) {
+      if (isBackendUnreachable(error) && !isImageValidatorUnavailable(error)) {
         markBackendOffline()
       } else if (axios.isAxiosError(error) && error.response) {
         // O servidor respondeu (mesmo com erro 4xx) - está alcançável.
