@@ -16,7 +16,11 @@ export function markBackendOffline(): void {
   backendStatus.offline = true
 }
 
-export function markBackendOnline(): void {
+export function markBackendOnline(force = false): void {
+  // Durante o cold start, a resposta da requisição original só confirma que o
+  // servidor voltou. A tela precisa permanecer aberta até a decisão do usuário
+  // ou o fim da contagem regressiva de 30s.
+  if (backendStatus.preserveCurrentView && !force) return
   if (backendStatus.offline) backendStatus.offline = false
   backendStatus.preserveCurrentView = false
 }

@@ -107,7 +107,7 @@ function continueNow(): void {
   if (redirectCountdownHandle) clearInterval(redirectCountdownHandle)
   redirectHandle = undefined
   redirectCountdownHandle = undefined
-  markBackendOnline()
+  markBackendOnline(true)
 }
 
 onMounted(() => {
