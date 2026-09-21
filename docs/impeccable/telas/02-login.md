@@ -5,6 +5,7 @@ Arquivos analisados: `frontend/src/views/LoginView.vue` e `frontend/src/app/layo
 ## Status
 
 - Critique: concluído
+- P1 — conexão entre login, memória e registro culinário: concluído
 - Visual: aguardando o critique das demais telas
 - Texto, cor e identidade: aguardando etapa visual
 

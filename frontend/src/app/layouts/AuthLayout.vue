@@ -17,8 +17,8 @@ const manifesto = computed(() =>
         statement: 'Descubra o sabor da autenticidade brasileira.',
       }
     : {
-        eyebrow: 'Que bom ter você de volta',
-        statement: 'A arte de saborear histórias.',
+        eyebrow: 'Memória, cozinha e descoberta',
+        statement: 'Seu caderno de descobertas culinárias.',
       },
 )
 </script>

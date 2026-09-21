@@ -219,9 +219,9 @@ function submit(): void {
 <template>
   <section class="auth-view" aria-labelledby="login-title">
     <div class="auth-view__heading">
-      <p class="auth-view__eyebrow">Que bom ter você de volta</p>
+      <p class="auth-view__eyebrow">De volta à sua cozinha</p>
       <h1 id="login-title">Bem-vindo de volta</h1>
-      <p>Entre para continuar compartilhando suas descobertas culinárias.</p>
+      <p>Entre para reencontrar o que você salvou e continuar registrando suas descobertas culinárias.</p>
     </div>
 
     <BaseToast
