@@ -22,6 +22,8 @@ const { register: registerBiometricCredential } = useBiometric()
 
 const devicesQuery = useList()
 const actionError = ref('')
+const deviceToRevoke = ref<{ id: string; name: string } | null>(null)
+const revokingDevice = ref(false)
 const logoutAllDialogOpen = ref(false)
 const loggingOutAll = ref(false)
 
@@ -100,7 +102,27 @@ const revokeMutation = useRevoke({
 
 function revokeDevice(id: string): void {
   actionError.value = ''
-  revokeMutation.mutate({ id })
+  const device = devicesQuery.data.value?.find((item) => item.id === id)
+  if (device) deviceToRevoke.value = { id: device.id, name: device.deviceName }
+}
+
+function confirmRevokeDevice(): void {
+  if (!deviceToRevoke.value || revokingDevice.value) return
+  revokingDevice.value = true
+  revokeMutation.mutate(
+    { id: deviceToRevoke.value.id },
+    {
+      onSuccess: () => {
+        deviceToRevoke.value = null
+        revokingDevice.value = false
+        invalidateDevices()
+      },
+      onError: (error) => {
+        actionError.value = normalizeHttpError(error).message
+        revokingDevice.value = false
+      },
+    },
+  )
 }
 
 async function confirmLogoutAll(): Promise<void> {
@@ -180,6 +202,20 @@ async function confirmLogoutAll(): Promise<void> {
       </template>
       <p v-if="actionError" class="devices-panel__error" role="alert">{{ actionError }}</p>
     </SettingsSection>
+
+    <BaseDialog
+      :open="!!deviceToRevoke"
+      title="Desconectar dispositivo?"
+      :description="`A sessão de ${deviceToRevoke?.name ?? 'este dispositivo'} será encerrada. Será necessário entrar novamente para usá-lo.`"
+      @update:open="(open) => { if (!open && !revokingDevice) deviceToRevoke = null }"
+    >
+      <template #actions>
+        <BaseButton variant="ghost" :disabled="revokingDevice" @click="deviceToRevoke = null">Cancelar</BaseButton>
+        <BaseButton variant="danger" :loading="revokingDevice" @click="confirmRevokeDevice">
+          Desconectar dispositivo
+        </BaseButton>
+      </template>
+    </BaseDialog>
 
     <SettingsZone title="Se achar que alguém entrou na sua conta">
       <SettingsRow

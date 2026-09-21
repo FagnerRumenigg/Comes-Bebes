@@ -23,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.Optional;
 import java.util.UUID;
 import java.time.Clock;
+import java.time.LocalDate;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -72,7 +73,7 @@ class UserServiceTest {
      */
     @Test
     void shouldCreateUserWithGeneratedUsernameAndEncodedPassword() {
-        CreateUserRequest request = new CreateUserRequest("fagner@exemplo.com.br", "MinhaSenha123!", " Fagner ");
+        CreateUserRequest request = new CreateUserRequest("fagner@exemplo.com.br", "MinhaSenha123!", " Fagner ", LocalDate.of(1990, 5, 20));
 
         when(stringNormalizer.normalize("fagner@exemplo.com.br")).thenReturn("fagner@exemplo.com.br");
         when(userRepository.existsByEmailIgnoreCase("fagner@exemplo.com.br")).thenReturn(false);
@@ -91,7 +92,7 @@ class UserServiceTest {
 
     @Test
     void shouldSlugifyDisplayNameIntoGeneratedUsername() {
-        CreateUserRequest request = new CreateUserRequest("joao@exemplo.com.br", "MinhaSenha123!", "João Editado!!");
+        CreateUserRequest request = new CreateUserRequest("joao@exemplo.com.br", "MinhaSenha123!", "João Editado!!", LocalDate.of(1990, 5, 20));
 
         when(stringNormalizer.normalize("joao@exemplo.com.br")).thenReturn("joao@exemplo.com.br");
         when(userRepository.existsByEmailIgnoreCase("joao@exemplo.com.br")).thenReturn(false);
@@ -106,7 +107,7 @@ class UserServiceTest {
 
     @Test
     void shouldAppendSuffixWhenGeneratedUsernameCollidesOnRegistration() {
-        CreateUserRequest request = new CreateUserRequest("fagner@exemplo.com.br", "MinhaSenha123!", "Fagner");
+        CreateUserRequest request = new CreateUserRequest("fagner@exemplo.com.br", "MinhaSenha123!", "Fagner", LocalDate.of(1990, 5, 20));
 
         when(stringNormalizer.normalize("fagner@exemplo.com.br")).thenReturn("fagner@exemplo.com.br");
         when(userRepository.existsByEmailIgnoreCase("fagner@exemplo.com.br")).thenReturn(false);
@@ -122,13 +123,36 @@ class UserServiceTest {
 
     @Test
     void shouldRejectRegistrationWithAlreadyUsedEmail() {
-        CreateUserRequest request = new CreateUserRequest("fagner@exemplo.com.br", "MinhaSenha123!", "Fagner");
+        CreateUserRequest request = new CreateUserRequest("fagner@exemplo.com.br", "MinhaSenha123!", "Fagner", LocalDate.of(1990, 5, 20));
 
         when(stringNormalizer.normalize("fagner@exemplo.com.br")).thenReturn("fagner@exemplo.com.br");
         when(userRepository.existsByEmailIgnoreCase("fagner@exemplo.com.br")).thenReturn(true);
 
         assertThatThrownBy(() -> userService.create(request))
                 .isInstanceOf(org.application.service.exception.DuplicateResourceException.class);
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldAcceptRegistrationOnTheDayUserTurnsEighteen() {
+        CreateUserRequest request = new CreateUserRequest("adulto@exemplo.com.br", "MinhaSenha123!", "Adulto", LocalDate.of(2008, 8, 20));
+
+        when(stringNormalizer.normalize(request.email())).thenReturn(request.email());
+        when(userRepository.existsByEmailIgnoreCase(request.email())).thenReturn(false);
+        when(userRepository.existsByUsernameIgnoreCase("adulto")).thenReturn(false);
+        when(passwordEncoder.encode(request.password())).thenReturn("hashed-password");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        assertThat(userService.create(request).getDateOfBirth()).isEqualTo(request.dateOfBirth());
+    }
+
+    @Test
+    void shouldRejectRegistrationBelowMinimumAge() {
+        CreateUserRequest request = new CreateUserRequest("menor@exemplo.com.br", "MinhaSenha123!", "Menor", LocalDate.of(2008, 8, 21));
+
+        assertThatThrownBy(() -> userService.create(request))
+                .isInstanceOf(InvalidOperationException.class)
+                .hasMessageContaining("18 anos");
         verify(userRepository, never()).save(any());
     }
 

@@ -239,9 +239,22 @@ class AuthServiceTest {
                 .tokenHash("ignored").expiresAt(OffsetDateTime.ofInstant(clock.instant().plusSeconds(3600), ZoneOffset.UTC)).build();
         when(refreshTokenRepository.findByTokenHash(any(String.class))).thenReturn(Optional.of(stored));
 
-        service.logout("refresh");
+        service.logout("refresh", stored.getUserId());
 
         assertThat(stored.getRevokedAt()).isNotNull();
+    }
+
+    @Test
+    void shouldNotRevokeRefreshTokenFromAnotherUserOnLogout() {
+        UUID tokenOwnerId = UUID.randomUUID();
+        RefreshToken stored = RefreshToken.builder().id(UUID.randomUUID()).userId(tokenOwnerId)
+                .tokenHash("ignored").expiresAt(OffsetDateTime.ofInstant(clock.instant().plusSeconds(3600), ZoneOffset.UTC)).build();
+        when(refreshTokenRepository.findByTokenHash(any(String.class))).thenReturn(Optional.of(stored));
+
+        service.logout("refresh", UUID.randomUUID());
+
+        assertThat(stored.getRevokedAt()).isNull();
+        org.mockito.Mockito.verify(refreshTokenRepository, org.mockito.Mockito.never()).save(stored);
     }
 
     @Test

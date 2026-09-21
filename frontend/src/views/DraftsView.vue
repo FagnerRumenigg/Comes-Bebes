@@ -7,7 +7,7 @@ import { useDraftsList } from '@/features/publications/useDraftsList'
 import type { PublicationDraft } from '@/features/publications/drafts'
 
 const router = useRouter()
-const { drafts, loading, refresh, remove } = useDraftsList()
+const { drafts, loading, error, refresh, remove } = useDraftsList()
 
 function continueDraft(id: string): void {
   void router.push(`/publicar/rascunho/${id}`)
@@ -65,6 +65,11 @@ onBeforeUnmount(revokePreviews)
     </header>
 
     <div v-if="loading" class="drafts-view__state">Carregando rascunhos...</div>
+    <div v-else-if="error" class="drafts-view__state" role="alert">
+      <strong>Não foi possível carregar seus rascunhos.</strong>
+      <p>Tente novamente. Eles continuam neste dispositivo.</p>
+      <BaseButton variant="secondary" @click="refresh">Tentar novamente</BaseButton>
+    </div>
     <div v-else-if="!drafts.length" class="drafts-view__state">
       Nenhum rascunho salvo. Ao começar uma publicação, ela é salva automaticamente aqui se você sair
       antes de publicar.
@@ -82,7 +87,7 @@ onBeforeUnmount(revokePreviews)
             <strong>{{ draftTitle(draft) }}</strong>
             <span class="drafts-view__badge">{{ draftTypeLabel(draft) }}</span>
           </div>
-          <p class="drafts-view__meta">Salvo em: {{ formatDate(draft.updatedAt) }}</p>
+          <p class="drafts-view__meta">Último salvamento neste dispositivo: {{ formatDate(draft.updatedAt) }}</p>
         </div>
         <div class="drafts-view__actions">
           <BaseButton variant="secondary" @click="continueDraft(draft.id)">

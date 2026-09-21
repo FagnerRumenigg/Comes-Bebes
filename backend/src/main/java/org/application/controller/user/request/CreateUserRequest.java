@@ -4,6 +4,8 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
 
 @Schema(name = "CreateUserRequest", description = "Dados necessários para criar uma conta.")
 public record CreateUserRequest(
@@ -12,6 +14,8 @@ public record CreateUserRequest(
         @Schema(description = "Senha da conta. Deve possuir entre 8 e 72 caracteres.", example = "MinhaSenha123!", format = "password")
         @NotBlank @Size(min = 8, max = 72) String password,
         @Schema(description = "Nome exibido no perfil. O @usuário é gerado automaticamente a partir dele (impl10.md v10 §19.4), editável depois em Configurações.", example = "Fagner")
-        @NotBlank @Size(max = 100) String displayName
+        @NotBlank @Size(max = 100) String displayName,
+        @Schema(description = "Data de nascimento. A conta é permitida somente para pessoas com 18 anos ou mais.", example = "1990-05-20", format = "date")
+        @NotNull LocalDate dateOfBirth
 ) {
 }

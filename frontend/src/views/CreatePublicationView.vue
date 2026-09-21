@@ -119,8 +119,12 @@ function startRateLimitCooldown(nextAvailableAt: string): void {
 const draftId = ref<string>(crypto.randomUUID())
 let draftCreatedAt = new Date().toISOString()
 const lastDraftSavedAt = ref<string | null>(null)
+const draftSaveError = ref(false)
+const missingDraft = ref(false)
 const existingDraftsCount = ref(0)
 let autosaveTimer: ReturnType<typeof setInterval> | undefined
+let draftSaveInFlight: Promise<void> | null = null
+let draftSaveQueued = false
 
 const savedAtFormatter = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' })
 function formatSavedTime(iso: string): string {
@@ -153,13 +157,34 @@ async function autosaveDraft(): Promise<void> {
   if (published.value) return
   const snapshot = currentDraftSnapshot()
   if (!hasDraftContent(snapshot)) return
-  await saveDraft(snapshot)
-  lastDraftSavedAt.value = snapshot.updatedAt
+  if (draftSaveInFlight) {
+    draftSaveQueued = true
+    return draftSaveInFlight
+  }
+  draftSaveInFlight = saveDraft(snapshot)
+    .then(() => {
+      lastDraftSavedAt.value = snapshot.updatedAt
+      draftSaveError.value = false
+    })
+    .catch(() => {
+      draftSaveError.value = true
+    })
+    .finally(() => {
+      draftSaveInFlight = null
+      if (draftSaveQueued) {
+        draftSaveQueued = false
+        void autosaveDraft()
+      }
+    })
+  return draftSaveInFlight
 }
 
 async function loadDraft(id: string): Promise<void> {
   const draft = await getDraft(id)
-  if (!draft) return
+  if (!draft) {
+    missingDraft.value = true
+    return
+  }
   draftId.value = draft.id
   draftCreatedAt = draft.createdAt
   sourceId.value = draft.sourceId ?? ''
@@ -404,6 +429,10 @@ async function submit(): Promise<void> {
   // Garante que o conteúdo exista antes do upload. Se o backend estiver em
   // cold start, a tela de loading pode aparecer enquanto a publicação espera.
   await autosaveDraft()
+  if (draftSaveError.value) {
+    formError.value = 'Não foi possível salvar seu rascunho. Tente novamente antes de publicar.'
+    return
+  }
   preserveCurrentViewWhileRequesting()
   if (isMyVersion.value) {
     versionMutation.mutate({
@@ -516,6 +545,13 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
+    <section v-else-if="missingDraft" class="create-publication__empty" aria-labelledby="missing-draft-title">
+      <h1 id="missing-draft-title">Rascunho não encontrado</h1>
+      <p>Este rascunho pode ter sido removido ou não está disponível neste dispositivo.</p>
+      <BaseButton @click="router.push('/rascunhos')">Ver meus rascunhos</BaseButton>
+      <BaseButton variant="secondary" @click="router.push('/publicar')">Começar uma publicação</BaseButton>
+    </section>
+
     <template v-else>
       <RouterLink class="create-publication__back" to="/">
         <AppIcon name="back" :size="18" :stroke-width="2" />
@@ -556,9 +592,10 @@ onBeforeUnmount(() => {
         <BaseButton variant="secondary" @click="router.back()">Voltar</BaseButton>
       </div>
       <form v-else class="create-publication__form" novalidate @submit.prevent="submit">
-        <p v-if="lastDraftSavedAt || existingDraftsCount" class="create-publication__draft-status">
+        <p v-if="lastDraftSavedAt || existingDraftsCount || draftSaveError" class="create-publication__draft-status">
           <AppIcon name="check" :size="15" :stroke-width="2.2" />
-          <span v-if="lastDraftSavedAt">Rascunho salvo às {{ formatSavedTime(lastDraftSavedAt) }}. </span>
+          <span v-if="draftSaveError" role="alert">Não foi possível salvar o rascunho. Tente novamente. </span>
+          <span v-else-if="lastDraftSavedAt">Rascunho salvo às {{ formatSavedTime(lastDraftSavedAt) }}. </span>
           <RouterLink to="/rascunhos"
             >Ver rascunhos salvos<span v-if="existingDraftsCount"> ({{ existingDraftsCount }})</span></RouterLink
           >

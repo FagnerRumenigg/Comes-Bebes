@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.application.model.UserNotification;
@@ -91,6 +92,10 @@ public class UserService {
      */
     @Transactional
     public User create(CreateUserRequest request) {
+        LocalDate today = LocalDate.now(clock);
+        if (request.dateOfBirth() == null || request.dateOfBirth().isAfter(today.minusYears(18))) {
+            throw new InvalidOperationException("MINIMUM_AGE_NOT_MET", "É necessário ter 18 anos ou mais para criar uma conta.");
+        }
         String email = stringNormalizer.normalize(request.email());
         ensureEmailAvailable(email);
         String username = resolveAvailableUsername(request.displayName(), null);
@@ -100,6 +105,7 @@ public class UserService {
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .username(username)
                 .displayName(request.displayName().trim())
+                .dateOfBirth(request.dateOfBirth())
                 .build();
 
         return userRepository.save(User.of(data));

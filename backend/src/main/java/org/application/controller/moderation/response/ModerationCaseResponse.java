@@ -6,6 +6,7 @@ import org.application.model.ModerationCase;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import java.util.List;
 
 @Builder
 @Schema(name = "ModerationCaseResponse", description = "Caso de moderação da fila administrativa.")
@@ -17,13 +18,15 @@ public record ModerationCaseResponse(
         OffsetDateTime openedAt,
         @Schema(nullable = true) UUID reviewedBy,
         @Schema(nullable = true) OffsetDateTime reviewedAt,
-        @Schema(nullable = true) String decisionNote
+        @Schema(nullable = true) String decisionNote,
+        List<ReportEvidenceResponse> reports
 ) {
-    public static ModerationCaseResponse of(ModerationCase item) {
+    public static ModerationCaseResponse of(ModerationCase item, List<ReportEvidenceResponse> reports) {
         return builder()
                 .id(item.getId()).publicationId(item.getPublicationId()).status(item.getStatus())
                 .reportCountAtOpen(item.getReportCountAtOpen()).openedAt(item.getOpenedAt())
                 .reviewedBy(item.getReviewedBy()).reviewedAt(item.getReviewedAt()).decisionNote(item.getDecisionNote())
+                .reports(reports)
                 .build();
     }
 }

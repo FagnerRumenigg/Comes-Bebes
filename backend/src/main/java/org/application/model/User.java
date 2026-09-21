@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 import org.application.dto.UserData;
 
 import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.UUID;
 
@@ -40,6 +41,9 @@ public class User {
 
     @Column(name = "display_name", nullable = false, length = 100)
     private String displayName;
+
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
 
     @Column(length = 280)
     private String bio;
@@ -125,6 +129,7 @@ public class User {
                 .passwordHash(data.passwordHash())
                 .username(data.username())
                 .displayName(data.displayName())
+                .dateOfBirth(data.dateOfBirth())
                 .build();
     }
 

@@ -133,8 +133,10 @@ public class AuthService {
         return response;
     }
 
-    public void logout(String rawRefreshToken) {
-        refreshTokenRepository.findByTokenHash(hash(rawRefreshToken)).ifPresent(token -> {
+    public void logout(String rawRefreshToken, UUID authenticatedUserId) {
+        refreshTokenRepository.findByTokenHash(hash(rawRefreshToken))
+                .filter(token -> token.getUserId().equals(authenticatedUserId))
+                .ifPresent(token -> {
             token.revoke(OffsetDateTime.now(clock).withOffsetSameInstant(ZoneOffset.UTC));
             refreshTokenRepository.save(token);
             log.info("event=logout userId={} sessionId={}", token.getUserId(), token.getSessionId());

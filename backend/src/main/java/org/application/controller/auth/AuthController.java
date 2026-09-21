@@ -77,8 +77,8 @@ public class AuthController {
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Encerrar sessão", description = "Revoga o refresh token informado.")
     @ApiResponse(responseCode = "204", description = "Sessão encerrada.")
-    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshTokenRequest request) {
-        authService.logout(request.refreshToken());
+    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshTokenRequest request, Authentication authentication) {
+        authService.logout(request.refreshToken(), currentUser.id(authentication));
         return ResponseEntity.noContent().build();
     }
 

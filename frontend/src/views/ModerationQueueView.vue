@@ -2,6 +2,12 @@
 import { usePending } from '@/api/generated/moderation/moderation'
 
 const pendingQuery = usePending()
+
+function priorityLabel(item: { reportCountAtOpen: number }): string {
+  if (item.reportCountAtOpen >= 5) return 'Alta prioridade'
+  if (item.reportCountAtOpen >= 3) return 'Prioridade média'
+  return 'Aguardando análise'
+}
 </script>
 
 <template>
@@ -24,9 +30,9 @@ const pendingQuery = usePending()
       <li v-for="item in pendingQuery.data.value" :key="item.id">
         <div>
           <strong>Caso {{ item.id }}</strong
-          ><span
+            ><span
             >{{ item.reportCountAtOpen }} denúncias · aberto em
-            {{ new Date(item.openedAt).toLocaleDateString('pt-BR') }}</span
+            {{ new Date(item.openedAt).toLocaleDateString('pt-BR') }} · {{ priorityLabel(item) }}</span
           >
         </div>
         <RouterLink :to="`/admin/moderacao/${item.id}`">Analisar caso</RouterLink>

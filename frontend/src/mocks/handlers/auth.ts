@@ -91,6 +91,16 @@ export const authMockHandlers = [
     if ((body.password?.length ?? 0) < 8 || body.password.length > 72) {
       fieldErrors.password = 'A senha deve ter entre 8 e 72 caracteres.'
     }
+    if (!body.dateOfBirth) {
+      fieldErrors.dateOfBirth = 'Informe sua data de nascimento.'
+    } else {
+      const birthDate = new Date(`${body.dateOfBirth}T00:00:00`)
+      const today = new Date()
+      const minimumBirthDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate())
+      if (Number.isNaN(birthDate.getTime()) || birthDate > minimumBirthDate) {
+        fieldErrors.dateOfBirth = 'Você precisa ter 18 anos ou mais para criar uma conta.'
+      }
+    }
     if (Object.keys(fieldErrors).length > 0) {
       return apiError(400, 'VALIDATION_ERROR', 'Revise os campos informados.', fieldErrors)
     }

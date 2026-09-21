@@ -10,6 +10,8 @@
  * Dados necessários para criar uma conta.
  */
 export interface CreateUserRequest {
+  /** Data de nascimento; o cadastro exige idade mínima de 18 anos. */
+  dateOfBirth: string;
   /**
    * E-mail da conta — é a credencial de login (produto5.md v5 §5.1).
    * @minLength 0

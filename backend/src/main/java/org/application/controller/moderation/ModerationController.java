@@ -43,7 +43,9 @@ public class ModerationController {
     @Operation(summary = "Listar casos pendentes", description = "Retorna os casos pendentes em ordem de abertura.")
     @ApiResponse(responseCode = "200", description = "Casos pendentes retornados.")
     public List<ModerationCaseResponse> pending() {
-        return moderationService.pendingCases().stream().map(ModerationCaseResponse::of).toList();
+        return moderationService.pendingCases().stream()
+                .map(item -> ModerationCaseResponse.of(item, moderationService.evidence(item.getId())))
+                .toList();
     }
 
     @GetMapping("/{id}")
@@ -57,7 +59,7 @@ public class ModerationController {
             @Parameter(description = "UUID do caso.", example = "550e8400-e29b-41d4-a716-446655440000")
             @PathVariable UUID id
     ) {
-        return ModerationCaseResponse.of(moderationService.find(id));
+        return ModerationCaseResponse.of(moderationService.find(id), moderationService.evidence(id));
     }
 
     @PatchMapping("/{id}")
@@ -74,8 +76,9 @@ public class ModerationController {
             @Valid @RequestBody DecideModerationCaseRequest request,
             Authentication authentication
     ) {
-        return ModerationCaseResponse.of(moderationService.decide(id, request,
-                currentUser.id(authentication, authentication == null ? request.reviewerId() : null)));
+        var decided = moderationService.decide(id, request,
+                currentUser.id(authentication, authentication == null ? request.reviewerId() : null));
+        return ModerationCaseResponse.of(decided, moderationService.evidence(id));
     }
 }
 

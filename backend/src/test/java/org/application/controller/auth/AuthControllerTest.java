@@ -72,7 +72,7 @@ class AuthControllerTest {
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"fagner@exemplo.com.br\",\"password\":\"password\",\"displayName\":\"Fagner\"}"))
+                        .content("{\"email\":\"fagner@exemplo.com.br\",\"password\":\"password\",\"displayName\":\"Fagner\",\"dateOfBirth\":\"1990-05-20\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(id.toString()))
                 .andExpect(jsonPath("$.status").doesNotExist())
@@ -94,12 +94,15 @@ class AuthControllerTest {
 
     @Test
     void shouldLogoutSession() throws Exception {
+        UUID userId = UUID.randomUUID();
+        when(currentUser.id(any())).thenReturn(userId);
+
         mockMvc.perform(post("/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"refreshToken\":\"refresh\"}"))
                 .andExpect(status().isNoContent());
 
-        verify(authService).logout("refresh");
+        verify(authService).logout("refresh", userId);
     }
 
     @Test

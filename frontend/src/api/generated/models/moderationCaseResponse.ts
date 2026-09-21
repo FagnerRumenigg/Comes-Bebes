@@ -8,6 +8,7 @@
 import type { ModerationCaseResponseReviewedBy } from './moderationCaseResponseReviewedBy';
 import type { ModerationCaseResponseReviewedAt } from './moderationCaseResponseReviewedAt';
 import type { ModerationCaseResponseDecisionNote } from './moderationCaseResponseDecisionNote';
+import type { ReportEvidenceResponse } from './reportEvidenceResponse';
 
 /**
  * Caso de moderação da fila administrativa.
@@ -21,4 +22,5 @@ export interface ModerationCaseResponse {
   reviewedBy: ModerationCaseResponseReviewedBy;
   reviewedAt: ModerationCaseResponseReviewedAt;
   decisionNote: ModerationCaseResponseDecisionNote;
+  reports?: ReportEvidenceResponse[];
 }

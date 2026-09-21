@@ -87,6 +87,7 @@ export * from './loginResponse';
 export * from './loginResponseRole';
 export * from './markPublicationsViewedRequest';
 export * from './moderationCaseResponse';
+export * from './reportEvidenceResponse';
 export * from './moderationCaseResponseDecisionNote';
 export * from './moderationCaseResponseReviewedAt';
 export * from './moderationCaseResponseReviewedBy';

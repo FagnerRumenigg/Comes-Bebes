@@ -35,13 +35,43 @@ public class ModerationService {
 
     @Transactional(readOnly = true)
     public List<org.application.model.ModerationCase> pendingCases() {
-        return caseRepository.findByStatusOrderByOpenedAtAsc("PENDING");
+        return caseRepository.findByStatusOrderByOpenedAtAsc("PENDING").stream()
+                .sorted(java.util.Comparator
+                        .comparingInt(this::priorityScore).reversed()
+                        .thenComparing(org.application.model.ModerationCase::getOpenedAt))
+                .toList();
+    }
+
+    private int priorityScore(org.application.model.ModerationCase item) {
+        int score = item.getReportCountAtOpen() * 10;
+        return reportRepository.findByModerationCaseId(item.getId()).stream()
+                .mapToInt(report -> score + riskWeight(report.getReasonId()))
+                .max()
+                .orElse(score);
+    }
+
+    private int riskWeight(Short reasonId) {
+        if (reasonId == null) return 0;
+        return switch (reasonId) {
+            case 6 -> 40; // conteúdo perigoso ou ilegal
+            case 2, 3 -> 30; // pessoa identificável ou conteúdo ofensivo
+            case 5 -> 20; // autoria
+            case 4 -> 10; // propaganda
+            default -> 0;
+        };
     }
 
     @Transactional(readOnly = true)
     public org.application.model.ModerationCase find(UUID caseId) {
         return caseRepository.findById(caseId)
                 .orElseThrow(() -> new ResourceNotFoundException("MODERATION_CASE_NOT_FOUND", "Caso de moderação não encontrado."));
+    }
+
+    @Transactional(readOnly = true)
+    public List<org.application.controller.moderation.response.ReportEvidenceResponse> evidence(UUID caseId) {
+        return reportRepository.findByModerationCaseId(caseId).stream()
+                .map(org.application.controller.moderation.response.ReportEvidenceResponse::of)
+                .toList();
     }
 
     @Transactional

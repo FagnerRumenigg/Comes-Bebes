@@ -19,6 +19,7 @@ const form = reactive<CreateUserRequest & { confirmPassword: string }>({
   displayName: '',
   email: '',
   password: '',
+  dateOfBirth: '',
   confirmPassword: '',
 })
 const fieldErrors = reactive<Record<string, string>>({})
@@ -64,6 +65,16 @@ function validate(): boolean {
   if (form.password.length < 8 || form.password.length > 72) {
     fieldErrors.password = 'A senha deve ter entre 8 e 72 caracteres.'
   }
+  if (!form.dateOfBirth) {
+    fieldErrors.dateOfBirth = 'Informe sua data de nascimento.'
+  } else {
+    const birthDate = new Date(`${form.dateOfBirth}T00:00:00`)
+    const today = new Date()
+    const minimumBirthDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate())
+    if (Number.isNaN(birthDate.getTime()) || birthDate > minimumBirthDate) {
+      fieldErrors.dateOfBirth = 'Você precisa ter 18 anos ou mais para criar uma conta.'
+    }
+  }
   if (form.confirmPassword !== form.password) {
     fieldErrors.confirmPassword = 'As senhas precisam ser iguais.'
   }
@@ -83,6 +94,7 @@ function submit(): void {
       displayName: form.displayName.trim(),
       email: form.email.trim(),
       password: form.password,
+      dateOfBirth: form.dateOfBirth,
     },
   })
 }
@@ -207,6 +219,17 @@ function goToFeed(): void {
         placeholder="Digite a senha novamente"
         maxlength="72"
         :error="fieldErrors.confirmPassword"
+        :disabled="registerMutation.isPending.value"
+        required
+      />
+      <BaseInput
+        id="register-date-of-birth"
+        v-model="form.dateOfBirth"
+        label="Data de nascimento"
+        type="date"
+        autocomplete="bday"
+        hint="Usamos esta informação apenas para confirmar a idade mínima de 18 anos."
+        :error="fieldErrors.dateOfBirth"
         :disabled="registerMutation.isPending.value"
         required
       />
