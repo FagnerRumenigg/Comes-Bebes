@@ -55,8 +55,17 @@ function start(): void {
 
       <h1 id="welcome-title">Senta que <em>já vai sair</em></h1>
       <p class="welcome-view__lead">
-        Este é um lugar para compartilhar aquilo de que todo mundo gosta: comida boa.
+        Um lugar tranquilo para descobrir, guardar e registrar comida boa — do seu jeito.
       </p>
+
+      <button
+        type="button"
+        class="welcome-view__submit"
+        :disabled="completeOnboardingMutation.isPending.value"
+        @click="start"
+      >
+        {{ completeOnboardingMutation.isPending.value ? 'Só um instante…' : 'Começar a explorar' }}
+      </button>
 
       <div class="welcome-view__cards">
         <div class="welcome-view__card">
@@ -70,20 +79,19 @@ function start(): void {
           </div>
         </div>
         <div class="welcome-view__card">
-          <span class="welcome-view__card-icon" aria-hidden="true">🌿</span>
+          <span class="welcome-view__card-icon" aria-hidden="true">🍋</span>
           <div>
-            <h2>Sem comentário, sem plateia</h2>
+            <h2>Guarde o que vale voltar</h2>
             <p>
-              Não tem comentário, não tem foto de gente, não tem quem ganha. Gostou de alguma
-              coisa? Reaja, salve, ou faça a sua versão.
+              Salve receitas e pratos para reencontrar quando bater vontade de cozinhar de novo.
             </p>
           </div>
         </div>
         <div class="welcome-view__card">
-          <span class="welcome-view__card-icon" aria-hidden="true">🍋</span>
+          <span class="welcome-view__card-icon" aria-hidden="true">🌿</span>
           <div>
-            <h2>Simples de propósito</h2>
-            <p>Comida, receitas e inspiração. Só isso. E a intenção é continuar assim.</p>
+            <h2>Sem plateia, só inspiração</h2>
+            <p>Reaja, salve ou faça sua versão. Comida e cozinha ficam no centro.</p>
           </div>
         </div>
       </div>
@@ -94,14 +102,6 @@ function start(): void {
         montada.
       </p>
 
-      <button
-        type="button"
-        class="welcome-view__submit"
-        :disabled="completeOnboardingMutation.isPending.value"
-        @click="start"
-      >
-        {{ completeOnboardingMutation.isPending.value ? 'Só um instante…' : 'Começar a explorar' }}
-      </button>
       <p v-if="errorMessage" class="welcome-view__error" role="alert">{{ errorMessage }}</p>
     </section>
   </SheetPage>
@@ -181,12 +181,13 @@ h1 em {
 }
 
 .welcome-view__note {
-  padding-inline-start: var(--space-4);
+  padding: var(--space-3) var(--space-4);
   margin-bottom: var(--space-7);
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   line-height: var(--line-height-body);
-  border-inline-start: 3px solid var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface));
+  border-radius: var(--radius-md);
 }
 
 .welcome-view__note strong {

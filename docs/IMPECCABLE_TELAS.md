@@ -20,7 +20,7 @@ Status em azul significa que a alteração foi implementada e validada.
 | # | Tela | Rota | Implementação | Status |
 |---|---|---|---|---|
 | 00 | [Marca / identidade](impeccable/telas/00-marca.md) | — | `docs/telas/00-marca.html` | **Critique concluído** |
-| 01 | [Boas-vindas e erro](impeccable/telas/01-boas-vindas-e-erro.md) | `/bem-vindo` | `WelcomeView.vue` | **Critique concluído** |
+| 01 | [Boas-vindas e erro](impeccable/telas/01-boas-vindas-e-erro.md) | `/bem-vindo` | `WelcomeView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 02 | [Login](impeccable/telas/02-login.md) | `/login` | `LoginView.vue` + `AuthLayout.vue` | **Critique concluído** |
 | 03 | [Carregando](impeccable/telas/03-carregando.md) | transversal | `docs/telas/03-carregando.html` | **Critique concluído** |
 | 04 | [Navegação](impeccable/telas/04-navegacao.md) | transversal | `AppLayout.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
@@ -69,8 +69,8 @@ As correções serão trabalhadas na branch `correcoes-p0`; antes de alterar com
 
 ### P1 — corrigir impacto alto
 
-- Corrigir recorte de menus posicionados — Tela 04: Navegação.
-- Reduzir fricção e reforçar o propósito na entrada — Tela 01: Boas-vindas.
+- ~~Corrigir recorte de menus posicionados — Tela 04: Navegação.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
+- ~~Reduzir fricção e reforçar o propósito na entrada — Tela 01: Boas-vindas.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - Conectar login à memória e ao registro culinário — Tela 02: Login.
 - Tornar feed, filtros e estados vazios mais claros — Tela 05: Feed.
 - Simplificar salvos e reforçar biblioteca pessoal — Tela 06: Salvos.

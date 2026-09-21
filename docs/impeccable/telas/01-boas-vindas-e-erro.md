@@ -5,6 +5,7 @@ Arquivo de referência: `docs/telas/01-boas-vindas-e-erro.html`
 ## Status
 
 - Critique: concluído
+- P1 — entrada mais direta e foco em memória: concluído
 - Visual: aguardando o critique das demais telas
 - Texto, cor e identidade: aguardando etapa visual
 
