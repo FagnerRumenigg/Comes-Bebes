@@ -23,7 +23,7 @@ Status em azul significa que a alteração foi implementada e validada.
 | 01 | [Boas-vindas e erro](impeccable/telas/01-boas-vindas-e-erro.md) | `/bem-vindo` | `WelcomeView.vue` | **Critique concluído** |
 | 02 | [Login](impeccable/telas/02-login.md) | `/login` | `LoginView.vue` + `AuthLayout.vue` | **Critique concluído** |
 | 03 | [Carregando](impeccable/telas/03-carregando.md) | transversal | `docs/telas/03-carregando.html` | **Critique concluído** |
-| 04 | [Navegação](impeccable/telas/04-navegacao.md) | transversal | `AppLayout.vue` | **Critique concluído** |
+| 04 | [Navegação](impeccable/telas/04-navegacao.md) | transversal | `AppLayout.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 05 | [Feed](impeccable/telas/05-feed.md) | `/` | `FeedView.vue` | **Critique concluído** |
 | 06 | [Salvos](impeccable/telas/06-salvos.md) | `/salvos` | `SavedView.vue` | **Critique concluído** |
 | 07 | [Coleção](impeccable/telas/07-colecao.md) | `/colecoes/:id` | `CollectionDetailsView.vue` | **Critique concluído** |

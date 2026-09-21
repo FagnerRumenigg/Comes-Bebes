@@ -5,6 +5,7 @@ Arquivo de referência: `docs/telas/04-navegacao.html`
 ## Status
 
 - Critique: concluído
+- P1 — recorte de menus: concluído
 - Visual: aguardando o critique das demais telas
 - Texto, cor e identidade: aguardando etapa visual
 
