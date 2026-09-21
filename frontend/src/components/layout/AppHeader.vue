@@ -100,6 +100,7 @@ function goHome(): void {
   position: sticky;
   z-index: 20;
   top: 0;
+  overflow: visible;
   background: color-mix(in srgb, var(--color-background) 92%, transparent);
   border-block-end: 1px solid var(--color-border);
   backdrop-filter: blur(0.75rem);
