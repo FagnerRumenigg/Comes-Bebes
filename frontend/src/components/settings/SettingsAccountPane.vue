@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQueryClient } from '@tanstack/vue-query'
 
 import { normalizeHttpError } from '@/api/errors'
-import { useFindByUsername } from '@/api/generated/profiles/profiles'
 import { useAnonymize, useUpdateCurrentUser } from '@/api/generated/users/users'
-import type { UpdateUserRequest, UserResponse } from '@/api/generated/models'
+import type { UpdateUserRequest } from '@/api/generated/models'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseDialog from '@/components/base/BaseDialog.vue'
 import BaseFieldError from '@/components/base/BaseFieldError.vue'
@@ -20,22 +19,11 @@ import SettingsRow from './SettingsRow.vue'
 import SettingsSection from './SettingsSection.vue'
 import SettingsZone from './SettingsZone.vue'
 
-// bio ainda não passou pelo orval (mesma situação de outros campos novos
-// nesta sessão) — trocar por UserResponse puro depois de rodar o backend e
-// `npm run api:generate`.
-type ProfileWithBio = UserResponse & { bio?: string | null }
 type UpdateUserRequestWithVisibility = UpdateUserRequest & { defaultPublicationVisibility?: string }
 
 const router = useRouter()
 const queryClient = useQueryClient()
 const authStore = useAuthStore()
-const ownUsername = computed(() => authStore.identity?.username ?? '')
-const profileQuery = useFindByUsername(ownUsername)
-const profile = computed(() => profileQuery.data.value as ProfileWithBio | undefined)
-
-function goToEditProfile(): void {
-  void router.push('/perfil/editar')
-}
 
 // "Quem pode ver o que você publica" (docs/telas/09-configuracoes.html) —
 // vale só pras próximas publicações; CreatePublicationView.vue lê essa
@@ -147,26 +135,11 @@ async function confirmDeleteAccount(): Promise<void> {
 <template>
   <div class="settings-account-pane">
     <h2>Minha conta</h2>
-    <p class="settings-account-pane__lead">Seus dados e como você aparece para as outras pessoas.</p>
+    <p class="settings-account-pane__lead">Gerencie o endereço usado para entrar na sua conta.</p>
 
     <SettingsSection>
-      <SettingsRow title="Como você quer ser chamado" :description="profileQuery.data.value?.displayName">
-        <BaseButton variant="secondary" @click="goToEditProfile">Mudar</BaseButton>
-      </SettingsRow>
-      <SettingsRow
-        title="Seu nome no Comes&Bebes"
-        :description="profileQuery.data.value ? `@${profileQuery.data.value.username}` : undefined"
-      >
-        <BaseButton variant="secondary" @click="goToEditProfile">Mudar</BaseButton>
-      </SettingsRow>
-      <SettingsRow title="E-mail" description="Por enquanto não conseguimos mostrar seu e-mail atual aqui.">
+      <SettingsRow title="E-mail" description="Use este endereço para entrar e recuperar sua conta.">
         <BaseButton variant="secondary" @click="openEmailDialog">Mudar</BaseButton>
-      </SettingsRow>
-      <SettingsRow
-        title="Descrição"
-        :description="profile?.bio || 'Ainda não preenchida.'"
-      >
-        <BaseButton variant="secondary" @click="goToEditProfile">Mudar</BaseButton>
       </SettingsRow>
     </SettingsSection>
 

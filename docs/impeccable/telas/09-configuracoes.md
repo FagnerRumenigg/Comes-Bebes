@@ -5,6 +5,7 @@ Referência: `docs/telas/09-configuracoes.html`
 ## Status
 
 - Critique: concluído
+- P1 — organização, conta e aparelhos: concluído e validado
 - Visual: aguardando demais telas
 - Texto, cor e identidade: etapa posterior
 

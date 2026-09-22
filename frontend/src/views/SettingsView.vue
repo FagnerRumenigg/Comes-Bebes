@@ -14,7 +14,7 @@ type SectionId = 'conta' | 'acesso' | 'avisos' | 'aparencia' | 'ajuda'
 
 const SECTIONS: Array<{ id: SectionId; label: string; icon: IconName }> = [
   { id: 'conta', label: 'Minha conta', icon: 'person' },
-  { id: 'acesso', label: 'Entrar e aparelhos', icon: 'lock' },
+  { id: 'acesso', label: 'Acesso e aparelhos', icon: 'lock' },
   { id: 'avisos', label: 'Avisos', icon: 'bell' },
   { id: 'aparencia', label: 'Aparência', icon: 'sun' },
   { id: 'ajuda', label: 'Ajuda e sobre', icon: 'help' },
@@ -38,8 +38,12 @@ function selectSection(id: SectionId): void {
   <section class="settings-view">
     <div class="settings-view__cols">
       <aside class="settings-view__side">
+        <span class="settings-view__eyebrow">Seu caderno, do seu jeito</span>
         <h1>Configurações</h1>
-        <nav class="settings-view__nav">
+        <p class="settings-view__intro">
+          Controle sua conta, seus acessos e como suas descobertas culinárias aparecem.
+        </p>
+        <nav class="settings-view__nav" aria-label="Seções de configurações">
           <button
             v-for="section in SECTIONS"
             :key="section.id"
@@ -81,6 +85,24 @@ function selectSection(id: SectionId): void {
   font-family: var(--font-family-display);
   font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-regular);
+}
+
+.settings-view__eyebrow {
+  display: block;
+  margin-block-end: var(--space-2);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.settings-view__intro {
+  max-width: 17rem;
+  margin: 0 0 var(--space-5);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-body);
 }
 
 .settings-view__nav {
