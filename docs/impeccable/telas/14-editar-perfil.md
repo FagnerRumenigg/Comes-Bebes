@@ -5,6 +5,7 @@ Referência: `docs/telas/14-editar-perfil.html`
 ## Status
 
 - Critique: concluído
+- P1 — contraste, identidade e segurança ao salvar: concluído e validado
 - Visual: aguardando próxima etapa
 - Texto, cor e identidade: etapa posterior
 
