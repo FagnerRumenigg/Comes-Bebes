@@ -9,6 +9,7 @@ import { useUpdateCurrentUser } from '@/api/generated/users/users'
 import type { UpdateUserRequest, UserResponse } from '@/api/generated/models'
 import BaseAvatar from '@/components/base/BaseAvatar.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseDialog from '@/components/base/BaseDialog.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import BaseTextarea from '@/components/base/BaseTextarea.vue'
 import BaseToast from '@/components/base/BaseToast.vue'
@@ -42,6 +43,7 @@ const hasChanges = computed(
 )
 const fieldErrors = reactive<Record<string, string>>({})
 const generalError = ref<string | null>(null)
+const discardDialogOpen = ref(false)
 
 watch(
   profileQuery.data,
@@ -101,7 +103,15 @@ function submit(): void {
 }
 
 function cancelEdit(): void {
-  if (hasChanges.value && !window.confirm('Descartar as alterações deste perfil?')) return
+  if (hasChanges.value) {
+    discardDialogOpen.value = true
+    return
+  }
+  void router.push(`/u/${ownUsername.value}`)
+}
+
+function discardChanges(): void {
+  discardDialogOpen.value = false
   void router.push(`/u/${ownUsername.value}`)
 }
 </script>
@@ -229,6 +239,19 @@ function cancelEdit(): void {
           </BaseButton>
         </div>
       </form>
+
+      <BaseDialog
+        v-model:open="discardDialogOpen"
+        title="Descartar alterações?"
+        description="Tudo o que você mudou nesta tela será perdido. Seu perfil continuará como estava."
+      >
+        <template #actions>
+          <BaseButton variant="ghost" @click="discardDialogOpen = false">
+            Continuar editando
+          </BaseButton>
+          <BaseButton variant="danger" @click="discardChanges">Descartar alterações</BaseButton>
+        </template>
+      </BaseDialog>
     </template>
   </section>
 </template>
