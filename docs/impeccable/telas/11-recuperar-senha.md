@@ -5,6 +5,7 @@ Referência: `docs/telas/11-recuperar-senha.html`
 ## Status
 
 - Critique: concluído
+- P1 — etapas, segurança e recuperação de link: concluído e validado
 - Visual: aguardando demais telas
 - Texto, cor e identidade: etapa posterior
 
