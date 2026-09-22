@@ -5,6 +5,7 @@ Referência: `docs/telas/05-feed.html`
 ## Status
 
 - Critique: concluído
+- P1 — feed, filtros e estados vazios: concluído e validado
 - Visual: aguardando demais telas
 - Texto, cor e identidade: etapa posterior
 

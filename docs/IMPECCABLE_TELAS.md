@@ -24,7 +24,7 @@ Status em azul significa que a alteração foi implementada e validada.
 | 02 | [Login](impeccable/telas/02-login.md) | `/login` | `LoginView.vue` + `AuthLayout.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 03 | [Carregando](impeccable/telas/03-carregando.md) | transversal | `docs/telas/03-carregando.html` | **Critique concluído** |
 | 04 | [Navegação](impeccable/telas/04-navegacao.md) | transversal | `AppLayout.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
-| 05 | [Feed](impeccable/telas/05-feed.md) | `/` | `FeedView.vue` | **Critique concluído** |
+| 05 | [Feed](impeccable/telas/05-feed.md) | `/` | `FeedView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 06 | [Salvos](impeccable/telas/06-salvos.md) | `/salvos` | `SavedView.vue` | **Critique concluído** |
 | 07 | [Coleção](impeccable/telas/07-colecao.md) | `/colecoes/:id` | `CollectionDetailsView.vue` | **Critique concluído** |
 | 08 | [Perfil](impeccable/telas/08-perfil.md) | `/u/:username` | `ProfileView.vue` | **Critique concluído** |
@@ -72,7 +72,7 @@ As correções serão trabalhadas na branch `correcoes-p0`; antes de alterar com
 - ~~Corrigir recorte de menus posicionados — Tela 04: Navegação.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - ~~Reduzir fricção e reforçar o propósito na entrada — Tela 01: Boas-vindas.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - ~~Conectar login à memória e ao registro culinário — Tela 02: Login.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
-- Tornar feed, filtros e estados vazios mais claros — Tela 05: Feed.
+- ~~Tornar feed, filtros e estados vazios mais claros — Tela 05: Feed.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - Simplificar salvos e reforçar biblioteca pessoal — Tela 06: Salvos.
 - Organizar ações de coleção por contexto e privacidade — Tela 07: Coleção.
 - Priorizar comida sobre métricas sociais no perfil — Tela 08: Perfil.
