@@ -83,7 +83,7 @@ describe('feed', () => {
 
     const { wrapper } = await mountFeed()
     await vi.waitFor(() => {
-      expect(wrapper.text()).toContain('A cozinha está quieta por enquanto.')
+      expect(wrapper.text()).toContain('A mesa ainda está posta.')
     })
   })
 
@@ -232,7 +232,7 @@ describe('feed', () => {
 
     const { wrapper } = await mountFeed()
     await vi.waitFor(() => {
-      expect(wrapper.text()).toContain('A cozinha está quieta por enquanto.')
+      expect(wrapper.text()).toContain('A mesa ainda está posta.')
     })
 
     const receitasButton = wrapper
