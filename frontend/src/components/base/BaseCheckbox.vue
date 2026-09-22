@@ -46,7 +46,7 @@ function updateValue(event: Event): void {
 
 <template>
   <div class="base-checkbox">
-    <div class="base-checkbox__row">
+    <label class="base-checkbox__row" :for="checkboxId">
       <input
         :id="checkboxId"
         class="base-checkbox__control"
@@ -61,11 +61,11 @@ function updateValue(event: Event): void {
       <span class="base-checkbox__box" aria-hidden="true">
         <AppIcon name="check" :size="14" :stroke-width="3.2" />
       </span>
-      <label class="base-checkbox__label" :for="checkboxId">
+      <span class="base-checkbox__label">
         <slot>{{ label }}</slot>
         <span v-if="required" class="base-checkbox__required" aria-hidden="true">*</span>
-      </label>
-    </div>
+      </span>
+    </label>
     <BaseFieldError v-if="error" :id="errorId" :message="error" />
     <p v-else-if="description" :id="descriptionId" class="base-checkbox__description">
       {{ description }}
@@ -83,6 +83,7 @@ function updateValue(event: Event): void {
   display: flex;
   align-items: flex-start;
   gap: var(--space-3);
+  cursor: pointer;
 }
 
 .base-checkbox__control {
