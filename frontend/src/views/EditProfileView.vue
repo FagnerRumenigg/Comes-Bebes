@@ -199,9 +199,11 @@ function cancelEdit(): void {
         </BaseInput>
         <p v-if="usernameChanged" class="edit-profile-view__username-warning">
           <AppIcon name="alert" :size="18" :stroke-width="1.9" />
-          Trocando para <strong>@{{ form.username.trim() }}</strong
-          >, os links antigos param de funcionar. Guardamos <strong>@{{ initialUsername }}</strong>
-          por 30 dias, para ninguém usar no seu lugar.
+          <span>
+            Trocando para <strong>@{{ form.username.trim() }}</strong
+            >, os links antigos param de funcionar. Guardamos <strong>@{{ initialUsername }}</strong>
+            por 30 dias, para ninguém usar no seu lugar.
+          </span>
         </p>
         <div class="edit-profile-view__bio-field">
           <BaseTextarea
