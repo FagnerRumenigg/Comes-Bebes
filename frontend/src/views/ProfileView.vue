@@ -115,6 +115,7 @@ function confirmBlock(): void {
           :avatar-key="profileQuery.data.value.avatarKey"
           size="large"
         />
+        <span class="profile-view__eyebrow">Caderno de descobertas</span>
         <h1>{{ profileQuery.data.value.displayName }}</h1>
         <p class="profile-view__username">@{{ profileQuery.data.value.username }}</p>
         <p v-if="profile?.bio" class="profile-view__bio">{{ profile.bio }}</p>
@@ -170,7 +171,7 @@ function confirmBlock(): void {
 
       <section
         v-if="!collectionsQuery.isPending.value && (publicCollections.length || isOwnProfile)"
-        class="profile-view__section"
+        class="profile-view__section profile-view__section--collections"
       >
         <div class="profile-view__section-header">
           <div>
@@ -202,8 +203,13 @@ function confirmBlock(): void {
 
       <CollectionFormDialog v-model:open="newCollectionOpen" @saved="handleCollectionCreated" />
 
-      <section class="profile-view__section">
-        <h2>Publicações</h2>
+      <section class="profile-view__section profile-view__section--publications">
+        <div class="profile-view__section-header">
+          <div>
+            <h2>O que já foi para a cozinha</h2>
+            <p class="profile-view__section-hint">Publicações e descobertas compartilhadas.</p>
+          </div>
+        </div>
         <div v-if="publicationsQuery.isPending.value" class="profile-view__state">
           Carregando publicações...
         </div>
@@ -233,6 +239,8 @@ function confirmBlock(): void {
 
 <style scoped>
 .profile-view {
+  display: flex;
+  flex-direction: column;
   max-width: var(--content-feed);
   margin-inline: auto;
 }
@@ -244,6 +252,16 @@ function confirmBlock(): void {
 .profile-view h1 {
   margin: var(--space-4) 0 0;
   font-size: clamp(2rem, 5vw, 3.5rem);
+}
+
+.profile-view__eyebrow {
+  display: block;
+  margin-block-start: var(--space-4);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .profile-view__username {
@@ -300,6 +318,14 @@ function confirmBlock(): void {
 
 .profile-view__section {
   margin-block-end: var(--space-10);
+}
+
+.profile-view__section--publications {
+  order: 2;
+}
+
+.profile-view__section--collections {
+  order: 3;
 }
 
 .profile-view__section-header {
