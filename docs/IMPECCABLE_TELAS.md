@@ -29,7 +29,7 @@ Status em azul significa que a alteração foi implementada e validada.
 | 07 | [Coleção](impeccable/telas/07-colecao.md) | `/colecoes/:id` | `CollectionDetailsView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 08 | [Perfil](impeccable/telas/08-perfil.md) | `/u/:username` | `ProfileView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 09 | [Configurações](impeccable/telas/09-configuracoes.md) | `/configuracoes/:secao?` | `SettingsView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
-| 10 | [Publicar](impeccable/telas/10-publicar.md) | `/publicar` | `CreatePublicationView.vue` | **Critique concluído** |
+| 10 | [Publicar](impeccable/telas/10-publicar.md) | `/publicar` | `CreatePublicationView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 11 | [Recuperar senha](impeccable/telas/11-recuperar-senha.md) | `/recuperar-senha/:token?` | `ForgotPasswordView.vue` | **Critique concluído** |
 | 12 | [Avisos / notificações](impeccable/telas/12-avisos.md) | `/notificacoes` | `NotificationsView.vue` | **Critique concluído** |
 | 13 | [Minha versão](impeccable/telas/13-minha-versao.md) | `/publicar/minha-versao/:sourceId` | `CreatePublicationView.vue` | **Critique concluído** |
@@ -77,7 +77,7 @@ As correções serão trabalhadas na branch `correcoes-p0`; antes de alterar com
 - ~~Organizar ações de coleção por contexto e privacidade — Tela 07: Coleção.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - ~~Priorizar comida sobre métricas sociais no perfil — Tela 08: Perfil.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - ~~Tornar configurações e ações destrutivas mais seguras — Tela 09: Configurações.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
-- Preservar dados e explicar erros durante publicação — Tela 10: Publicar.
+- ~~Preservar dados e explicar erros durante publicação — Tela 10: Publicar.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - Tornar recuperação de senha segura e compreensível — Tela 11: Recuperar senha.
 - Agrupar avisos e tornar cada item acionável — Tela 12: Avisos.
 - Preservar relação com o original ao criar versão — Tela 13: Minha versão.
