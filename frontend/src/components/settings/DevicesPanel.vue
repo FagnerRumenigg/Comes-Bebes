@@ -178,27 +178,30 @@ async function confirmLogoutAll(): Promise<void> {
       <p v-if="biometricError" class="devices-panel__error" role="alert">{{ biometricError }}</p>
     </SettingsSection>
 
-    <SettingsSection title="Onde sua conta está aberta" note="Se você não reconhecer algum, desconecte.">
+    <SettingsSection title="Dispositivos conectados" note="Se você não reconhecer um aparelho, desconecte-o.">
       <div v-if="devicesQuery.isPending.value" class="devices-panel__state">Carregando dispositivos...</div>
       <div v-else-if="devicesQuery.isError.value" class="devices-panel__state" role="alert">
         Não foi possível carregar seus dispositivos.
       </div>
       <template v-else>
-        <SettingsRow
-          v-for="device in devicesQuery.data.value"
-          :key="device.id"
-          :title="device.isCurrent ? `${device.deviceName} · Este aparelho` : device.deviceName"
-          :description="device.isActive ? `Último acesso: ${formatDate(device.lastActivityAt)}` : 'Revogado'"
-        >
-          <BaseButton
-            v-if="device.isActive && !device.isCurrent"
-            variant="secondary"
-            :loading="revokeMutation.isPending.value"
-            @click="revokeDevice(device.id)"
-          >
-            Desconectar
-          </BaseButton>
-        </SettingsRow>
+        <div class="devices-panel__device-list" role="list" aria-label="Aparelhos conectados">
+          <h3>Aparelhos</h3>
+          <div v-for="device in devicesQuery.data.value" :key="device.id" class="devices-panel__device" role="listitem">
+            <SettingsRow
+              :title="device.isCurrent ? `${device.deviceName} · Este aparelho` : device.deviceName"
+              :description="device.isActive ? `Último acesso: ${formatDate(device.lastActivityAt)}` : 'Revogado'"
+            >
+              <BaseButton
+                v-if="device.isActive && !device.isCurrent"
+                variant="secondary"
+                :loading="revokeMutation.isPending.value"
+                @click="revokeDevice(device.id)"
+              >
+                Desconectar
+              </BaseButton>
+            </SettingsRow>
+          </div>
+        </div>
       </template>
       <p v-if="actionError" class="devices-panel__error" role="alert">{{ actionError }}</p>
     </SettingsSection>
@@ -253,5 +256,24 @@ async function confirmLogoutAll(): Promise<void> {
 .devices-panel__error {
   margin-block-start: var(--space-3);
   color: var(--color-danger);
+}
+
+.devices-panel__device-list {
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.devices-panel__device-list h3 {
+  margin: 0 0 var(--space-2);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.devices-panel__device + .devices-panel__device {
+  margin-block-start: var(--space-2);
+  border-block-start: 1px solid var(--color-border);
 }
 </style>
