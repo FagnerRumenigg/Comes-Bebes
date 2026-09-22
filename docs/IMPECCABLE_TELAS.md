@@ -33,7 +33,7 @@ Status em azul significa que a alteração foi implementada e validada.
 | 11 | [Recuperar senha](impeccable/telas/11-recuperar-senha.md) | `/recuperar-senha/:token?` | `ForgotPasswordView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 12 | [Avisos / notificações](impeccable/telas/12-avisos.md) | `/notificacoes` | `NotificationsView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 13 | [Minha versão](impeccable/telas/13-minha-versao.md) | `/publicar/minha-versao/:sourceId` | `CreatePublicationView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
-| 14 | [Editar perfil](impeccable/telas/14-editar-perfil.md) | `/perfil/editar` | `EditProfileView.vue` | **Critique concluído** |
+| 14 | [Editar perfil](impeccable/telas/14-editar-perfil.md) | `/perfil/editar` | `EditProfileView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 15 | [Cadastro](impeccable/telas/15-cadastro.md) | `/cadastro` | `RegisterView.vue` | <span style="color:#2563eb"><strong>P0 corrigido</strong></span> |
 | 16 | [Busca](impeccable/telas/16-busca.md) | `/buscar` | `SearchView.vue` | **Critique concluído** |
 | 17 | [Detalhes da publicação](impeccable/telas/17-detalhes-publicacao.md) | `/publicacoes/:id` | `PublicationDetailsView.vue` | **Critique concluído** |
@@ -81,7 +81,7 @@ As correções serão trabalhadas na branch `correcoes-p0`; antes de alterar com
 - ~~Tornar recuperação de senha segura e compreensível — Tela 11: Recuperar senha.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - ~~Agrupar avisos e tornar cada item acionável — Tela 12: Avisos.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - ~~Preservar relação com o original ao criar versão — Tela 13: Minha versão.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
-- Corrigir contraste e segurança ao salvar perfil — Tela 14: Editar perfil.
+- ~~Corrigir contraste e segurança ao salvar perfil — Tela 14: Editar perfil.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - Reduzir fricção e melhorar validação do cadastro — Tela 15: Cadastro.
 - Transformar busca em descoberta culinária — Tela 16: Busca.
 - Priorizar conteúdo e ações na publicação — Tela 17: Detalhes da publicação.
