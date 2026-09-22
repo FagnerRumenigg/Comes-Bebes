@@ -23,6 +23,15 @@ const route = useRoute()
 const router = useRouter()
 const routeToken = computed(() => (route.params.token as string | undefined) ?? '')
 const step = ref<Step>(routeToken.value ? 'nova' : 'pedir')
+const stepLabels: Array<{ id: Step; label: string }> = [
+  { id: 'pedir', label: 'Pedir link' },
+  { id: 'enviado', label: 'Conferir e-mail' },
+  { id: 'nova', label: 'Criar senha' },
+  { id: 'pronto', label: 'Concluir' },
+]
+const stepIndex = computed(() =>
+  step.value === 'expirado' ? 2 : stepLabels.findIndex((item) => item.id === step.value),
+)
 
 // ---------- passo 1: pedir link ----------
 const email = ref('')
@@ -54,6 +63,7 @@ async function requestLink(): Promise<void> {
 
 // ---------- passo 2: link enviado ----------
 const cooldownSeconds = ref(0)
+const resendError = ref('')
 let cooldownTimer: ReturnType<typeof setInterval> | undefined
 
 function startCooldown(): void {
@@ -67,6 +77,7 @@ function startCooldown(): void {
 
 async function resendLink(): Promise<void> {
   if (cooldownSeconds.value > 0 || isRequesting.value) return
+  resendError.value = ''
   isRequesting.value = true
   try {
     await apiRequest<void>({
@@ -74,9 +85,11 @@ async function resendLink(): Promise<void> {
       method: 'POST',
       data: { email: email.value.trim() },
     })
+    startCooldown()
+  } catch (error) {
+    resendError.value = normalizeHttpError(error).message
   } finally {
     isRequesting.value = false
-    startCooldown()
   }
 }
 
@@ -142,6 +155,20 @@ onBeforeUnmount(() => clearInterval(cooldownTimer))
 
 <template>
   <section class="forgot-password-view">
+    <ol class="forgot-password-view__progress" aria-label="Etapas da recuperação de senha">
+      <li
+        v-for="(item, index) in stepLabels"
+        :key="item.id"
+        :class="{
+          'forgot-password-view__progress-step--done': index < stepIndex,
+          'forgot-password-view__progress-step--active': index === stepIndex,
+        }"
+      >
+        <span>{{ index + 1 }}</span>
+        {{ item.label }}
+      </li>
+    </ol>
+
     <!-- 1 — pedir link -->
     <template v-if="step === 'pedir'">
       <RouterLink class="forgot-password-view__back" to="/login">
@@ -197,6 +224,7 @@ onBeforeUnmount(() => clearInterval(cooldownTimer))
       >
         {{ cooldownSeconds > 0 ? `Reenviar em ${cooldownSeconds}s` : 'Reenviar o link' }}
       </BaseButton>
+      <BaseFieldError v-if="resendError" :message="resendError" />
       <button type="button" class="forgot-password-view__text-link" @click="useAnotherEmail">
         Usar outro e-mail
       </button>
@@ -279,6 +307,49 @@ onBeforeUnmount(() => clearInterval(cooldownTimer))
   max-width: 26rem;
   margin-inline: auto;
   padding-block: var(--space-8);
+}
+
+.forgot-password-view__progress {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0 0 var(--space-8);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  list-style: none;
+}
+
+.forgot-password-view__progress li {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  text-align: center;
+}
+
+.forgot-password-view__progress li span {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  place-items: center;
+  font-weight: var(--font-weight-semibold);
+}
+
+.forgot-password-view__progress-step--active,
+.forgot-password-view__progress-step--done {
+  color: var(--color-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+.forgot-password-view__progress-step--active span,
+.forgot-password-view__progress-step--done span {
+  color: var(--color-primary-contrast);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .forgot-password-view__back {
