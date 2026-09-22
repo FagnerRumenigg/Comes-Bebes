@@ -5,6 +5,7 @@ Referência: `docs/telas/13-minha-versao.html`
 ## Status
 
 - Critique: concluído
+- P1 — referência, autoria e navegação: concluído e validado
 - Visual: aguardando próxima etapa
 - Texto, cor e identidade: etapa posterior
 
