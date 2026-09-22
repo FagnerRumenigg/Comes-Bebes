@@ -27,7 +27,7 @@ Status em azul significa que a alteração foi implementada e validada.
 | 05 | [Feed](impeccable/telas/05-feed.md) | `/` | `FeedView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 06 | [Salvos](impeccable/telas/06-salvos.md) | `/salvos` | `SavedView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 07 | [Coleção](impeccable/telas/07-colecao.md) | `/colecoes/:id` | `CollectionDetailsView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
-| 08 | [Perfil](impeccable/telas/08-perfil.md) | `/u/:username` | `ProfileView.vue` | **Critique concluído** |
+| 08 | [Perfil](impeccable/telas/08-perfil.md) | `/u/:username` | `ProfileView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 09 | [Configurações](impeccable/telas/09-configuracoes.md) | `/configuracoes/:secao?` | `SettingsView.vue` | **Critique concluído** |
 | 10 | [Publicar](impeccable/telas/10-publicar.md) | `/publicar` | `CreatePublicationView.vue` | **Critique concluído** |
 | 11 | [Recuperar senha](impeccable/telas/11-recuperar-senha.md) | `/recuperar-senha/:token?` | `ForgotPasswordView.vue` | **Critique concluído** |
@@ -75,7 +75,7 @@ As correções serão trabalhadas na branch `correcoes-p0`; antes de alterar com
 - ~~Tornar feed, filtros e estados vazios mais claros — Tela 05: Feed.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - ~~Simplificar salvos e reforçar biblioteca pessoal — Tela 06: Salvos.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - ~~Organizar ações de coleção por contexto e privacidade — Tela 07: Coleção.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
-- Priorizar comida sobre métricas sociais no perfil — Tela 08: Perfil.
+- ~~Priorizar comida sobre métricas sociais no perfil — Tela 08: Perfil.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - Tornar configurações e ações destrutivas mais seguras — Tela 09: Configurações.
 - Preservar dados e explicar erros durante publicação — Tela 10: Publicar.
 - Tornar recuperação de senha segura e compreensível — Tela 11: Recuperar senha.

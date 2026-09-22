@@ -5,6 +5,7 @@ Referência: `docs/telas/08-perfil.html`
 ## Status
 
 - Critique: concluído
+- P1 — conteúdo culinário e ações do perfil: concluído e validado
 - Visual: aguardando demais telas
 - Texto, cor e identidade: etapa posterior
 
