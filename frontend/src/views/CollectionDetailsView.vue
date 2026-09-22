@@ -315,6 +315,9 @@ async function removeInvitee(userId: string): Promise<void> {
       </span>
 
       <header class="collection-details-view__header">
+        <span class="collection-details-view__eyebrow">
+          {{ isOwner ? 'Sua seleção' : `Seleção de @${collectionQuery.data.value.authorUsername}` }}
+        </span>
         <h1>{{ collectionQuery.data.value.name }}</h1>
         <p v-if="collectionQuery.data.value.description">
           {{ collectionQuery.data.value.description }}
@@ -349,16 +352,20 @@ async function removeInvitee(userId: string): Promise<void> {
             @toggled="refreshCollection"
           />
           <template v-if="isOwner">
-            <BaseButton variant="secondary" @click="openShareDialog">Compartilhar</BaseButton>
-            <BaseButton variant="ghost" @click="openVisibilityDialog">Quem pode ver</BaseButton>
-            <BaseButton variant="ghost" @click="editOpen = true">Editar</BaseButton>
-            <BaseButton
-              variant="danger"
-              :loading="deleteMutation.isPending.value"
-              @click="confirmDelete"
-            >
-              Excluir
-            </BaseButton>
+            <div class="collection-details-view__primary-actions">
+              <BaseButton variant="secondary" @click="openShareDialog">Compartilhar</BaseButton>
+              <BaseButton variant="ghost" @click="openVisibilityDialog">Quem pode ver</BaseButton>
+            </div>
+            <div class="collection-details-view__secondary-actions">
+              <BaseButton variant="ghost" @click="editOpen = true">Editar coleção</BaseButton>
+              <BaseButton
+                variant="danger"
+                :loading="deleteMutation.isPending.value"
+                @click="confirmDelete"
+              >
+                Excluir coleção
+              </BaseButton>
+            </div>
           </template>
           <BaseButton v-else variant="secondary" @click="openShareDialog">Compartilhar</BaseButton>
         </div>
@@ -377,7 +384,7 @@ async function removeInvitee(userId: string): Promise<void> {
       <BaseDialog
         v-model:open="visibilityOpen"
         title="Quem pode ver"
-        description="Você pode mudar isso quando quiser."
+        description="Escolha quem terá acesso. A mudança pode remover o acesso de quem já segue a coleção."
       >
         <RadioCardGroup v-model="visibilityChoice" :options="VISIBILITY_OPTIONS" />
         <p v-if="losesFollowers" class="collection-details-view__warning">
@@ -499,7 +506,7 @@ async function removeInvitee(userId: string): Promise<void> {
         <p v-else>
           <strong>Nada por aqui ainda</strong>
         </p>
-        <p v-if="isOwner">Guarde publicações aqui para juntar o que combina.</p>
+        <p v-if="isOwner">Guarde publicações aqui para juntar o que combina e voltar a essa seleção quando quiser.</p>
         <p v-else>
           {{ collectionQuery.data.value.authorDisplayName }} ainda não guardou nada nesta coleção.
           Se você seguir, avisamos quando entrar coisa nova.
@@ -584,6 +591,16 @@ async function removeInvitee(userId: string): Promise<void> {
   color: var(--color-text-secondary);
 }
 
+.collection-details-view__eyebrow {
+  display: block;
+  margin-block-end: var(--space-2);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .collection-details-view__meta {
   display: flex;
   flex-wrap: wrap;
@@ -601,6 +618,18 @@ async function removeInvitee(userId: string): Promise<void> {
   align-items: center;
   gap: var(--space-3);
   margin-block-start: var(--space-4);
+}
+
+.collection-details-view__primary-actions,
+.collection-details-view__secondary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.collection-details-view__secondary-actions {
+  margin-inline-start: var(--space-2);
 }
 
 .collection-details-view__error {
