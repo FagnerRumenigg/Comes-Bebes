@@ -48,16 +48,16 @@ const SORT_LABELS: Record<FeedSort, string> = {
 
 const EMPTY_STATE_TEXT: Record<FeedFilter, { title: string; description: string }> = {
   mix: {
-    title: 'A cozinha está quieta por enquanto.',
-    description: 'Quando novas publicações chegarem, elas aparecerão aqui.',
+    title: 'A mesa ainda está posta.',
+    description: 'Explore tudo ou volte em outro momento: novas descobertas aparecem aqui.',
   },
   pratos: {
     title: 'Ainda não há pratos por aqui.',
-    description: 'Quando novos pratos chegarem, eles aparecerão aqui.',
+    description: 'Experimente ver tudo ou volte quando novos pratos chegarem.',
   },
   receitas: {
     title: 'Ainda não há receitas por aqui.',
-    description: 'Que tal publicar a primeira?',
+    description: 'Experimente ver tudo ou compartilhe uma receita quando quiser.',
   },
 }
 
@@ -162,6 +162,10 @@ function clearDraft(): void {
 
 function clearFilters(): void {
   applyFilters({ tipo: 'mix', quem: 'EVERYONE', ordem: 'RECENT' })
+}
+
+function exploreAll(): void {
+  clearFilters()
 }
 
 onMounted(() => {
@@ -368,6 +372,7 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
 
     <template v-else>
       <div class="feed-view__toolbar">
+        <span class="feed-view__toolbar-label">Descubra algo novo</span>
         <button
           type="button"
           class="feed-view__filter-btn"
@@ -455,9 +460,14 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
         <AppIcon name="home" :size="40" :stroke-width="1.4" />
         <strong>{{ EMPTY_STATE_TEXT[filter].title }}</strong>
         <p>{{ EMPTY_STATE_TEXT[filter].description }}</p>
-        <BaseButton v-if="authStore.authenticated" @click="router.push('/publicar')">
-          Publicar algo que você fez
-        </BaseButton>
+        <div class="feed-view__state-actions">
+          <BaseButton v-if="hasActiveFilters" variant="secondary" @click="exploreAll">
+            Ver tudo
+          </BaseButton>
+          <BaseButton v-if="authStore.authenticated" @click="router.push('/publicar')">
+            Publicar algo que você fez
+          </BaseButton>
+        </div>
       </div>
 
       <template v-else>
@@ -601,7 +611,15 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
 
 .feed-view__toolbar {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-block-end: var(--space-4);
+}
+
+.feed-view__toolbar-label {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
 }
 
 .feed-view__filter-btn {
@@ -738,6 +756,14 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
 .feed-view__state p {
   max-width: 28rem;
   margin: 0;
+}
+
+.feed-view__state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-block-start: var(--space-2);
 }
 
 .feed-view__pagination {
