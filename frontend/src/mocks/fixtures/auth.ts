@@ -17,13 +17,3 @@ export const mockAccounts = [
   },
 ]
 
-export const mockCredentials = {
-  user: {
-    email: 'fagner@exemplo.com.br',
-    password: 'MinhaSenha123!',
-  },
-  admin: {
-    email: 'admin@exemplo.com.br',
-    password: 'AdminSenha123!',
-  },
-} as const
