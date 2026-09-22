@@ -8,7 +8,7 @@ import {
   setBackendReadinessCheck,
 } from '@/composables/useBackendStatus'
 
-export const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8082'
+export const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8092'
 const unreachableStatuses = new Set([502, 503, 504])
 
 setBackendReadinessCheck(async () => {

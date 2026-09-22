@@ -20,12 +20,6 @@ import { useThemeStore } from '@/stores/theme.store'
 import '@/styles/global.css'
 
 async function bootstrap(): Promise<void> {
-  const mocksEnabled = import.meta.env.DEV && import.meta.env.VITE_ENABLE_MOCKS !== 'false'
-  if (mocksEnabled) {
-    const { startMockServer } = await import('@/mocks/browser')
-    await startMockServer()
-  }
-
   const app = createApp(App)
   installApplicationPlugins(app)
   app.config.errorHandler = (error, _instance, info) => reportAppCrash(error, info)
