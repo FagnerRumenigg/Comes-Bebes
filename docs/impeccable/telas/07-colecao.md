@@ -5,6 +5,7 @@ Referência: `docs/telas/07-colecao.html`
 ## Status
 
 - Critique: concluído
+- P1 — ações, privacidade e compartilhamento: concluído e validado
 - Visual: aguardando demais telas
 - Texto, cor e identidade: etapa posterior
 
