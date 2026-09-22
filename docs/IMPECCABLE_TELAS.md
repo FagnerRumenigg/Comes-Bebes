@@ -31,7 +31,7 @@ Status em azul significa que a alteração foi implementada e validada.
 | 09 | [Configurações](impeccable/telas/09-configuracoes.md) | `/configuracoes/:secao?` | `SettingsView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 10 | [Publicar](impeccable/telas/10-publicar.md) | `/publicar` | `CreatePublicationView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 11 | [Recuperar senha](impeccable/telas/11-recuperar-senha.md) | `/recuperar-senha/:token?` | `ForgotPasswordView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
-| 12 | [Avisos / notificações](impeccable/telas/12-avisos.md) | `/notificacoes` | `NotificationsView.vue` | **Critique concluído** |
+| 12 | [Avisos / notificações](impeccable/telas/12-avisos.md) | `/notificacoes` | `NotificationsView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 13 | [Minha versão](impeccable/telas/13-minha-versao.md) | `/publicar/minha-versao/:sourceId` | `CreatePublicationView.vue` | **Critique concluído** |
 | 14 | [Editar perfil](impeccable/telas/14-editar-perfil.md) | `/perfil/editar` | `EditProfileView.vue` | **Critique concluído** |
 | 15 | [Cadastro](impeccable/telas/15-cadastro.md) | `/cadastro` | `RegisterView.vue` | <span style="color:#2563eb"><strong>P0 corrigido</strong></span> |
@@ -79,7 +79,7 @@ As correções serão trabalhadas na branch `correcoes-p0`; antes de alterar com
 - ~~Tornar configurações e ações destrutivas mais seguras — Tela 09: Configurações.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - ~~Preservar dados e explicar erros durante publicação — Tela 10: Publicar.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - ~~Tornar recuperação de senha segura e compreensível — Tela 11: Recuperar senha.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
-- Agrupar avisos e tornar cada item acionável — Tela 12: Avisos.
+- ~~Agrupar avisos e tornar cada item acionável — Tela 12: Avisos.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - Preservar relação com o original ao criar versão — Tela 13: Minha versão.
 - Corrigir contraste e segurança ao salvar perfil — Tela 14: Editar perfil.
 - Reduzir fricção e melhorar validação do cadastro — Tela 15: Cadastro.

@@ -5,6 +5,7 @@ Referência: `docs/telas/12-avisos.html`
 ## Status
 
 - Critique: concluído
+- P1 — agrupamento, ações e descoberta: concluído e validado
 - Visual: aguardando próxima etapa
 - Texto, cor e identidade: etapa posterior
 
