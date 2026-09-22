@@ -564,7 +564,8 @@ onBeforeUnmount(() => {
 
       <h1>{{ pageTitle }}</h1>
       <p v-if="isMyVersion" class="create-publication__intro">
-        Já trouxemos a receita — mude o que você fez diferente, o resto pode ficar como está.
+        Registre como ficou na sua cozinha. A referência original continua visível para dar crédito
+        e contexto à sua interpretação.
       </p>
       <p v-else class="create-publication__intro">
         Uma foto e duas linhas já bastam. Não precisa ser receita completa.
@@ -574,6 +575,7 @@ onBeforeUnmount(() => {
         v-if="isMyVersion && sourceQuery.data.value"
         class="create-publication__origin"
         :to="`/publicacoes/${sourceId}`"
+        :aria-label="`Receita original: ${sourceTitle}. Ver publicação original.`"
       >
         <img
           v-if="sourceQuery.data.value.imageUrl"
@@ -582,6 +584,7 @@ onBeforeUnmount(() => {
           alt=""
         />
         <span>
+          <span class="create-publication__origin-label">Receita original</span>
           <strong>{{ sourceTitle }}</strong>
           <span class="create-publication__origin-meta">
             de {{ sourceQuery.data.value.authorDisplayName }} · a receita original
@@ -680,8 +683,8 @@ onBeforeUnmount(() => {
             Vai aparecer como: <strong>{{ titlePreview }}</strong>
           </p>
           <p class="create-publication__title-help">
-            O nome de {{ sourceAuthorName }} fica no começo, para as pessoas saberem de onde veio a
-            receita.
+            A referência fica no título para que sua interpretação continue ligada à receita de
+            {{ sourceAuthorName }}.
           </p>
         </div>
         <BaseInput
@@ -698,7 +701,7 @@ onBeforeUnmount(() => {
           :error="fieldErrors.title"
         />
 
-        <BaseTextarea
+          <BaseTextarea
           v-if="!isMyVersion && type === 'DISH'"
           v-model="description"
           label="Conte alguma coisa"
@@ -712,8 +715,8 @@ onBeforeUnmount(() => {
           label="O que você mudou?"
           hint="Opcional, até 2.000 caracteres."
           maxlength="2000"
-          :error="fieldErrors.changeSummary"
-        />
+            :error="fieldErrors.changeSummary"
+          />
 
         <div v-if="recipeMode" class="create-publication__recipe">
           <IngredientEditor
@@ -748,7 +751,11 @@ onBeforeUnmount(() => {
         <div class="create-publication__visibility">
           <span class="create-publication__visibility-label">Quem pode ver</span>
           <p class="create-publication__visibility-note">
-            Escolha o alcance desta publicação. Você poderá ajustar publicações antigas depois.
+            {{
+              isMyVersion
+                ? 'Sua versão terá uma visibilidade própria; a publicação original não muda.'
+                : 'Escolha o alcance desta publicação. Você poderá ajustar publicações antigas depois.'
+            }}
           </p>
           <RadioCardGroup v-model="visibility" :options="VISIBILITY_OPTIONS" />
         </div>
@@ -867,6 +874,16 @@ onBeforeUnmount(() => {
 
 .create-publication__origin strong {
   display: block;
+}
+
+.create-publication__origin-label {
+  display: block;
+  margin-block-end: var(--space-1);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .create-publication__origin-meta {
