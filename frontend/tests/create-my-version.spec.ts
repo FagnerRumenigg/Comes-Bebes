@@ -75,7 +75,7 @@ describe('publicar minha versão', () => {
     expect((yieldInputs[1]!.element as HTMLInputElement).value).toBe(recipe.yieldUnit)
 
     expect(wrapper.text()).toContain(
-      'Já trouxemos a receita — mude o que você fez diferente, o resto pode ficar como está.',
+      'Registre como ficou na sua cozinha. A referência original continua visível para dar crédito',
     )
   })
 
