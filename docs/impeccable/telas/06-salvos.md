@@ -5,6 +5,7 @@ Referência: `docs/telas/06-salvos.html`
 ## Status
 
 - Critique: concluído
+- P1 — biblioteca pessoal e estado vazio: concluído e validado
 - Visual: aguardando demais telas
 - Texto, cor e identidade: etapa posterior
 

@@ -85,8 +85,9 @@ const showNudge = computed(
   <section class="saved-view">
     <header class="saved-view__header">
       <div>
+        <span class="saved-view__eyebrow">Sua biblioteca pessoal</span>
         <h1>Salvos</h1>
-        <p>Aqui ficam as receitas que você guardar para fazer depois.</p>
+        <p>Guarde descobertas para reencontrar quando der vontade de cozinhar.</p>
       </div>
       <BaseButton variant="secondary" @click="newCollectionOpen = true">
         <AppIcon name="plus" :size="18" :stroke-width="2.2" />
@@ -126,7 +127,10 @@ const showNudge = computed(
         </BaseButton>
       </p>
 
-      <section v-if="ownCollectionsQuery.data.value?.content.length" class="saved-view__section">
+      <section
+        v-if="ownCollectionsQuery.data.value?.content.length"
+        class="saved-view__section saved-view__section--collections"
+      >
         <h2>Suas coleções ({{ ownCollectionsQuery.data.value.content.length }})</h2>
         <div class="saved-view__grid">
           <CollectionCard
@@ -143,7 +147,7 @@ const showNudge = computed(
 
       <section
         v-if="followedCollectionsQuery.data.value?.content.length"
-        class="saved-view__section"
+        class="saved-view__section saved-view__section--collections"
       >
         <h2>Coleções que você segue ({{ followedCollectionsQuery.data.value.content.length }})</h2>
         <div class="saved-view__grid">
@@ -156,7 +160,7 @@ const showNudge = computed(
         </div>
       </section>
 
-      <section v-if="savedTotal > 0" class="saved-view__section">
+      <section v-if="savedTotal > 0" class="saved-view__section saved-view__section--saved">
         <div class="saved-view__section-head">
           <h2>Tudo que você guardou ({{ savedTotal }})</h2>
           <button v-if="showSeeAll" type="button" class="saved-view__more" @click="showAllSaved">
@@ -188,8 +192,20 @@ const showNudge = computed(
 
 <style scoped>
 .saved-view {
+  display: flex;
+  flex-direction: column;
   max-width: var(--content-feed);
   margin-inline: auto;
+}
+
+.saved-view__eyebrow {
+  display: block;
+  margin-block-end: var(--space-2);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .saved-view__header {
@@ -208,6 +224,18 @@ const showNudge = computed(
 
 .saved-view__section {
   margin-block-end: var(--space-10);
+}
+
+.saved-view__section--saved {
+  order: 2;
+}
+
+.saved-view__section--collections {
+  order: 3;
+}
+
+.saved-view__nudge {
+  order: 1;
 }
 
 .saved-view__section h2 {
