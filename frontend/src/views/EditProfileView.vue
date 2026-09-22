@@ -30,8 +30,16 @@ const ownUsername = computed(() => authStore.identity?.username ?? '')
 const profileQuery = useFindByUsername(ownUsername)
 
 const form = reactive({ displayName: '', username: '', bio: '', avatarKey: '' })
+const savedForm = ref({ displayName: '', username: '', bio: '', avatarKey: '' })
 const initial = computed(() => (form.displayName.trim().charAt(0).toUpperCase() || '?'))
 const initialUsername = ref('')
+const hasChanges = computed(
+  () =>
+    form.displayName !== savedForm.value.displayName ||
+    form.username !== savedForm.value.username ||
+    form.bio !== savedForm.value.bio ||
+    form.avatarKey !== savedForm.value.avatarKey,
+)
 const fieldErrors = reactive<Record<string, string>>({})
 const generalError = ref<string | null>(null)
 
@@ -43,6 +51,7 @@ watch(
     form.username = profile.username
     form.bio = profile.bio ?? ''
     form.avatarKey = profile.avatarKey ?? ''
+    savedForm.value = { ...form }
     initialUsername.value = profile.username
   },
   { immediate: true },
@@ -90,6 +99,11 @@ function submit(): void {
   }
   updateMutation.mutate({ id: authStore.identity.userId, data })
 }
+
+function cancelEdit(): void {
+  if (hasChanges.value && !window.confirm('Descartar as alterações deste perfil?')) return
+  void router.push(`/u/${ownUsername.value}`)
+}
 </script>
 
 <template>
@@ -102,6 +116,9 @@ function submit(): void {
     <div class="edit-profile-view__heading">
       <h1 id="edit-profile-title">Editar perfil</h1>
       <p>É assim que as outras pessoas veem você.</p>
+      <p class="edit-profile-view__heading-hint">
+        Seu nome e descrição aparecem no perfil, nas publicações e nas coleções abertas.
+      </p>
     </div>
 
     <div v-if="profileQuery.isPending.value" class="edit-profile-view__state">
@@ -202,10 +219,12 @@ function submit(): void {
         </div>
 
         <div class="edit-profile-view__actions">
-          <BaseButton variant="ghost" type="button" @click="router.push(`/u/${ownUsername}`)">
+          <BaseButton variant="ghost" type="button" @click="cancelEdit">
             Cancelar
           </BaseButton>
-          <BaseButton type="submit" :loading="updateMutation.isPending.value">Salvar</BaseButton>
+          <BaseButton type="submit" :loading="updateMutation.isPending.value" :disabled="!hasChanges">
+            Salvar alterações
+          </BaseButton>
         </div>
       </form>
     </template>
@@ -238,6 +257,13 @@ function submit(): void {
 .edit-profile-view__heading p {
   margin-block-start: var(--space-1);
   color: var(--color-text-secondary);
+}
+
+.edit-profile-view__heading-hint {
+  max-width: 36rem;
+  margin-block-start: var(--space-2) !important;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
 }
 
 .edit-profile-view__state {
@@ -318,10 +344,10 @@ function submit(): void {
   height: 2.75rem;
   flex: none;
   place-items: center;
-  color: var(--color-primary-contrast);
+  color: var(--color-text);
   font-family: var(--font-editorial);
   font-size: var(--font-size-lg);
-  background: var(--color-secondary);
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
   border-radius: var(--radius-pill);
 }
 
