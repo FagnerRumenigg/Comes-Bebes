@@ -107,6 +107,8 @@ const visibleItems = computed<NotificationItem[]>(() => {
   return content.filter((item) => item.id !== pendingDeleteId.value)
 })
 
+const newItemsCount = computed(() => visibleItems.value.filter((item) => isNew(item)).length)
+
 const dayGroups = computed(() => groupNotificationsByDay(visibleItems.value))
 
 function flushPending(): void {
@@ -196,14 +198,20 @@ function linkComponentProps(item: NotificationItem): { is: typeof RouterLink | '
 <template>
   <section class="notifications-view">
     <header class="notifications-view__header">
-      <h1>Avisos</h1>
+      <div>
+        <span class="notifications-view__eyebrow">O que merece sua atenção</span>
+        <h1>Avisos</h1>
+        <p class="notifications-view__lead">
+          {{ newItemsCount ? `${newItemsCount} novo${newItemsCount === 1 ? '' : 's'} por aqui.` : 'Atualizações sobre suas descobertas e coleções.' }}
+        </p>
+      </div>
       <button
         v-if="visibleItems.length"
         type="button"
         class="notifications-view__clear"
         @click="requestClearAll"
       >
-        Limpar tudo
+        Limpar avisos
       </button>
     </header>
 
@@ -221,8 +229,8 @@ function linkComponentProps(item: NotificationItem): { is: typeof RouterLink | '
     <div v-else-if="!visibleItems.length" class="notifications-view__empty">
       <AppIcon name="bell" :size="40" :stroke-width="1.4" />
       <h2>Nada por aqui ainda</h2>
-      <p>Quando alguém guardar ou reagir a alguma coisa que você publicou, a gente conta.</p>
-      <BaseButton @click="router.push('/publicar')">Publicar algo que você fez</BaseButton>
+      <p>Quando algo acontecer com suas publicações, coleções ou acessos, a gente conta por aqui.</p>
+      <BaseButton @click="router.push('/')">Descobrir no feed</BaseButton>
     </div>
 
     <template v-else>
@@ -459,6 +467,22 @@ function linkComponentProps(item: NotificationItem): { is: typeof RouterLink | '
 
 .notif-item__when {
   margin: var(--space-1) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.notifications-view__eyebrow {
+  display: block;
+  margin-block-end: var(--space-2);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.notifications-view__lead {
+  margin: var(--space-2) 0 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
 }
