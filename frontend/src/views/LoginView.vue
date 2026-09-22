@@ -14,7 +14,6 @@ import BaseToast from '@/components/base/BaseToast.vue'
 import AppIcon from '@/components/icons/AppIcon.vue'
 import { isPlatformAuthenticatorAvailable, isWebAuthnSupported, useBiometric } from '@/composables/useBiometric'
 import PasswordInput from '@/features/auth/components/PasswordInput.vue'
-import { mockCredentials } from '@/mocks/fixtures/auth'
 import { useAuthStore } from '@/stores/auth.store'
 
 const route = useRoute()
@@ -27,7 +26,6 @@ const remember = ref(false)
 const fieldErrors = reactive<Record<string, string>>({})
 const generalError = ref<string | null>(null)
 const credentialsInvalid = ref(false)
-const mocksEnabled = import.meta.env.DEV && import.meta.env.VITE_ENABLE_MOCKS !== 'false'
 
 function warmImageValidator(): void {
   void apiRequest({
@@ -306,15 +304,6 @@ function submit(): void {
       <RouterLink class="auth-form__forgot" to="/recuperar-senha">Esqueci minha senha</RouterLink>
     </form>
 
-    <details v-if="mocksEnabled" class="mock-credentials">
-      <summary>Credenciais para testar sem backend</summary>
-      <p>
-        E-mail: <code>{{ mockCredentials.user.email }}</code
-        ><br />
-        Senha: <code>{{ mockCredentials.user.password }}</code>
-      </p>
-    </details>
-
     <p class="auth-view__alternative">
       Ainda não tem uma conta?
       <RouterLink to="/cadastro">Criar cadastro</RouterLink>
@@ -416,25 +405,6 @@ function submit(): void {
 
 .auth-form__forgot:hover {
   text-decoration: underline;
-}
-
-.mock-credentials {
-  padding: var(--space-3) var(--space-4);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-}
-
-.mock-credentials summary {
-  color: var(--color-text);
-  cursor: pointer;
-  font-weight: var(--font-weight-medium);
-}
-
-.mock-credentials p {
-  margin-block-start: var(--space-2);
 }
 
 .auth-view__alternative {
