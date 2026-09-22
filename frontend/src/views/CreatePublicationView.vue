@@ -179,6 +179,10 @@ async function autosaveDraft(): Promise<void> {
   return draftSaveInFlight
 }
 
+function retryDraftSave(): void {
+  void autosaveDraft()
+}
+
 async function loadDraft(id: string): Promise<void> {
   const draft = await getDraft(id)
   if (!draft) {
@@ -593,9 +597,10 @@ onBeforeUnmount(() => {
       </div>
       <form v-else class="create-publication__form" novalidate @submit.prevent="submit">
         <p v-if="lastDraftSavedAt || existingDraftsCount || draftSaveError" class="create-publication__draft-status">
-          <AppIcon name="check" :size="15" :stroke-width="2.2" />
-          <span v-if="draftSaveError" role="alert">Não foi possível salvar o rascunho. Tente novamente. </span>
+          <AppIcon :name="draftSaveError ? 'alert' : 'check'" :size="15" :stroke-width="2.2" />
+          <span v-if="draftSaveError" role="alert">O rascunho ainda não foi salvo. </span>
           <span v-else-if="lastDraftSavedAt">Rascunho salvo às {{ formatSavedTime(lastDraftSavedAt) }}. </span>
+          <button v-if="draftSaveError" type="button" @click="retryDraftSave">Tentar salvar novamente</button>
           <RouterLink to="/rascunhos"
             >Ver rascunhos salvos<span v-if="existingDraftsCount"> ({{ existingDraftsCount }})</span></RouterLink
           >
@@ -742,6 +747,9 @@ onBeforeUnmount(() => {
 
         <div class="create-publication__visibility">
           <span class="create-publication__visibility-label">Quem pode ver</span>
+          <p class="create-publication__visibility-note">
+            Escolha o alcance desta publicação. Você poderá ajustar publicações antigas depois.
+          </p>
           <RadioCardGroup v-model="visibility" :options="VISIBILITY_OPTIONS" />
         </div>
 
@@ -885,6 +893,15 @@ onBeforeUnmount(() => {
   margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
+}
+
+.create-publication__draft-status button {
+  padding: 0;
+  color: var(--color-primary);
+  font: inherit;
+  font-weight: var(--font-weight-semibold);
+  background: transparent;
+  border: 0;
 }
 
 .create-publication__source-error {
@@ -1066,6 +1083,12 @@ onBeforeUnmount(() => {
   color: var(--color-text);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
+}
+
+.create-publication__visibility-note {
+  margin: calc(var(--space-2) * -1) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
 }
 
 .create-publication__actions {

@@ -5,6 +5,7 @@ Referência: `docs/telas/10-publicar.html`
 ## Status
 
 - Critique: concluído
+- P1 — erros, privacidade e rascunho: concluído e validado
 - Visual: aguardando demais telas
 - Texto, cor e identidade: etapa posterior
 
