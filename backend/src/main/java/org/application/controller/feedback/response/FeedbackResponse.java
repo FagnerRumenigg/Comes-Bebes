@@ -2,6 +2,8 @@ package org.application.controller.feedback.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
+import org.application.model.FeedbackCategory;
+import org.application.model.FeedbackStatus;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -19,6 +21,8 @@ public record FeedbackResponse(
         String userDisplayName,
         @Schema(description = "@usuário de quem enviou.", nullable = true)
         String username,
+        FeedbackCategory category,
+        FeedbackStatus status,
         OffsetDateTime createdAt
 ) {
 }

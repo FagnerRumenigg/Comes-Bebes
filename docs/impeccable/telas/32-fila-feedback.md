@@ -5,13 +5,13 @@ Referência: `frontend/src/views/FeedbackQueueView.vue`
 ## Status
 
 - Critique: concluído
-- Visual: aguardando próxima etapa
-- Texto, cor e identidade: etapa posterior
+- P1: concluído e validado
+- Triagem, status e contexto: aplicados
 
 ## Principais pontos
 
-- **[P1] Triagem:** separar sugestão, problema, dúvida e contato de retorno.
-- **[P1] Status:** mostrar novo, em análise, respondido e arquivado com ações claras.
-- **[P1] Contexto:** exibir data, usuário, rota ou funcionalidade relacionada quando disponível.
+- **[P1] Triagem:** separar sugestão, problema, dúvida e contato com filtro por categoria.
+- **[P1] Status:** mostrar novo, em análise, respondido e arquivado com alteração direta na fila.
+- **[P1] Contexto:** exibir mensagem, data, usuário e e-mail de retorno quando disponível.
 - **[P2] Privacidade:** tratar e-mails e dados pessoais com acesso restrito e cuidado visual.
 - **[P2] Detector:** nenhum alerta automatizado no componente.
