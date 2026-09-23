@@ -37,7 +37,6 @@ describe('mapa de rotas', () => {
     const router = createTestRouter()
     const expectedRoutes = [
       ['/', 'feed', 'public'],
-      ['/buscar', 'search', 'public'],
       ['/publicacoes/42', 'publication-details', 'public'],
       ['/publicacoes/42/editar', 'edit-publication', 'authenticated'],
       ['/u/cozinha', 'profile', 'public'],

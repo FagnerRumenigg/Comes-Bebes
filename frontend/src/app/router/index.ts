@@ -16,7 +16,6 @@ import ProfileView from '@/views/ProfileView.vue'
 import EditProfileView from '@/views/EditProfileView.vue'
 import FollowingListView from '@/views/FollowingListView.vue'
 import ForgotPasswordView from '@/views/ForgotPasswordView.vue'
-import SearchView from '@/views/SearchView.vue'
 import SavedView from '@/views/SavedView.vue'
 import AcceptCollectionInviteView from '@/views/AcceptCollectionInviteView.vue'
 import CollectionDetailsView from '@/views/CollectionDetailsView.vue'
@@ -49,12 +48,6 @@ export const routes: RouteRecordRaw[] = [
         name: 'feed',
         component: FeedView,
         meta: { access: 'public', pageTitle: 'Feed' },
-      },
-      {
-        path: 'buscar',
-        name: 'search',
-        component: SearchView,
-        meta: { access: 'public', pageTitle: 'Buscar' },
       },
       {
         path: 'publicacoes/:id/editar',
