@@ -35,6 +35,13 @@ const followingQuery = useFollowing(userId, { page: 1, size: 50 }, {
       </RouterLink>
 
       <h1>{{ isOwnProfile ? 'Quem eu sigo' : `Quem ${profileQuery.data.value.displayName} segue` }}</h1>
+      <p class="following-list-view__intro">
+        {{
+          isOwnProfile
+            ? 'Acompanhe cozinheiros e descubra novas publicações no seu feed.'
+            : `Pessoas que fazem parte da rede de ${profileQuery.data.value.displayName}.`
+        }}
+      </p>
 
       <div v-if="followingQuery.isPending.value" class="following-list-view__state">
         Carregando...
@@ -85,8 +92,13 @@ const followingQuery = useFollowing(userId, { page: 1, size: 50 }, {
 }
 
 .following-list-view h1 {
-  margin: 0 0 var(--space-6);
+  margin: 0;
   font-size: var(--font-size-2xl);
+}
+
+.following-list-view__intro {
+  margin: var(--space-2) 0 var(--space-6);
+  color: var(--color-text-secondary);
 }
 
 .following-list-view__state,
@@ -110,7 +122,10 @@ const followingQuery = useFollowing(userId, { page: 1, size: 50 }, {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding-block: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 
 .following-list-view__person {
