@@ -135,7 +135,7 @@ function goToFeed(): void {
     <div class="auth-view__heading">
       <p class="auth-view__eyebrow">Sua cozinha começa aqui</p>
       <h1 id="register-title">Crie sua conta</h1>
-      <p>Escolha como você será encontrado pela comunidade.</p>
+      <p>Crie um espaço para guardar, registrar e descobrir comida boa do seu jeito.</p>
     </div>
 
     <BaseToast
@@ -228,7 +228,7 @@ function goToFeed(): void {
         label="Data de nascimento"
         type="date"
         autocomplete="bday"
-        hint="Usamos esta informação apenas para confirmar a idade mínima de 18 anos."
+        hint="Usamos apenas para confirmar a idade mínima de 18 anos; ela não aparece no seu perfil."
         :error="fieldErrors.dateOfBirth"
         :disabled="registerMutation.isPending.value"
         required
@@ -242,8 +242,8 @@ function goToFeed(): void {
         :disabled="registerMutation.isPending.value"
         required
       >
-        Eu aceito os <RouterLink to="/termos" target="_blank">Termos de Serviço</RouterLink> e a
-        <RouterLink to="/privacidade" target="_blank">Política de Privacidade</RouterLink> do Comes&amp;Bebes.
+        Li e aceito os <RouterLink to="/termos" target="_blank">Termos de Serviço</RouterLink> e a
+        <RouterLink to="/privacidade" target="_blank">Política de Privacidade</RouterLink>.
       </BaseCheckbox>
       <BaseButton
         class="auth-form__submit"
