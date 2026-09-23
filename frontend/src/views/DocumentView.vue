@@ -10,6 +10,16 @@ const documentQuery = useDocument(slug)
 
 const paragraphs = computed(() => (documentQuery.data.value?.body ?? '').split(/\n{2,}/).filter(Boolean))
 const isSectionHeading = (paragraph: string) => /^\d+\./.test(paragraph)
+const sections = computed(() =>
+  paragraphs.value
+    .map((paragraph, index) => ({ paragraph, index }))
+    .filter(({ paragraph }) => isSectionHeading(paragraph)),
+)
+
+function sectionId(paragraph: string): string {
+  const number = paragraph.match(/^\d+/)?.[0] ?? 'secao'
+  return `secao-${number}`
+}
 </script>
 
 <template>
@@ -22,16 +32,28 @@ const isSectionHeading = (paragraph: string) => /^\d+\./.test(paragraph)
       <header class="document-view__header">
         <p class="document-view__eyebrow">Documento vigente</p>
         <h1>{{ documentQuery.data.value.title }}</h1>
+        <p class="document-view__intro">
+          Consulte a versão vigente abaixo. Use o sumário para encontrar rapidamente um assunto específico.
+        </p>
         <p class="document-view__updated">
           Atualizado em {{ new Date(documentQuery.data.value.updatedAt).toLocaleDateString('pt-BR') }}
         </p>
       </header>
+      <nav v-if="sections.length" class="document-view__toc" aria-label="Sumário do documento">
+        <strong>Neste documento</strong>
+        <ol>
+          <li v-for="section in sections" :key="section.index">
+            <a :href="`#${sectionId(section.paragraph)}`">{{ section.paragraph }}</a>
+          </li>
+        </ol>
+      </nav>
       <div class="document-view__content">
-        <p
-          v-for="(paragraph, index) in paragraphs"
-          :key="index"
-          :class="{ 'document-view__section': isSectionHeading(paragraph) }"
-        >{{ paragraph }}</p>
+        <template v-for="(paragraph, index) in paragraphs" :key="index">
+          <h2 v-if="isSectionHeading(paragraph)" :id="sectionId(paragraph)" class="document-view__section">
+            {{ paragraph }}
+          </h2>
+          <p v-else>{{ paragraph }}</p>
+        </template>
       </div>
     </template>
   </section>
@@ -71,6 +93,37 @@ const isSectionHeading = (paragraph: string) => /^\d+\./.test(paragraph)
   font-size: var(--font-size-sm);
 }
 
+.document-view__intro {
+  max-width: 42rem;
+  margin: var(--space-4) 0 0;
+  color: var(--color-text);
+  line-height: var(--line-height-body);
+}
+
+.document-view__toc {
+  margin-block: var(--space-6);
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.document-view__toc strong {
+  font-size: var(--font-size-sm);
+}
+
+.document-view__toc ol {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding-inline-start: var(--space-5);
+}
+
+.document-view__toc a {
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+}
+
 .document-view__content {
   padding-block-start: var(--space-6);
 }
@@ -83,9 +136,11 @@ const isSectionHeading = (paragraph: string) => /^\d+\./.test(paragraph)
 }
 
 .document-view__content .document-view__section {
+  scroll-margin-block-start: var(--space-6);
   margin-block-start: var(--space-8);
   color: var(--color-text);
   font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-lg);
 }
 
 .document-view__state {
