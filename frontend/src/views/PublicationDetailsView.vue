@@ -33,6 +33,7 @@ const shareOpen = ref(false)
 const shareCopied = ref(false)
 const shareError = ref('')
 const shareUrl = computed(() => window.location.href)
+const updateNotice = computed(() => route.query.atualizado === '1')
 
 const errorMessage = computed(() => normalizeHttpError(publicationQuery.error.value).message)
 
@@ -102,6 +103,9 @@ async function copyShareLink(): Promise<void> {
     <button type="button" class="publication-details__back" @click="goBack">
       <span aria-hidden="true">←</span> Voltar
     </button>
+    <p v-if="updateNotice" class="publication-details__update-notice" role="status">
+      Alterações salvas. Esta publicação já está atualizada.
+    </p>
     <div v-if="publicationQuery.isPending.value" class="publication-details__state">
       Carregando publicação…
     </div>
@@ -270,6 +274,16 @@ async function copyShareLink(): Promise<void> {
 .publication-details__back:hover {
   color: var(--color-primary);
   background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+.publication-details__update-notice {
+  margin: 0 0 var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--color-primary) 45%, var(--color-border));
+  border-radius: var(--radius-sm);
 }
 
 .publication-details__header {
