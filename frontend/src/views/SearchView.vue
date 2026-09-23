@@ -56,6 +56,19 @@ function searchSuggestion(suggestion: (typeof suggestions)[number]): void {
       <h1>Buscar publicações</h1>
       <p>Encontre pratos, receitas e memórias culinárias por título ou ingrediente.</p>
     </header>
+    <div v-if="!submitted" class="search-view__quick-searches">
+      <strong>Comece por aqui</strong>
+      <div class="search-view__suggestions" aria-label="Sugestões de busca">
+        <button
+          v-for="suggestion in suggestions"
+          :key="`quick-${suggestion.type}-${suggestion.label}`"
+          type="button"
+          @click="searchSuggestion(suggestion)"
+        >
+          {{ suggestion.label }}
+        </button>
+      </div>
+    </div>
     <form class="search-view__form" @submit.prevent="submit">
       <BaseInput v-model="title" label="Título" placeholder="Ex.: bolo de cenoura" />
       <BaseInput v-model="ingredient" label="Ingrediente" placeholder="Ex.: chocolate" />
@@ -139,6 +152,16 @@ function searchSuggestion(suggestion: (typeof suggestions)[number]): void {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
+}
+.search-view__quick-searches {
+  display: grid;
+  gap: var(--space-3);
+  margin-block-end: var(--space-4);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+.search-view__quick-searches strong {
+  color: var(--color-text);
 }
 .search-view__actions {
   display: flex;
