@@ -5,13 +5,14 @@ Referência: `frontend/src/views/AcceptCollectionInviteView.vue`
 ## Status
 
 - Critique: concluído
-- Visual: aguardando próxima etapa
-- Texto, cor e identidade: etapa posterior
+- P1: concluído e validado
+- Convite, permissões e colaboração: aplicados
 
 ## Principais pontos
 
-- **[P1] Explicar o convite:** mostrar quem convidou, qual coleção é e o que acontecerá ao aceitar.
-- **[P1] Controle e privacidade:** deixar claro o que a pessoa poderá ver ou fazer e oferecer recusar sem penalidade.
-- **[P1] Token inválido:** apresentar erro específico para convite expirado, usado ou inexistente.
+- **[P1] Explicar o convite:** a confirmação explica o acesso à coleção e o papel de colaborador antes do aceite.
+- **[P1] Controle e privacidade:** o aceite é explícito, pode ser recusado sem penalidade e o login só é solicitado no momento necessário.
+- **[P1] Token inválido:** mensagens específicas orientam convites expirados, já utilizados ou indisponíveis.
+- **[P1] Colaboração:** o convite concede papel editor; colaboradores podem adicionar publicações, enquanto configurações, remoções e exclusão permanecem com o proprietário.
 - **[P2] Mínimo de social:** enquadrar colaboração como curadoria de comida, não como relacionamento social.
 - **[P2] Detector:** nenhum alerta automatizado no componente.

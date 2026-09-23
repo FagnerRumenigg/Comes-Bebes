@@ -2,6 +2,8 @@ package org.application.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.PrePersist;
@@ -38,12 +40,21 @@ public class CollectionFollow {
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "access_role", nullable = false)
+    @Builder.Default
+    private CollectionAccessRole accessRole = CollectionAccessRole.VIEWER;
+
     public boolean isActive() {
         return deletedAt == null;
     }
 
     public void reactivate() {
         deletedAt = null;
+    }
+
+    public void promoteToEditor() {
+        accessRole = CollectionAccessRole.EDITOR;
     }
 
     public void remove(OffsetDateTime deletedAt) {

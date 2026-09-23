@@ -39,6 +39,8 @@ public record CollectionResponse(
         Long followersCount,
         @Schema(description = "Indica se a conta autenticada segue esta coleção. Nulo para visitantes ou para o próprio autor.", nullable = true)
         Boolean followedByCurrentUser,
+        @Schema(description = "Indica se a conta autenticada pode adicionar publicações à coleção.")
+        boolean canEdit,
         @Schema(description = "Data de criação.")
         OffsetDateTime createdAt,
         @Schema(description = "Data da última atualização.")
@@ -46,7 +48,7 @@ public record CollectionResponse(
 ) {
     public static CollectionResponse of(PublicationCollection collection, ZoneId zoneId, User author,
                                          long publicationsCount, List<String> coverImageUrls,
-                                         Long followersCount, Boolean followedByCurrentUser) {
+                                         Long followersCount, Boolean followedByCurrentUser, boolean canEdit) {
         return CollectionResponse.builder()
                 .id(collection.getId())
                 .authorId(collection.getAuthorId())
@@ -60,6 +62,7 @@ public record CollectionResponse(
                 .coverImageUrls(coverImageUrls)
                 .followersCount(followersCount)
                 .followedByCurrentUser(followedByCurrentUser)
+                .canEdit(canEdit)
                 .createdAt(DateTimeConverter.toApplicationTime(collection.getCreatedAt(), zoneId))
                 .updatedAt(DateTimeConverter.toApplicationTime(collection.getUpdatedAt(), zoneId))
                 .build();

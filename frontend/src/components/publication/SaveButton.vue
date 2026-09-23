@@ -8,6 +8,7 @@ import {
 } from '@/api/generated/collections/collections'
 import { removeSaved, save } from '@/api/generated/publications/publications'
 import { getGetUserCollectionsQueryKey, useGetUserCollections } from '@/api/generated/users/users'
+import { useGetFollowedCollections } from '@/api/generated/collections/collections'
 import { normalizeHttpError } from '@/api/errors'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseDialog from '@/components/base/BaseDialog.vue'
@@ -42,6 +43,16 @@ const collectionsQuery = useGetUserCollections(userId, {
   page: 1,
   size: 50,
 }, { query: { enabled: organizeOpen } })
+const followedCollectionsQuery = useGetFollowedCollections(
+  { page: 1, size: 50 },
+  { query: { enabled: organizeOpen } },
+)
+const editableCollections = computed(() => {
+  const own = collectionsQuery.data.value?.content ?? []
+  const followed = followedCollectionsQuery.data.value?.content ?? []
+  return [...new Map([...own, ...followed].map((collection) => [collection.id, collection])).values()]
+    .filter((collection) => collection.canEdit)
+})
 
 const saveMutation = useMutation({
   mutationFn: () => save(props.publicationId, {}),
@@ -199,17 +210,17 @@ function removeFromSaved(): void {
 
         <BaseFieldError v-if="organizeError" :message="organizeError" />
 
-        <div v-if="collectionsQuery.isPending.value" class="save-button__state">
+        <div v-if="collectionsQuery.isPending.value || followedCollectionsQuery.isPending.value" class="save-button__state">
           Carregando suas coleções...
         </div>
         <div
-          v-else-if="!collectionsQuery.data.value?.content.length"
+          v-else-if="!editableCollections.length"
           class="save-button__state"
         >
           Você ainda não tem coleções.
         </div>
         <ul v-else class="save-button__list">
-          <li v-for="collection in collectionsQuery.data.value.content" :key="collection.id">
+          <li v-for="collection in editableCollections" :key="collection.id">
             <span>{{ collection.name }}</span>
             <BaseButton
               variant="secondary"

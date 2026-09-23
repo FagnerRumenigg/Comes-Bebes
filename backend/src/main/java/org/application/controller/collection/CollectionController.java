@@ -330,7 +330,8 @@ public class CollectionController {
         // Contador de seguidores só para o dono: visitante nunca vê (produto5.md v5 §3.1, impl10.md v10 §13.8).
         Long followersCount = isOwner ? collectionService.countFollowers(collection.getId()) : null;
         Boolean followedByCurrentUser = isOwner ? null : viewerId == null ? null : collectionService.isFollowing(viewerId, collection.getId());
-        return CollectionResponse.of(collection, applicationZoneId, author, publicationsCount, coverImageUrls, followersCount, followedByCurrentUser);
+        return CollectionResponse.of(collection, applicationZoneId, author, publicationsCount, coverImageUrls, followersCount,
+                followedByCurrentUser, collectionService.canEdit(viewerId, collection.getId()));
     }
 
     private UUID viewerId(Authentication authentication) {
