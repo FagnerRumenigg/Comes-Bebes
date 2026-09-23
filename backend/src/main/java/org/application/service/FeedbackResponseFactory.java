@@ -41,6 +41,8 @@ public class FeedbackResponseFactory {
                     .userId(item.getUserId())
                     .userDisplayName(sender == null ? null : sender.getDisplayName())
                     .username(sender == null ? null : sender.getUsername())
+                    .category(item.getCategory())
+                    .status(item.getStatus())
                     .createdAt(DateTimeConverter.toApplicationTime(item.getCreatedAt(), zoneId))
                     .build();
         });

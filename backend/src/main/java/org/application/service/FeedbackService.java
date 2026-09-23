@@ -2,6 +2,7 @@ package org.application.service;
 
 import lombok.RequiredArgsConstructor;
 import org.application.controller.feedback.request.CreateFeedbackRequest;
+import org.application.controller.feedback.request.UpdateFeedbackRequest;
 import org.application.model.FeedbackSubmission;
 import org.application.model.User;
 import org.application.model.UserNotification;
@@ -42,6 +43,15 @@ public class FeedbackService {
     @Transactional(readOnly = true)
     public Page<FeedbackSubmission> list(Pageable pageable) {
         return feedbackSubmissionRepository.findAllByOrderByCreatedAtDesc(pageable);
+    }
+
+    @Transactional
+    public void update(UUID feedbackId, UpdateFeedbackRequest request) {
+        FeedbackSubmission feedback = feedbackSubmissionRepository.findById(feedbackId)
+                .orElseThrow(() -> new org.application.service.exception.ResourceNotFoundException(
+                        "FEEDBACK_NOT_FOUND", "Feedback não encontrado."));
+        feedback.updateTriage(request.category(), request.status());
+        feedbackSubmissionRepository.save(feedback);
     }
 
     // Sem preferência de usuário pra este tipo (diferente dos outros 5 avisos

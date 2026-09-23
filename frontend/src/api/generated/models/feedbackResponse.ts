@@ -24,5 +24,7 @@ export interface FeedbackResponse {
   userDisplayName: FeedbackResponseUserDisplayName;
   /** @usuário de quem enviou. */
   username: FeedbackResponseUsername;
+  category?: 'SUGGESTION' | 'BUG' | 'QUESTION' | 'CONTACT';
+  status?: 'NEW' | 'IN_REVIEW' | 'RESPONDED' | 'ARCHIVED';
   createdAt: string;
 }

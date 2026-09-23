@@ -2,6 +2,8 @@ package org.application.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -37,11 +39,26 @@ public class FeedbackSubmission {
     @Column(name = "contact_email", length = 320)
     private String contactEmail;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private FeedbackCategory category = FeedbackCategory.SUGGESTION;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private FeedbackStatus status = FeedbackStatus.NEW;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
     @jakarta.persistence.PrePersist
     void onCreate() {
         createdAt = OffsetDateTime.now(java.time.ZoneOffset.UTC);
+    }
+
+    public void updateTriage(FeedbackCategory category, FeedbackStatus status) {
+        this.category = category;
+        this.status = status;
     }
 }

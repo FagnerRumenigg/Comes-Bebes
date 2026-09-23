@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.application.config.CurrentUser;
 import org.application.controller.feedback.request.CreateFeedbackRequest;
+import org.application.controller.feedback.request.UpdateFeedbackRequest;
 import org.application.controller.feedback.response.FeedbackResponse;
 import org.application.dto.PageResponse;
 import org.application.service.FeedbackResponseFactory;
@@ -24,9 +25,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.ZoneId;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -60,5 +64,18 @@ public class FeedbackController {
     @ApiResponse(responseCode = "200", description = "Mensagens retornadas.")
     public PageResponse<FeedbackResponse> list(@Parameter(hidden = true) Pageable pageable) {
         return feedbackResponseFactory.of(feedbackService.list(pageable), applicationZoneId);
+    }
+
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Atualizar triagem", description = "Atualiza categoria e status de uma mensagem. Só quem administra o app pode alterar.")
+    @ApiResponse(responseCode = "204", description = "Triagem atualizada.")
+    public ResponseEntity<Void> update(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateFeedbackRequest request
+    ) {
+        feedbackService.update(id, request);
+        return ResponseEntity.noContent().build();
     }
 }

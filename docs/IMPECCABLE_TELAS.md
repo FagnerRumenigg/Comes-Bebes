@@ -51,7 +51,7 @@ Status em azul significa que a alteração foi implementada e validada.
 | 29 | [Página não encontrada](impeccable/telas/29-pagina-nao-encontrada.md) | qualquer rota inválida | `NotFoundView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 30 | [Fila de moderação](impeccable/telas/30-fila-moderacao.md) | `/admin/moderacao` | `ModerationQueueView.vue` | <span style="color:#2563eb"><strong>P0 corrigido</strong></span> |
 | 31 | [Análise de moderação](impeccable/telas/31-analise-moderacao.md) | `/admin/moderacao/:caseId` | `ModerationCaseView.vue` | <span style="color:#2563eb"><strong>P0 corrigido</strong></span> |
-| 32 | [Fila de feedback administrativo](impeccable/telas/32-fila-feedback.md) | `/admin/feedback` | `FeedbackQueueView.vue` | **Critique concluído** |
+| 32 | [Fila de feedback administrativo](impeccable/telas/32-fila-feedback.md) | `/admin/feedback` | `FeedbackQueueView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 
 ## Correções prioritárias
 
@@ -90,7 +90,7 @@ As correções serão trabalhadas na branch `correcoes-p0`; antes de alterar com
 - ~~Explicar convite, permissões e erros do token — Tela 22: Convite de coleção.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - ~~Tornar termos legíveis, localizáveis e atualizados — Tela 25: Termos.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - ~~Oferecer recuperação útil na página inexistente — Tela 29: Página não encontrada.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
-- Separar tipos, status e contexto do feedback — Tela 32: Fila de feedback.
+- ~~Separar tipos, status e contexto do feedback — Tela 32: Fila de feedback.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 
 ### P2 — melhorar experiência
 
