@@ -38,7 +38,7 @@ Status em azul significa que a alteração foi implementada e validada.
 | 16 | [Busca](impeccable/telas/16-busca.md) | `/` (busca no Feed) | `FeedView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 17 | [Detalhes da publicação](impeccable/telas/17-detalhes-publicacao.md) | `/publicacoes/:id` | `PublicationDetailsView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 18 | [Editar publicação](impeccable/telas/18-editar-publicacao.md) | `/publicacoes/:id/editar` | `EditPublicationView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
-| 19 | [Seguindo](impeccable/telas/19-seguindo.md) | `/u/:username/seguindo` | `FollowingListView.vue` | **Critique concluído** |
+| 19 | [Seguindo](impeccable/telas/19-seguindo.md) | `/u/:username/seguindo` | `FollowingListView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 20 | [Rascunhos](impeccable/telas/20-rascunhos.md) | `/rascunhos` | `DraftsView.vue` | **Critique concluído** |
 | 21 | [Continuar rascunho](impeccable/telas/21-continuar-rascunho.md) | `/publicar/rascunho/:draftId` | `CreatePublicationView.vue` | **Critique concluído** |
 | 22 | [Aceitar convite de coleção](impeccable/telas/22-aceitar-convite-colecao.md) | `/colecoes/convite/:token` | `AcceptCollectionInviteView.vue` | **Critique concluído** |
@@ -86,7 +86,7 @@ As correções serão trabalhadas na branch `correcoes-p0`; antes de alterar com
 - ~~Transformar busca em descoberta culinária — Tela 16: Busca.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - ~~Priorizar conteúdo e ações na publicação — Tela 17: Detalhes da publicação.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - ~~Preservar conteúdo durante edição — Tela 18: Editar publicação.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
-- Manter o mínimo de social na tela de seguindo — Tela 19: Seguindo.
+- ~~Manter o mínimo de social na tela de seguindo — Tela 19: Seguindo.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - Explicar convite, permissões e erros do token — Tela 22: Convite de coleção.
 - Tornar termos legíveis, localizáveis e atualizados — Tela 25: Termos.
 - Oferecer recuperação útil na página inexistente — Tela 29: Página não encontrada.

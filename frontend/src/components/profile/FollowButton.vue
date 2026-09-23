@@ -56,6 +56,8 @@ function toggle(): void {
       v-else
       :variant="isFollowing ? 'secondary' : 'primary'"
       :loading="mutation.isPending.value"
+      :pressed="isFollowing"
+      :aria-label="isFollowing ? 'Deixar de seguir' : 'Seguir'"
       @click="toggle"
     >
       {{ isFollowing ? 'Deixar de seguir' : 'Seguir' }}
