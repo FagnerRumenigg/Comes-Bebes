@@ -333,18 +333,32 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
       <span>Publicações recentes de quem você segue e da comunidade.</span>
     </header>
 
-    <form class="feed-view__search" role="search" @submit.prevent="submitSearch">
-      <AppIcon name="search" :size="20" :stroke-width="1.8" class="feed-view__search-icon" />
-      <input
-        v-model="searchTerm"
-        type="search"
-        placeholder="Buscar por título..."
-        aria-label="Buscar publicações por título"
-      />
-      <button v-if="searchTerm" type="button" aria-label="Limpar busca" @click="clearSearch">
-        <AppIcon name="close" :size="18" :stroke-width="2" />
+    <div class="feed-view__search-row">
+      <form class="feed-view__search" role="search" @submit.prevent="submitSearch">
+        <AppIcon name="search" :size="20" :stroke-width="1.8" class="feed-view__search-icon" />
+        <input
+          v-model="searchTerm"
+          type="search"
+          placeholder="Buscar por título..."
+          aria-label="Buscar publicações por título"
+        />
+        <button v-if="searchTerm" type="button" aria-label="Limpar busca" @click="clearSearch">
+          <AppIcon name="close" :size="18" :stroke-width="2" />
+        </button>
+      </form>
+      <button
+        v-if="!isSearching"
+        type="button"
+        class="feed-view__filter-btn"
+        :class="{ 'feed-view__filter-btn--active': hasActiveFilters }"
+        :aria-expanded="panelOpen"
+        @click="togglePanel"
+      >
+        <AppIcon name="filter" :size="17" :stroke-width="2" />
+        Filtros
+        <span v-if="hasActiveFilters" class="feed-view__filter-dot" aria-hidden="true" />
       </button>
-    </form>
+    </div>
 
     <template v-if="isSearching">
       <p class="feed-view__summary">
@@ -371,21 +385,6 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
     </template>
 
     <template v-else>
-      <div class="feed-view__toolbar">
-        <span class="feed-view__toolbar-label">Descubra algo novo</span>
-        <button
-          type="button"
-          class="feed-view__filter-btn"
-          :class="{ 'feed-view__filter-btn--active': hasActiveFilters }"
-          :aria-expanded="panelOpen"
-          @click="togglePanel"
-        >
-          <AppIcon name="filter" :size="19" :stroke-width="2" />
-          Filtros
-          <span v-if="hasActiveFilters" class="feed-view__filter-dot" aria-hidden="true" />
-        </button>
-      </div>
-
       <div v-if="panelOpen" class="feed-view__panel">
         <div class="feed-view__panel-row">
           <b>Mostrar</b>
@@ -516,7 +515,6 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--letter-spacing-wide);
   text-transform: uppercase;
-  transition: height var(--duration-fast) var(--ease-standard);
 }
 
 .feed-view__heading {
@@ -553,6 +551,18 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
+}
+
+.feed-view__search-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-3);
+  margin-block-end: var(--space-6);
+}
+
+.feed-view__search-row .feed-view__search {
+  flex: 1;
+  margin-block-end: 0;
 }
 
 .feed-view__search-icon {
@@ -609,25 +619,12 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
   border: 0;
 }
 
-.feed-view__toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-block-end: var(--space-4);
-}
-
-.feed-view__toolbar-label {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-}
-
 .feed-view__filter-btn {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: var(--control-min-size);
-  padding-inline: var(--space-4);
+  min-height: 2.75rem;
+  padding-inline: var(--space-3);
   color: var(--color-text);
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-semibold);
