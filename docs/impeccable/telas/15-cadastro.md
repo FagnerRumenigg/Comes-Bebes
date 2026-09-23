@@ -9,6 +9,7 @@ Referência: `frontend/src/views/RegisterView.vue`
 A tela solicita a data de nascimento e valida a idade mínima de 18 anos. A API permanece como autoridade final, armazena o dado de forma privada e rejeita cadastros abaixo da idade mínima.
 
 - Critique: concluído
+- P1 — fricção, validação e termos: concluído e validado
 - Visual: aguardando próxima etapa
 - Texto, cor e identidade: etapa posterior
 
