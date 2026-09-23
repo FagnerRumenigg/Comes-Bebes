@@ -338,7 +338,7 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
         <AppIcon name="search" :size="20" :stroke-width="1.8" class="feed-view__search-icon" />
         <input
           v-model="searchTerm"
-          type="search"
+          type="text"
           placeholder="Buscar por título..."
           aria-label="Buscar publicações por título"
         />
@@ -386,7 +386,8 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
 
     <template v-else>
       <div v-if="panelOpen" class="feed-view__panel">
-        <div class="feed-view__panel-row">
+        <div class="feed-view__panel-grid">
+          <div class="feed-view__panel-row">
           <b>Mostrar</b>
           <div class="feed-view__chips" role="group" aria-label="Mostrar">
             <button
@@ -400,9 +401,9 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
               {{ FILTER_LABELS[option] }}
             </button>
           </div>
-        </div>
+          </div>
 
-        <div v-if="authStore.authenticated" class="feed-view__panel-row">
+          <div v-if="authStore.authenticated" class="feed-view__panel-row">
           <b>De quem</b>
           <div class="feed-view__chips" role="group" aria-label="De quem">
             <button
@@ -416,9 +417,9 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
               {{ SCOPE_LABELS[option] }}
             </button>
           </div>
-        </div>
+          </div>
 
-        <div class="feed-view__panel-row">
+          <div class="feed-view__panel-row">
           <b>Ordenar por</b>
           <div class="feed-view__chips" role="group" aria-label="Ordenar por">
             <button
@@ -431,6 +432,7 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
             >
               {{ SORT_LABELS[option] }}
             </button>
+          </div>
           </div>
         </div>
 
@@ -649,20 +651,26 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
 }
 
 .feed-view__panel {
-  padding: var(--space-5);
+  padding: var(--space-4);
   margin-block-end: var(--space-6);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
 
+.feed-view__panel-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-6);
+}
+
 .feed-view__panel-row {
-  margin-block-end: var(--space-5);
+  min-width: 0;
 }
 
 .feed-view__panel-row > b {
   display: block;
-  margin-block-end: var(--space-3);
+  margin-block-end: var(--space-2);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
 }
@@ -674,8 +682,8 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
 }
 
 .feed-view__chip {
-  min-height: 2.75rem;
-  padding-inline: var(--space-4);
+  min-height: 2.5rem;
+  padding-inline: var(--space-3);
   color: var(--color-text);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
@@ -698,7 +706,8 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
 .feed-view__panel-foot {
   display: flex;
   gap: var(--space-3);
-  padding-block-start: var(--space-4);
+  padding-block-start: var(--space-3);
+  margin-block-start: var(--space-4);
   border-block-start: 1px solid var(--color-border);
 }
 
@@ -786,6 +795,12 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect())
 @media (prefers-reduced-motion: reduce) {
   .feed-view__skeleton {
     animation: none;
+  }
+}
+
+@media (max-width: 40rem) {
+  .feed-view__panel-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
