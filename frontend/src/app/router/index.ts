@@ -113,7 +113,7 @@ export const routes: RouteRecordRaw[] = [
         path: 'colecoes/convite/:token',
         name: 'accept-collection-invite',
         component: AcceptCollectionInviteView,
-        meta: { access: 'authenticated', pageTitle: 'Aceitar convite' },
+        meta: { access: 'public', pageTitle: 'Aceitar convite' },
       },
       {
         path: 'colecoes/:id',

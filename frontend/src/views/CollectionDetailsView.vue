@@ -344,6 +344,9 @@ async function removeInvitee(userId: string): Promise<void> {
             {{ collectionQuery.data.value.followersCount === 1 ? 'pessoa segue' : 'pessoas seguem' }}
           </template>
         </p>
+        <p v-if="!isOwner && collectionQuery.data.value.canEdit" class="collection-details-view__editor-badge">
+          Você pode adicionar publicações nesta coleção.
+        </p>
         <div class="collection-details-view__actions">
           <CollectionFollowButton
             v-if="!isOwner"
@@ -606,6 +609,13 @@ async function removeInvitee(userId: string): Promise<void> {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.1875rem;
+}
+
+.collection-details-view__editor-badge {
+  margin: var(--space-2) 0 0;
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
 }
 
 .collection-details-view__meta-icon {

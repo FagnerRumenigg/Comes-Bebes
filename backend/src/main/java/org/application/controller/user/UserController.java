@@ -220,7 +220,8 @@ public class UserController {
             Long followersCount = isOwner ? collectionService.countFollowers(item.getId()) : null;
             Boolean followedByCurrentUser = isOwner ? null : viewerId == null ? null : collectionService.isFollowing(viewerId, item.getId());
             return CollectionResponse.of(item, applicationZoneId, author, collectionService.countPublications(item.getId()),
-                    collectionService.coverImageUrls(item.getId()), followersCount, followedByCurrentUser);
+                    collectionService.coverImageUrls(item.getId()), followersCount, followedByCurrentUser,
+                    collectionService.canEdit(viewerId, item.getId()));
         });
     }
 

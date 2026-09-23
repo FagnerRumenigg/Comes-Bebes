@@ -3,6 +3,7 @@ package org.application.service;
 import lombok.RequiredArgsConstructor;
 import org.application.model.CollectionFollow;
 import org.application.model.CollectionFollowId;
+import org.application.model.CollectionAccessRole;
 import org.application.model.CollectionInvite;
 import org.application.model.CollectionPublication;
 import org.application.model.CollectionVisibility;
@@ -115,7 +116,7 @@ public class CollectionService {
 
     @Transactional
     public void addPublication(UUID collectionId, UUID authorId, UUID publicationId) {
-        PublicationCollection collection = requireOwned(collectionId, authorId);
+        PublicationCollection collection = requireCanEdit(collectionId, authorId);
         publicationRepository.findByIdAndStatus(publicationId, PublicationStatus.ACTIVE)
                 .orElseThrow(() -> new ResourceNotFoundException("PUBLICATION_NOT_FOUND", "Publicação não encontrada."));
         if (collectionPublicationRepository.existsByCollectionIdAndPublicationId(collectionId, publicationId)) return;
@@ -295,10 +296,11 @@ public class CollectionService {
                 .orElseThrow(() -> new ResourceNotFoundException("COLLECTION_NOT_FOUND", "Coleção não encontrada."));
         if (!collection.getAuthorId().equals(viewerId)) {
             CollectionFollowId id = new CollectionFollowId(viewerId, collection.getId());
-            CollectionFollow follow = collectionFollowRepository.findById(id)
-                    .orElseGet(() -> CollectionFollow.builder().followerId(viewerId).collectionId(collection.getId()).build());
-            follow.reactivate();
-            collectionFollowRepository.save(follow);
+        CollectionFollow follow = collectionFollowRepository.findById(id)
+                .orElseGet(() -> CollectionFollow.builder().followerId(viewerId).collectionId(collection.getId()).build());
+        follow.reactivate();
+        follow.promoteToEditor();
+        collectionFollowRepository.save(follow);
         }
         return collection;
     }
@@ -325,6 +327,7 @@ public class CollectionService {
         CollectionFollow follow = existing
                 .orElseGet(() -> CollectionFollow.builder().followerId(invitee.getId()).collectionId(collectionId).build());
         follow.reactivate();
+        follow.promoteToEditor();
         collectionFollowRepository.save(follow);
 
         if (!alreadyActive && invitee.isNotifyOnCollectionShared()) {
@@ -383,6 +386,33 @@ public class CollectionService {
                 .orElseThrow(() -> new ResourceNotFoundException("COLLECTION_NOT_FOUND", "Coleção não encontrada."));
         if (!collection.getAuthorId().equals(authorId)) {
             throw new InvalidOperationException("NOT_COLLECTION_AUTHOR", "Você não é o autor desta coleção.");
+        }
+        return collection;
+    }
+
+    @Transactional(readOnly = true)
+    public boolean canEdit(UUID userId, UUID collectionId) {
+        if (userId == null) return false;
+        PublicationCollection collection = collectionRepository.findByIdAndDeletedAtIsNull(collectionId).orElse(null);
+        if (collection == null) return false;
+        if (collection.getAuthorId().equals(userId)) return true;
+        return collectionFollowRepository.findById(new CollectionFollowId(userId, collectionId))
+                .filter(CollectionFollow::isActive)
+                .map(follow -> follow.getAccessRole() == CollectionAccessRole.EDITOR)
+                .orElse(false);
+    }
+
+    private PublicationCollection requireCanEdit(UUID collectionId, UUID userId) {
+        PublicationCollection collection = collectionRepository.findByIdAndDeletedAtIsNull(collectionId)
+                .orElseThrow(() -> new ResourceNotFoundException("COLLECTION_NOT_FOUND", "Coleção não encontrada."));
+        if (collection.getAuthorId().equals(userId)) return collection;
+
+        boolean editor = collectionFollowRepository.findById(new CollectionFollowId(userId, collectionId))
+                .filter(CollectionFollow::isActive)
+                .map(follow -> follow.getAccessRole() == CollectionAccessRole.EDITOR)
+                .orElse(false);
+        if (!editor) {
+            throw new InvalidOperationException("NOT_COLLECTION_EDITOR", "Você não pode adicionar publicações a esta coleção.");
         }
         return collection;
     }

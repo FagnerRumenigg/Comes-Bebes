@@ -41,7 +41,7 @@ Status em azul significa que a alteração foi implementada e validada.
 | 19 | [Seguindo](impeccable/telas/19-seguindo.md) | `/u/:username/seguindo` | `FollowingListView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 20 | [Rascunhos](impeccable/telas/20-rascunhos.md) | `/rascunhos` | `DraftsView.vue` | **Critique concluído** |
 | 21 | [Continuar rascunho](impeccable/telas/21-continuar-rascunho.md) | `/publicar/rascunho/:draftId` | `CreatePublicationView.vue` | **Critique concluído** |
-| 22 | [Aceitar convite de coleção](impeccable/telas/22-aceitar-convite-colecao.md) | `/colecoes/convite/:token` | `AcceptCollectionInviteView.vue` | **Critique concluído** |
+| 22 | [Aceitar convite de coleção](impeccable/telas/22-aceitar-convite-colecao.md) | `/colecoes/convite/:token` | `AcceptCollectionInviteView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 23 | [Meus dispositivos](impeccable/telas/23-dispositivos.md) | `/dispositivos` | `DevicesView.vue` | <span style="color:#2563eb"><strong>P0 corrigido</strong></span> |
 | 24 | [Informar e-mail](impeccable/telas/24-informar-email.md) | `/informar-email` | `RequireEmailView.vue` | **Critique concluído** |
 | 25 | [Termos de Serviço](impeccable/telas/25-termos.md) | `/termos` | `DocumentView.vue` | **Critique concluído** |
@@ -87,7 +87,7 @@ As correções serão trabalhadas na branch `correcoes-p0`; antes de alterar com
 - ~~Priorizar conteúdo e ações na publicação — Tela 17: Detalhes da publicação.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - ~~Preservar conteúdo durante edição — Tela 18: Editar publicação.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - ~~Manter o mínimo de social na tela de seguindo — Tela 19: Seguindo.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
-- Explicar convite, permissões e erros do token — Tela 22: Convite de coleção.
+- ~~Explicar convite, permissões e erros do token — Tela 22: Convite de coleção.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - Tornar termos legíveis, localizáveis e atualizados — Tela 25: Termos.
 - Oferecer recuperação útil na página inexistente — Tela 29: Página não encontrada.
 - Separar tipos, status e contexto do feedback — Tela 32: Fila de feedback.

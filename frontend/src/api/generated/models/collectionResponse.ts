@@ -39,6 +39,8 @@ export interface CollectionResponse {
   followersCount: CollectionResponseFollowersCount;
   /** Indica se a conta autenticada segue esta coleção. Nulo para visitantes ou para o próprio autor. */
   followedByCurrentUser: CollectionResponseFollowedByCurrentUser;
+  /** Indica se a conta autenticada pode adicionar publicações à coleção. */
+  canEdit: boolean;
   /** Data de criação. */
   createdAt: string;
   /** Data da última atualização. */
