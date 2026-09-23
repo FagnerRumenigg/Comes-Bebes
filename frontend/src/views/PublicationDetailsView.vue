@@ -8,6 +8,7 @@ import {
 } from '@/api/generated/publications/publications'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseDialog from '@/components/base/BaseDialog.vue'
+import AppIcon from '@/components/icons/AppIcon.vue'
 import IngredientList from '@/components/recipe/IngredientList.vue'
 import OriginReference from '@/components/recipe/OriginReference.vue'
 import RecipeInstructions from '@/components/recipe/RecipeInstructions.vue'
@@ -28,6 +29,10 @@ const publicationQuery = useGetPublicationById(publicationId)
 const myVersionOpen = ref(false)
 const deleteDialogOpen = ref(false)
 const deleteError = ref('')
+const shareOpen = ref(false)
+const shareCopied = ref(false)
+const shareError = ref('')
+const shareUrl = computed(() => window.location.href)
 
 const errorMessage = computed(() => normalizeHttpError(publicationQuery.error.value).message)
 
@@ -74,6 +79,22 @@ function confirmDelete(): void {
   deleteError.value = ''
   deleteMutation.mutate({ id: publicationId.value })
 }
+
+function openShare(): void {
+  shareCopied.value = false
+  shareError.value = ''
+  shareOpen.value = true
+}
+
+async function copyShareLink(): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(window.location.href)
+    shareCopied.value = true
+    shareError.value = ''
+  } catch {
+    shareError.value = 'Não foi possível copiar o link. Tente novamente.'
+  }
+}
 </script>
 
 <template>
@@ -115,41 +136,42 @@ function confirmDelete(): void {
       />
 
       <div class="publication-details__actions">
-        <RouterLink
-          v-if="canManage"
-          class="publication-details__edit"
-          :to="`/publicacoes/${publicationQuery.data.value.id}/editar`"
-        >
-          Editar publicação
-        </RouterLink>
-        <BaseButton
-          v-if="canManage"
-          variant="ghost"
-          class="publication-details__delete"
-          @click="deleteDialogOpen = true"
-        >
-          Excluir publicação
-        </BaseButton>
-        <ReactionBar :publication="publicationQuery.data.value" />
-        <SaveButton
-          :publication-id="publicationQuery.data.value.id"
-          :saved="publicationQuery.data.value.saved"
-        />
-        <ReportDialog
-          :publication-id="publicationQuery.data.value.id"
-          :author-id="publicationQuery.data.value.authorId"
-          :reported="publicationQuery.data.value.reportedByCurrentUser"
-        />
-        <BaseButton
-          v-if="
-            publicationQuery.data.value.type === 'RECIPE' ||
-            publicationQuery.data.value.type === 'MY_VERSION'
-          "
-          variant="secondary"
-          @click="startMyVersion"
-        >
-          Publicar minha versão
-        </BaseButton>
+        <div class="publication-details__primary-actions">
+          <ReactionBar :publication="publicationQuery.data.value" />
+          <SaveButton
+            :publication-id="publicationQuery.data.value.id"
+            :saved="publicationQuery.data.value.saved"
+          />
+          <BaseButton variant="secondary" @click="openShare">
+            <AppIcon name="share" :size="17" :stroke-width="1.8" />
+            Compartilhar
+          </BaseButton>
+          <BaseButton
+            v-if="
+              publicationQuery.data.value.type === 'RECIPE' ||
+              publicationQuery.data.value.type === 'MY_VERSION'
+            "
+            @click="startMyVersion"
+          >
+            Publicar minha versão
+          </BaseButton>
+          <ReportDialog
+            :publication-id="publicationQuery.data.value.id"
+            :author-id="publicationQuery.data.value.authorId"
+            :reported="publicationQuery.data.value.reportedByCurrentUser"
+          />
+        </div>
+        <div v-if="canManage" class="publication-details__manage-actions">
+          <RouterLink
+            class="publication-details__edit"
+            :to="`/publicacoes/${publicationQuery.data.value.id}/editar`"
+          >
+            Editar publicação
+          </RouterLink>
+          <BaseButton variant="ghost" class="publication-details__delete" @click="deleteDialogOpen = true">
+            Excluir publicação
+          </BaseButton>
+        </div>
       </div>
 
       <p v-if="publicationQuery.data.value.description" class="publication-details__description">
@@ -168,6 +190,23 @@ function confirmDelete(): void {
         <IngredientList :ingredients="recipe.ingredients" />
         <RecipeInstructions :instructions="recipe.instructions" />
       </template>
+
+      <BaseDialog
+        v-model:open="shareOpen"
+        title="Compartilhar publicação"
+        description="Copie o link para enviar esta publicação para alguém."
+      >
+        <div class="publication-details__share-row">
+          <input :value="shareUrl" readonly aria-label="Link da publicação" />
+          <BaseButton variant="secondary" @click="copyShareLink">
+            {{ shareCopied ? 'Copiado' : 'Copiar' }}
+          </BaseButton>
+        </div>
+        <p v-if="shareError" class="publication-details__share-error" role="alert">{{ shareError }}</p>
+        <template #actions>
+          <BaseButton variant="ghost" @click="shareOpen = false">Fechar</BaseButton>
+        </template>
+      </BaseDialog>
 
       <BaseDialog
         v-model:open="myVersionOpen"
@@ -268,18 +307,29 @@ function confirmDelete(): void {
 }
 
 .publication-details__actions {
+  display: grid;
+  gap: var(--space-3);
+  padding-block: var(--space-5);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.publication-details__primary-actions,
+.publication-details__manage-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-4);
-  padding-block: var(--space-5);
-  border-block-end: 1px solid var(--color-border);
+  gap: var(--space-3);
 }
 
 .publication-details__actions :deep(.reaction-bar) {
   flex-basis: 100%;
   padding: 0;
   border: 0;
+}
+
+.publication-details__manage-actions {
+  padding-block-start: var(--space-2);
+  border-block-start: 1px solid var(--color-border);
 }
 
 .publication-details__edit {
@@ -306,6 +356,27 @@ function confirmDelete(): void {
 .publication-details__delete-error {
   margin: 0;
   color: var(--color-danger);
+}
+
+.publication-details__share-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.publication-details__share-row input {
+  min-width: 0;
+  flex: 1;
+  padding: var(--space-3);
+  color: var(--color-text-secondary);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.publication-details__share-error {
+  margin-block-start: var(--space-3);
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
 }
 
 .publication-details__description {

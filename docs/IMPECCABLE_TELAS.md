@@ -36,7 +36,7 @@ Status em azul significa que a alteração foi implementada e validada.
 | 14 | [Editar perfil](impeccable/telas/14-editar-perfil.md) | `/perfil/editar` | `EditProfileView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 15 | [Cadastro](impeccable/telas/15-cadastro.md) | `/cadastro` | `RegisterView.vue` | <span style="color:#2563eb"><strong>P0 + P1 corrigidos</strong></span> |
 | 16 | [Busca](impeccable/telas/16-busca.md) | `/` (busca no Feed) | `FeedView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
-| 17 | [Detalhes da publicação](impeccable/telas/17-detalhes-publicacao.md) | `/publicacoes/:id` | `PublicationDetailsView.vue` | **Critique concluído** |
+| 17 | [Detalhes da publicação](impeccable/telas/17-detalhes-publicacao.md) | `/publicacoes/:id` | `PublicationDetailsView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 18 | [Editar publicação](impeccable/telas/18-editar-publicacao.md) | `/publicacoes/:id/editar` | `EditPublicationView.vue` | **Critique concluído** |
 | 19 | [Seguindo](impeccable/telas/19-seguindo.md) | `/u/:username/seguindo` | `FollowingListView.vue` | **Critique concluído** |
 | 20 | [Rascunhos](impeccable/telas/20-rascunhos.md) | `/rascunhos` | `DraftsView.vue` | **Critique concluído** |
@@ -84,7 +84,7 @@ As correções serão trabalhadas na branch `correcoes-p0`; antes de alterar com
 - ~~Corrigir contraste e segurança ao salvar perfil — Tela 14: Editar perfil.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - ~~Reduzir fricção e melhorar validação do cadastro — Tela 15: Cadastro.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - ~~Transformar busca em descoberta culinária — Tela 16: Busca.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
-- Priorizar conteúdo e ações na publicação — Tela 17: Detalhes da publicação.
+- ~~Priorizar conteúdo e ações na publicação — Tela 17: Detalhes da publicação.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - Preservar conteúdo durante edição — Tela 18: Editar publicação.
 - Manter o mínimo de social na tela de seguindo — Tela 19: Seguindo.
 - Explicar convite, permissões e erros do token — Tela 22: Convite de coleção.
