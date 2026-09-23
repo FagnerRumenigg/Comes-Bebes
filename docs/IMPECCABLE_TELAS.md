@@ -48,7 +48,7 @@ Status em azul significa que a alteração foi implementada e validada.
 | 26 | [Política de Privacidade](impeccable/telas/26-privacidade.md) | `/privacidade` | `DocumentView.vue` | <span style="color:#2563eb"><strong>P0 corrigido</strong></span> |
 | 27 | [Ajuda / FAQ](impeccable/telas/27-ajuda-faq.md) | `/faq` | `DocumentView.vue` | **Critique concluído** |
 | 28 | [Falar com a gente](impeccable/telas/28-falar-com-a-gente.md) | `/sugestao` | `FeedbackView.vue` | **Critique concluído** |
-| 29 | [Página não encontrada](impeccable/telas/29-pagina-nao-encontrada.md) | qualquer rota inválida | `NotFoundView.vue` | **Critique concluído** |
+| 29 | [Página não encontrada](impeccable/telas/29-pagina-nao-encontrada.md) | qualquer rota inválida | `NotFoundView.vue` | <span style="color:#2563eb"><strong>P1 corrigido</strong></span> |
 | 30 | [Fila de moderação](impeccable/telas/30-fila-moderacao.md) | `/admin/moderacao` | `ModerationQueueView.vue` | <span style="color:#2563eb"><strong>P0 corrigido</strong></span> |
 | 31 | [Análise de moderação](impeccable/telas/31-analise-moderacao.md) | `/admin/moderacao/:caseId` | `ModerationCaseView.vue` | <span style="color:#2563eb"><strong>P0 corrigido</strong></span> |
 | 32 | [Fila de feedback administrativo](impeccable/telas/32-fila-feedback.md) | `/admin/feedback` | `FeedbackQueueView.vue` | **Critique concluído** |
@@ -89,7 +89,7 @@ As correções serão trabalhadas na branch `correcoes-p0`; antes de alterar com
 - ~~Manter o mínimo de social na tela de seguindo — Tela 19: Seguindo.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - ~~Explicar convite, permissões e erros do token — Tela 22: Convite de coleção.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - ~~Tornar termos legíveis, localizáveis e atualizados — Tela 25: Termos.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
-- Oferecer recuperação útil na página inexistente — Tela 29: Página não encontrada.
+- ~~Oferecer recuperação útil na página inexistente — Tela 29: Página não encontrada.~~ <span style="color:#2563eb"><strong>Concluído</strong></span>
 - Separar tipos, status e contexto do feedback — Tela 32: Fila de feedback.
 
 ### P2 — melhorar experiência
