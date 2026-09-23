@@ -5,13 +5,13 @@ Referência: `frontend/src/views/EditPublicationView.vue`
 ## Status
 
 - Critique: concluído
-- Visual: aguardando próxima etapa
-- Texto, cor e identidade: etapa posterior
+- P1: concluído e validado
+- Visual, preservação e confirmação: aplicados
 
 ## Principais pontos
 
-- **[P1] Modo de edição:** deixar inequívoco o que já foi publicado e o que será alterado.
-- **[P1] Preservar conteúdo:** evitar perda de foto, receita ou relato ao cancelar, voltar ou receber erro.
-- **[P1] Resultado:** confirmar claramente que a alteração foi salva e quando ela estará visível.
+- **[P1] Modo de edição:** a tela identifica a publicação e informa que a imagem atual não é alterada nesse fluxo.
+- **[P1] Preservar conteúdo:** erros mantêm os dados preenchidos e o cancelamento com alterações pede confirmação antes de sair.
+- **[P1] Resultado:** após o salvamento, os detalhes exibem confirmação de que a publicação foi atualizada.
 - **[P2] Campos:** priorizar conteúdo culinário e manter a edição simples.
 - **[P2] Detector:** nenhum alerta automatizado no componente.

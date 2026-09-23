@@ -11,6 +11,7 @@ import {
 import type { CreateRecipeRequest, UpdatePublicationRequest } from '@/api/generated/models'
 import { normalizeHttpError } from '@/api/errors'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseDialog from '@/components/base/BaseDialog.vue'
 import BaseFieldError from '@/components/base/BaseFieldError.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import BaseSelect from '@/components/base/BaseSelect.vue'
@@ -53,6 +54,8 @@ const yieldUnit = ref('')
 const ingredients = ref<IngredientDraft[]>([{ name: '', quantity: '', unit: '', note: '' }])
 const tags = ref<string[]>([])
 const initialized = ref(false)
+const initialSnapshot = ref('')
+const cancelDialogOpen = ref(false)
 const formError = ref('')
 const ingredientError = ref('')
 const fieldErrors = reactive<Record<string, string>>({})
@@ -74,6 +77,23 @@ const loadError = computed(() => {
   return error ? normalizeHttpError(error).message : null
 })
 
+function formSnapshot(): string {
+  return JSON.stringify({
+    title: title.value,
+    description: description.value,
+    visibility: visibility.value,
+    instructions: instructions.value,
+    yieldQuantity: yieldQuantity.value,
+    yieldUnit: yieldUnit.value,
+    ingredients: ingredients.value,
+    tags: tags.value,
+  })
+}
+
+const hasUnsavedChanges = computed(
+  () => initialized.value && initialSnapshot.value !== formSnapshot(),
+)
+
 watch(
   [() => publicationQuery.data.value, () => recipeQuery.data.value],
   ([publication, recipe]) => {
@@ -94,6 +114,7 @@ watch(
       }))
     }
     initialized.value = true
+    initialSnapshot.value = formSnapshot()
   },
   { immediate: true },
 )
@@ -102,7 +123,10 @@ const updateMutation = useUpdatePublication({
   mutation: {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['publications'] })
-      void router.push(`/publicacoes/${publicationId.value}`)
+      void router.push({
+        path: `/publicacoes/${publicationId.value}`,
+        query: { atualizado: '1' },
+      })
     },
     onError: (error) => {
       const normalized = normalizeHttpError(error)
@@ -165,6 +189,19 @@ function submit(): void {
     ...(recipe ? { recipe } : {}),
   }
   updateMutation.mutate({ id: publicationId.value, data })
+}
+
+function cancelEdit(): void {
+  if (hasUnsavedChanges.value) {
+    cancelDialogOpen.value = true
+    return
+  }
+  void router.back()
+}
+
+function discardAndLeave(): void {
+  cancelDialogOpen.value = false
+  void router.back()
 }
 </script>
 
@@ -244,12 +281,23 @@ function submit(): void {
           type="button"
           variant="secondary"
           :disabled="updateMutation.isPending.value"
-          @click="router.back()"
+          @click="cancelEdit"
         >
           Cancelar
         </BaseButton>
       </div>
     </form>
+
+    <BaseDialog
+      v-model:open="cancelDialogOpen"
+      title="Descartar alterações?"
+      description="Você fez alterações nesta publicação. Se sair agora, elas serão perdidas."
+    >
+      <template #actions>
+        <BaseButton variant="ghost" @click="cancelDialogOpen = false">Continuar editando</BaseButton>
+        <BaseButton variant="secondary" @click="discardAndLeave">Descartar e sair</BaseButton>
+      </template>
+    </BaseDialog>
   </article>
 </template>
 
